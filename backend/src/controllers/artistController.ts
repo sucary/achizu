@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { ArtistStore } from '../models/artistStore';
+import { ArtistService } from '../services/artistService';
 import { CreateArtistDTO, UpdateArtistDTO, ArtistQueryParams, LocationView } from '../types/artist';
 import { isValidLocation, isValidSocialLinks } from '../types/validation';
 
 export const getAllArtists = async (req: Request, res: Response) => {
     try {
         const filters: ArtistQueryParams = req.query;
-        let artists = await ArtistStore.getAll();
+        let artists = await ArtistService.getAll();
 
         if (filters.name) {
             const nameQuery = filters.name.toLowerCase();
@@ -38,7 +38,7 @@ export const getAllArtists = async (req: Request, res: Response) => {
 
 export const getArtistById = async (req: Request, res: Response) => {
     try {
-        const artist = await ArtistStore.getById(req.params.id);
+        const artist = await ArtistService.getById(req.params.id);
         if (!artist) {
             res.status(404).json({ message: 'Artist not found' });
             return;
@@ -70,10 +70,15 @@ export const createArtist = async (req: Request, res: Response) => {
             return;
         }
 
-        const newArtist = await ArtistStore.create(data);
+        const newArtist = await ArtistService.create(data);
         res.status(201).json(newArtist);
     } catch (error) {
         console.error('Error in createArtist:', error);
+        // Check if it's a known error (e.g. from CityService)
+        if (error instanceof Error && error.message.includes('City not found')) {
+            res.status(400).json({ message: error.message });
+            return;
+        }
         res.status(500).json({ message: 'Database error' });
     }
 };
@@ -98,7 +103,7 @@ export const updateArtist = async (req: Request, res: Response) => {
             return;
         }
 
-        const updatedArtist = await ArtistStore.update(req.params.id, data);
+        const updatedArtist = await ArtistService.update(req.params.id, data);
         if (!updatedArtist) {
             res.status(404).json({ message: 'Artist not found' });
             return;
@@ -107,13 +112,17 @@ export const updateArtist = async (req: Request, res: Response) => {
         res.json(updatedArtist);
     } catch (error) {
         console.error('Error in updateArtist:', error);
+        if (error instanceof Error && error.message.includes('City not found')) {
+            res.status(400).json({ message: error.message });
+            return;
+        }
         res.status(500).json({ message: 'Database error' });
     }
 };
 
 export const deleteArtist = async (req: Request, res: Response) => {
     try {
-        const success = await ArtistStore.delete(req.params.id);
+        const success = await ArtistService.delete(req.params.id);
         if (!success) {
             res.status(404).json({ message: 'Artist not found' });
             return;
@@ -133,7 +142,7 @@ export const getArtistCountByCity = async (req: Request, res: Response) => {
             return;
         }
 
-        const counts = await ArtistStore.countByCity(view);
+        const counts = await ArtistService.countByCity(view);
         res.json(counts);
     } catch (error) {
         console.error('Error in getArtistCountByCity:', error);

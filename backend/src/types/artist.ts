@@ -12,7 +12,7 @@ export interface Coordinates {
 export interface Location {
     city: string;
     province: string;
-    coordinates: Coordinates;
+    coordinates: Coordinates;   // For determining the city, not for locating the artist
 }
 
 /**
@@ -38,6 +38,10 @@ export interface Artist {
     socialLinks?: SocialLinks;
     createdAt: Date | string;
     updatedAt: Date | string;
+    originalLocationDisplayCoordinates: Coordinates;
+    activeLocationDisplayCoordinates: Coordinates;
+    originalCityId: string;
+    activeCityId: string;
 }
 
 /**
@@ -52,6 +56,16 @@ export interface CreateArtistDTO {
 }
 
 /**
+ * Extended DTO for Store layer including resolved IDs and coordinates
+ */
+export interface StoreArtistDTO extends CreateArtistDTO {
+    originalCityId: string;
+    activeCityId: string;
+    originalLocationDisplayCoordinates: Coordinates;
+    activeLocationDisplayCoordinates: Coordinates;
+}
+
+/**
  * Artist data for updates (all fields optional except those needed for validation)
  */
 export interface UpdateArtistDTO {
@@ -60,6 +74,16 @@ export interface UpdateArtistDTO {
     originalLocation?: Location;
     activeLocation?: Location;
     socialLinks?: SocialLinks;
+}
+
+/**
+ * Extended Update DTO for Store layer
+ */
+export interface UpdateStoreArtistDTO extends UpdateArtistDTO {
+    originalCityId?: string;
+    activeCityId?: string;
+    originalLocationDisplayCoordinates?: Coordinates;
+    activeLocationDisplayCoordinates?: Coordinates;
 }
 
 /**

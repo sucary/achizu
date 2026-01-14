@@ -13,6 +13,7 @@ import fs from 'fs';
 export async function initTestDb() {
     
     await pool.query('DROP TABLE IF EXISTS artists CASCADE');
+    await pool.query('DROP TABLE IF EXISTS city_boundaries CASCADE');
 
     const schema = fs.readFileSync(
         path.resolve(__dirname, '../db/schema.sql'),

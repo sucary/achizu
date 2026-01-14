@@ -38,6 +38,8 @@ export interface Artist {
     socialLinks?: SocialLinks;
     createdAt: Date | string;
     updatedAt: Date | string;
+    originalCityId: string;
+    activeCityId: string;
 }
 
 /**

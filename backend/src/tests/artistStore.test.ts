@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest';
 import { initTestDb, cleanupTestDb, closeTestDb } from './setup';
+import pool from '../config/database';
 
 // Import AFTER setup loads .env.test
 import { ArtistStore } from '../models/artistStore';
@@ -17,7 +18,34 @@ afterAll(async () => {
 });
 
 describe('ArtistStore', () => {
-    const testArtist = {
+    let tokyoId: string;
+    let osakaId: string;
+    let kyotoId: string;
+    let yokohamaId: string;
+
+    // Create dummy cities
+    const createCity = async (name: string, province: string, lat: number, lng: number) => {
+        const result = await pool.query(`
+            INSERT INTO city_boundaries (name, province, boundary, center)
+            VALUES (
+                $1,
+                $2,
+                ST_Multi(ST_Buffer(ST_SetSRID(ST_MakePoint($4, $3), 4326)::geometry, 0.1))::geography,
+                ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography
+            )
+            RETURNING id
+        `, [name, province, lat, lng]);
+        return result.rows[0].id;
+    };
+
+    beforeAll(async () => {
+        tokyoId = await createCity('Tokyo', 'Tokyo', 35.6762, 139.6503);
+        osakaId = await createCity('Osaka', 'Osaka', 34.6937, 135.5023);
+        kyotoId = await createCity('Kyoto', 'Kyoto', 35.0116, 135.7681);
+        yokohamaId = await createCity('Yokohama', 'Kanagawa', 35.4437, 139.6380);
+    });
+
+    const getTestArtist = () => ({
         name: 'Test Artist',
         originalLocation: {
             city: 'Tokyo',
@@ -29,7 +57,11 @@ describe('ArtistStore', () => {
             province: 'Osaka',
             coordinates: { lat: 34.6937, lng: 135.5023 },
         },
-    };
+        originalCityId: tokyoId,
+        activeCityId: osakaId,
+        originalLocationDisplayCoordinates: { lat: 35.6762, lng: 139.6503 },
+        activeLocationDisplayCoordinates: { lat: 34.6937, lng: 135.5023 }
+    });
 
     describe('getAll', () => {
         it('returns empty array when no artists', async () => {
@@ -40,7 +72,7 @@ describe('ArtistStore', () => {
 
     describe('create', () => {
         it('creates artist with correct coordinates', async () => {
-            const created = await ArtistStore.create(testArtist);
+            const created = await ArtistStore.create(getTestArtist());
 
             expect(created.name).toBe('Test Artist');
             expect(created.originalLocation.coordinates.lat).toBeCloseTo(35.6762);
@@ -55,19 +87,22 @@ describe('ArtistStore', () => {
         });
 
         it('returns correct counts by active city', async () => {
-            await ArtistStore.create(testArtist);
+            const baseArtist = getTestArtist();
+            await ArtistStore.create(baseArtist);
             await ArtistStore.create({
-                ...testArtist,
+                ...baseArtist,
                 name: 'Test Artist 2',
             });
             await ArtistStore.create({
-                ...testArtist,
+                ...baseArtist,
                 name: 'Test Artist 3',
                 activeLocation: {
                     city: 'Kyoto',
                     province: 'Kyoto',
                     coordinates: { lat: 35.0116, lng: 135.7681 },
                 },
+                activeCityId: kyotoId,
+                activeLocationDisplayCoordinates: { lat: 35.0116, lng: 135.7681 }
             });
 
             const result = await ArtistStore.countByCity('active');
@@ -77,15 +112,18 @@ describe('ArtistStore', () => {
         });
 
         it('returns correct counts by original city', async () => {
-            await ArtistStore.create(testArtist);
+            const baseArtist = getTestArtist();
+            await ArtistStore.create(baseArtist);
             await ArtistStore.create({
-                ...testArtist,
+                ...baseArtist,
                 name: 'Test Artist 2',
                 originalLocation: {
                     city: 'Yokohama',
                     province: 'Kanagawa',
                     coordinates: { lat: 35.4437, lng: 139.6380 },
                 },
+                originalCityId: yokohamaId,
+                originalLocationDisplayCoordinates: { lat: 35.4437, lng: 139.6380 }
             });
 
             const result = await ArtistStore.countByCity('original');
