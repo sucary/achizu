@@ -1,10 +1,10 @@
 import { ArtistStore } from '../models/artistStore';
 import { CityService } from './cityService';
-import { CreateArtistDTO, UpdateArtistDTO, Artist, StoreArtistDTO, UpdateStoreArtistDTO } from '../types/artist';
+import { CreateArtistDTO, UpdateArtistDTO, Artist, StoreArtistDTO, UpdateStoreArtistDTO, ArtistQueryParams } from '../types/artist';
 
 export const ArtistService = {
-    getAll: async () => {
-        return await ArtistStore.getAll();
+    getAll: async (params: ArtistQueryParams) => {
+        return await ArtistStore.getAll(params);
     },
 
     getById: async (id: string) => {

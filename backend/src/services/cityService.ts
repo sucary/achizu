@@ -17,6 +17,11 @@ interface NominatimResponse {
         type: "MultiPolygon" | "Polygon";
         coordinates: number[][][][];
     };
+    address?: {
+        country?: string;
+        country_code?: string;
+        [key: string]: string | undefined;
+    };
 }
 
 export const CityService = {
@@ -80,6 +85,7 @@ export const CityService = {
             state: state,
             format: 'json',
             polygon_geojson: '1',
+            addressdetails: '1',
             limit: '1'
         });
 
@@ -117,6 +123,8 @@ export const CityService = {
                 ? { type: 'MultiPolygon', coordinates: [data.geojson.coordinates] }
                 : data.geojson;
 
+            const country = data.address?.country || 'Unknown';
+
             const result = await client.query(`
                 INSERT INTO city_boundaries (
                     name, province, country,
@@ -127,7 +135,7 @@ export const CityService = {
                     ST_SetSRID(ST_MakePoint($5, $6), 4326)::geography,
                     $7
                 )
-                RETURNING 
+                RETURNING
                     id, name, province, country,
                     ST_AsGeoJSON(boundary)::json as boundary,
                     ST_Y(center::geometry) as lat,
@@ -136,7 +144,7 @@ export const CityService = {
             `, [
                 name,
                 province,
-                'Unknown', // Nominatim search result doesn't always give country easily in this format, can be improved later
+                country,
                 JSON.stringify(geojson),
                 parseFloat(data.lon),
                 parseFloat(data.lat),

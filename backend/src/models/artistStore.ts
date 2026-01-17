@@ -1,4 +1,4 @@
-import { Artist, StoreArtistDTO, UpdateStoreArtistDTO, LocationCount, LocationView } from '../types/artist';
+import { Artist, StoreArtistDTO, UpdateStoreArtistDTO, LocationCount, LocationView, ArtistQueryParams } from '../types/artist';
 import pool from '../config/database';
 
 /**
@@ -59,8 +59,33 @@ function rowToArtist(row: Record<string, unknown>): Artist {
  *      ST_X(original_coordinates::geometry) extracts the Longitude.
  */
 export const ArtistStore = {
-    getAll: async (): Promise<Artist[]> => {
+    getAll: async (params: ArtistQueryParams = {}): Promise<Artist[]> => {
         try {
+            const { name, city, province, view = 'active' } = params;
+
+            const conditions: string[] = [];
+            const values: unknown[] = [];
+            let paramIndex = 1;
+
+            if (name) {
+                conditions.push(`name ILIKE $${paramIndex++}`);
+                values.push(`%${name}%`);
+            }
+
+            if (city) {
+                const column = view === 'active' ? 'active_city' : 'original_city';
+                conditions.push(`${column} ILIKE $${paramIndex++}`);
+                values.push(`%${city}%`);
+            }
+
+            if (province) {
+                const column = view === 'active' ? 'active_province' : 'original_province';
+                conditions.push(`${column} ILIKE $${paramIndex++}`);
+                values.push(`%${province}%`);
+            }
+
+            const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
             const result = await pool.query(`
                 SELECT
                     id, name, profile_picture,
@@ -77,7 +102,9 @@ export const ArtistStore = {
                     instagram_url, twitter_url, spotify_url, website_url,
                     created_at, updated_at
                 FROM artists
-            `);
+                ${whereClause}
+                ORDER BY created_at DESC
+            `, values);
 
             return result.rows.map(rowToArtist);
         } catch (error) {
