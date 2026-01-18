@@ -35,12 +35,16 @@ export const createArtistMarker = (artist: Artist) => {
   });
 };
 
-export const getDisplayArtists = (artists: Artist[]) => {
-    return artists.map(artist => ({
-        ...artist,
-        activeLocation: {
-            ...artist.activeLocation,
-            coordinates: artist.activeLocationDisplayCoordinates
-        }
-    }));
-};
+  export const getDisplayArtists = (artists: Artist[]) => {
+      return artists.map(artist => ({
+          ...artist,
+          activeLocation: {
+              ...artist.activeLocation,
+              coordinates: artist.activeLocationDisplayCoordinates
+          },
+          originalLocation: {
+              ...artist.originalLocation,
+              coordinates: artist.originalLocationDisplayCoordinates
+          }
+      }));
+  };

@@ -7,12 +7,13 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 // @ts-ignore
 import * as LMarkerCluster from 'leaflet.markercluster';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { Artist } from '../../types/artist';
+import type { Artist, LocationView } from '../../types/artist';
 import ArtistProfile from '../ArtistProfile';
 import { createArtistMarker } from '../../utils/mapUtils';
 
-const ArtistCluster = ({ artists }: { artists: Artist[] }) => {
+const ArtistCluster = ({ artists, view }: { artists: Artist[] ; view: LocationView }) => {
   const map = useMap();
+
 
   useEffect(() => {
     // Distance basedd clustering
@@ -34,8 +35,9 @@ const ArtistCluster = ({ artists }: { artists: Artist[] }) => {
 
     artists.forEach((artist) => {
       const icon = createArtistMarker(artist);
+      const location = view === 'active' ? artist.activeLocation : artist.originalLocation;
       const marker = L.marker(
-        [artist.activeLocation.coordinates.lat, artist.activeLocation.coordinates.lng], 
+        [location.coordinates.lat, location.coordinates.lng], 
         { icon }
       );
       
@@ -55,7 +57,7 @@ const ArtistCluster = ({ artists }: { artists: Artist[] }) => {
     return () => {
       map.removeLayer(markerClusterGroup);
     };
-  }, [map, artists]);
+  }, [map, artists, view]);
 
   return null;
 };
