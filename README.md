@@ -4,7 +4,7 @@ Nerd: A full-stack web application that displays artist locations on an interact
 
 Human: Built to visualize the geographic distribution of my favorite artists—where they're from and where they're currently based.
 
-This project is inspired by [Anitabi](https://www.anitabi.cn/map), an interactive map website visualizing real-world location of Anime scenes.
+This project is inspired by [Anitabi](https://www.anitabi.cn/map), an interactive map website visualizing real-world location of Anime scenes for pilgrimage.
 
 ## Project Overview
 
