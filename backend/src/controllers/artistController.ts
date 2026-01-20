@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { ArtistService } from '../services/artistService';
 import { ArtistQueryParams, LocationView } from '../types/artist';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
-import { ArtistInputSchema } from '../schemas/artists';
+import { ArtistInputSchema } from '../schemas/artistValidation';
 
 export const getAllArtists = asyncHandler(async (req: Request, res: Response) => {
     const filters: ArtistQueryParams = {

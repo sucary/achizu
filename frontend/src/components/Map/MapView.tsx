@@ -21,7 +21,7 @@ const MapView = () => {
     });
 
     const displayArtists = useMemo(() =>
-        getDisplayArtists(artists || [], view),
+        getDisplayArtists({}, view, artists || []),
         [artists, view]
     );
 
