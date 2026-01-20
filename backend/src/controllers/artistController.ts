@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { ArtistService } from '../services/artistService';
-import { CreateArtistDTO, UpdateArtistDTO, ArtistQueryParams, LocationView } from '../types/artist';
-import { isValidLocation, isValidSocialLinks } from '../types/validation';
+import { ArtistQueryParams, LocationView } from '../types/artist';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
+import { ArtistInputSchema } from '../schemas/artists';
 
 export const getAllArtists = asyncHandler(async (req: Request, res: Response) => {
     const filters: ArtistQueryParams = {
@@ -25,20 +25,7 @@ export const getArtistById = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const createArtist = asyncHandler(async (req: Request, res: Response) => {
-    const data: CreateArtistDTO = req.body;
-
-    // Validation
-    if (!data.name || !data.originalLocation || !data.activeLocation) {
-        throw new AppError('Missing required fields', 400);
-    }
-
-    if (!isValidLocation(data.originalLocation) || !isValidLocation(data.activeLocation)) {
-        throw new AppError('Invalid location data', 400);
-    }
-
-    if (data.socialLinks && !isValidSocialLinks(data.socialLinks)) {
-        throw new AppError('Invalid social links', 400);
-    }
+    const data = ArtistInputSchema.parse(req.body);
 
     try {
         const newArtist = await ArtistService.create(data);
@@ -52,20 +39,8 @@ export const createArtist = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const updateArtist = asyncHandler(async (req: Request, res: Response) => {
-    const data: UpdateArtistDTO = req.body;
-
-    // Validation for provided fields
-    if (data.originalLocation && !isValidLocation(data.originalLocation)) {
-        throw new AppError('Invalid original location data', 400);
-    }
-
-    if (data.activeLocation && !isValidLocation(data.activeLocation)) {
-        throw new AppError('Invalid active location data', 400);
-    }
-
-    if (data.socialLinks && !isValidSocialLinks(data.socialLinks)) {
-        throw new AppError('Invalid social links', 400);
-    }
+    // Allow partial updates
+    const data = ArtistInputSchema.partial().parse(req.body);
 
     try {
         const updatedArtist = await ArtistService.update(req.params.id, data);

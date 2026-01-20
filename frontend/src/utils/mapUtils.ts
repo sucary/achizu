@@ -35,7 +35,7 @@ export const createArtistMarker = (artist: Artist) => {
   });
 };
 
-  export const getDisplayArtists = (artists: Artist[]) => {
+  export const getDisplayArtists = (p0: {}, view: string, artists: Artist[]) => {
       return artists.map(artist => ({
           ...artist,
           activeLocation: {
