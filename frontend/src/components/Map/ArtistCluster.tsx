@@ -11,7 +11,14 @@ import type { Artist, LocationView } from '../../types/artist';
 import ArtistProfile from '../ArtistProfile';
 import { createArtistMarker } from '../../utils/mapUtils';
 
-const ArtistCluster = ({ artists, view }: { artists: Artist[] ; view: LocationView }) => {
+interface ArtistClusterProps {
+    artists: Artist[];
+    view: LocationView;
+    onArtistSelect?: (artist: Artist) => void;
+    onArtistDeselect?: () => void;
+}
+
+const ArtistCluster = ({ artists, view, onArtistSelect, onArtistDeselect }: ArtistClusterProps) => {
   const map = useMap();
 
 
@@ -48,7 +55,19 @@ const ArtistCluster = ({ artists, view }: { artists: Artist[] ; view: LocationVi
           closeButton: false,
           minWidth: 320
       });
-      
+
+      marker.on('popupopen', () => {
+          if (onArtistSelect) {
+              onArtistSelect(artist);
+          }
+      });
+
+      marker.on('popupclose', () => {
+          if (onArtistDeselect) {
+              onArtistDeselect();
+          }
+      });
+
       markerClusterGroup.addLayer(marker);
     });
 
@@ -57,7 +76,7 @@ const ArtistCluster = ({ artists, view }: { artists: Artist[] ; view: LocationVi
     return () => {
       map.removeLayer(markerClusterGroup);
     };
-  }, [map, artists, view]);
+  }, [map, artists, view, onArtistSelect, onArtistDeselect]);
 
   return null;
 };

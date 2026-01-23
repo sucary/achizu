@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { Artist, ArtistQueryParams } from '../types/artist';
+import type { City } from '../types/city';
 
 const API_URL = 'http://localhost:3000/api';
 
@@ -26,6 +27,16 @@ export const getArtists = async (params?: ArtistQueryParams): Promise<Artist[]> 
         return response.data;
     } catch (error) {
         console.error('Failed to fetch artists:', error);
+        throw error;
+    }
+};
+
+export const getCityById = async (id: string): Promise<City> => {
+    try {
+        const response = await api.get<City>(`/cities/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch city:', error);
         throw error;
     }
 };

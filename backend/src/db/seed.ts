@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import { ArtistService } from '../services/artistService';
 import pool from '../config/database';
 import { CreateArtistDTO } from '../types/artist';
@@ -88,11 +91,11 @@ async function seedDatabase() {
 try {
     console.log('Starting database seed...');
     
-    // Clear existing data
     await pool.query('DELETE FROM artists');
     console.log('Cleared existing artists');
+    await pool.query('DELETE FROM city_boundaries');
+    console.log('Cleared existing cities');
 
-    // Insert new artists
     for (const artist of sampleArtists) {
         try {
             await ArtistService.create(artist);

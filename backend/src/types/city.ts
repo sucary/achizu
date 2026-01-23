@@ -11,7 +11,11 @@ export interface City {
         boundary: {
             type: "MultiPolygon";
             coordinates: number[][][][];
-        }; 
+        };
+        rawBoundary?: {
+            type: "MultiPolygon" | "Polygon";
+            coordinates: number[][][][] | number[][][];
+        };
         center: Coordinates;
         osmId: string;
         lastUpdated: Date | string;

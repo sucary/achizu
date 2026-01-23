@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, ZoomControl, useMap } from 'react-leaflet';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { MapContainer, TileLayer, ZoomControl, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression } from 'leaflet';
-import { getArtists } from '../../services/api';
+import { getArtists, getCityById } from '../../services/api';
 import type { Artist, LocationView } from '../../types/artist';
 import { getDisplayArtists } from '../../utils/mapUtils';
 import LocateControl from './buttons/LocateMeButton';
@@ -14,16 +14,42 @@ const MapView = () => {
     const defaultCenter: LatLngExpression = [35.6762, 139.6503]; // Tokyo
     const defaultZoom = 4;
     const [view, setView] = useState<LocationView>('active');
+    const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
 
     const {data: artists, isLoading} = useQuery({
         queryKey: ['artists'],
         queryFn: () => getArtists(),
     });
 
+    const { data: selectedCity } = useQuery({
+        queryKey: ['city', selectedCityId],
+        queryFn: () => {
+            console.log('Fetching city:', selectedCityId);
+            return selectedCityId ? getCityById(selectedCityId) : null;
+        },
+        enabled: !!selectedCityId
+    });
+
+    useEffect(() => {
+        console.log('Selected City Data:', selectedCity);
+    }, [selectedCity]);
+
     const displayArtists = useMemo(() =>
         getDisplayArtists({}, view, artists || []),
         [artists, view]
     );
+
+    const handleArtistSelect = useCallback((artist: Artist) => {
+        console.log('Artist selected:', artist.name);
+        const cityId = view === 'active' ? artist.activeCityId : artist.originalCityId;
+        console.log('Setting selected city ID:', cityId);
+        setSelectedCityId(cityId);
+    }, [view]);
+
+    const handleArtistDeselect = useCallback(() => {
+        console.log('Artist deselected, clearing boundary');
+        setSelectedCityId(null);
+    }, []);
 
     if (isLoading) {
         return (
@@ -47,7 +73,37 @@ const MapView = () => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <LocateControl />
-            <ArtistCluster artists={displayArtists} view={view} />
+            <ArtistCluster
+                artists={displayArtists}
+                view={view}
+                onArtistSelect={handleArtistSelect}
+                onArtistDeselect={handleArtistDeselect}
+            />
+            {selectedCity && selectedCity.boundary && (
+                <GeoJSON
+                    key={selectedCity.id}
+                    data={selectedCity.boundary}
+                    style={{
+                        color: '#ff0000',
+                        weight: 2,
+                        opacity: 0.8,
+                        fillOpacity: 0.1
+                    }}
+                />
+            )}
+            {selectedCity && selectedCity.rawBoundary && (
+                <GeoJSON
+                    key={`${selectedCity.id}-raw`}
+                    data={selectedCity.rawBoundary}
+                    style={{
+                        color: '#3b82f6',
+                        weight: 2,
+                        opacity: 0.8,
+                        fillOpacity: 0.1,
+                        dashArray: '5, 5'
+                    }}
+                />
+            )}
         </MapContainer>
     );
 };

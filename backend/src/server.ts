@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import artistRoutes from './routes/artistRoutes';
+import cityRoutes from './routes/cityRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 
@@ -27,6 +28,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/artists', artistRoutes);
+app.use('/api/cities', cityRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
     res.json({

@@ -53,6 +53,7 @@ export const CityService = {
             SELECT 
                 id, name, province, country,
                 ST_AsGeoJSON(boundary)::json as boundary,
+                ST_AsGeoJSON(raw_boundary)::json as raw_boundary,
                 ST_Y(center::geometry) as lat,
                 ST_X(center::geometry) as lng,
                 osm_id, last_updated, needs_refresh
@@ -69,6 +70,7 @@ export const CityService = {
             province: row.province,
             country: row.country,
             boundary: row.boundary,
+            rawBoundary: row.raw_boundary,
             center: { lat: row.lat, lng: row.lng },
             osmId: row.osm_id,
             lastUpdated: row.last_updated,
@@ -128,9 +130,10 @@ export const CityService = {
             const result = await client.query(`
                 INSERT INTO city_boundaries (
                     name, province, country,
-                    boundary, center, osm_id
+                    boundary, raw_boundary, center, osm_id
                 ) VALUES (
                     $1, $2, $3,
+                    ST_SetSRID(ST_GeomFromGeoJSON($4), 4326)::geography,
                     ST_SetSRID(ST_GeomFromGeoJSON($4), 4326)::geography,
                     ST_SetSRID(ST_MakePoint($5, $6), 4326)::geography,
                     $7
@@ -138,6 +141,7 @@ export const CityService = {
                 RETURNING
                     id, name, province, country,
                     ST_AsGeoJSON(boundary)::json as boundary,
+                    ST_AsGeoJSON(raw_boundary)::json as raw_boundary,
                     ST_Y(center::geometry) as lat,
                     ST_X(center::geometry) as lng,
                     osm_id, last_updated, needs_refresh
@@ -198,6 +202,7 @@ export const CityService = {
                 SELECT
                     id, name, province, country,
                     ST_AsGeoJSON(boundary)::json as boundary,
+                    ST_AsGeoJSON(raw_boundary)::json as raw_boundary,
                     ST_Y(center::geometry) as lat,
                     ST_X(center::geometry) as lng,
                     osm_id, last_updated, needs_refresh
@@ -214,6 +219,7 @@ export const CityService = {
                 province: row.province,
                 country: row.country,
                 boundary: row.boundary,
+                rawBoundary: row.raw_boundary,
                 center: { lat: row.lat, lng: row.lng },
                 osmId: row.osm_id,
                 lastUpdated: row.last_updated,
@@ -248,6 +254,36 @@ export const CityService = {
         return {
             lat: result.rows[0].lat,
             lng: result.rows[0].lng
+        };
+    },
+
+    getById: async (id: string): Promise<City | null> => {
+        const result = await pool.query(`
+            SELECT
+                id, name, province, country,
+                ST_AsGeoJSON(boundary)::json as boundary,
+                ST_AsGeoJSON(raw_boundary)::json as raw_boundary,
+                ST_Y(center::geometry) as lat,
+                ST_X(center::geometry) as lng,
+                osm_id, last_updated, needs_refresh
+            FROM city_boundaries
+            WHERE id = $1
+        `, [id]);
+
+        if (result.rows.length === 0) return null;
+
+        const row = result.rows[0];
+        return {
+            id: row.id,
+            name: row.name,
+            province: row.province,
+            country: row.country,
+            boundary: row.boundary,
+            rawBoundary: row.raw_boundary,
+            center: { lat: row.lat, lng: row.lng },
+            osmId: row.osm_id,
+            lastUpdated: row.last_updated,
+            needsRefresh: row.needs_refresh
         };
     }
 };
