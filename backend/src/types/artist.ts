@@ -13,6 +13,8 @@ export interface Location {
     city: string;
     province: string;
     coordinates: Coordinates;   // For determining the city, not for locating the artist
+    osmId?: number;
+    osmType?: string;
 }
 
 /**

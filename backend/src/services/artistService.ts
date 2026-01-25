@@ -12,23 +12,64 @@ export const ArtistService = {
     },
 
     create: async (data: CreateArtistDTO): Promise<Artist> => {
-        // 1. Check if cities exist and get their IDs
-        const originalCity = await CityService.getCity(
-            data.originalLocation.city,
-            data.originalLocation.province
-        );
+        let originalCity, activeCity;
 
-        const activeCity = await CityService.getCity(
-            data.activeLocation.city,
-            data.activeLocation.province
-        );
+        // 1. Handle original location - support both OSM ID and city name + province
+        if (data.originalLocation.osmId && data.originalLocation.osmType) {
+            originalCity = await CityService.getByOsmId(
+                data.originalLocation.osmId,
+                data.originalLocation.osmType
+            );
 
-        // 2. Enforce Nominatim city centers
+            if (!originalCity) {
+                const nominatimData = await CityService.fetchByOsmId(
+                    data.originalLocation.osmId,
+                    data.originalLocation.osmType
+                );
+                if (!nominatimData) {
+                    throw new Error('Failed to fetch original city data from Nominatim');
+                }
+                originalCity = await CityService.saveFromNominatim(nominatimData);
+            }
+        } else {
+            // （old) city name + province for testing/seeding
+            originalCity = await CityService.getCity(
+                data.originalLocation.city,
+                data.originalLocation.province
+            );
+        }
+
+        // 2. Handle active location
+        if (data.activeLocation.osmId && data.activeLocation.osmType) {
+            activeCity = await CityService.getByOsmId(
+                data.activeLocation.osmId,
+                data.activeLocation.osmType
+            );
+
+            if (!activeCity) {
+                const nominatimData = await CityService.fetchByOsmId(
+                    data.activeLocation.osmId,
+                    data.activeLocation.osmType
+                );
+                if (!nominatimData) {
+                    throw new Error('Failed to fetch active city data from Nominatim');
+                }
+                activeCity = await CityService.saveFromNominatim(nominatimData);
+            }
+        } else {
+            // （old) city name + province for testing/seeding
+            activeCity = await CityService.getCity(
+                data.activeLocation.city,
+                data.activeLocation.province
+            );
+        }
+
+        // 3. Enforce Nominatim city centers
         // Overwrite the provided coordinates with Nominatim coordinates
         data.originalLocation.coordinates = originalCity.center;
         data.activeLocation.coordinates = activeCity.center;
 
-        // 3. Generate random display coordinates for both locations
+        // 4. Generate random display coordinates for both locations
         // - If both cities are the same, use the same random point
         // Fallback to the official center if generation fails
         let originalDisplayCoordinates, activeDisplayCoordinates;
@@ -49,7 +90,7 @@ export const ArtistService = {
             activeDisplayCoordinates = activeRandomPoint || activeCity.center;
         }
 
-        // 4. Prepare data for Store
+        // 5. Prepare data for Store
         const storeData: StoreArtistDTO = {
             ...data,
             originalCityId: originalCity.id,
@@ -58,7 +99,7 @@ export const ArtistService = {
             activeLocationDisplayCoordinates: activeDisplayCoordinates
         };
 
-        // 5. Create artist
+        // 6. Create artist
         return await ArtistStore.create(storeData);
     },
 
@@ -76,19 +117,59 @@ export const ArtistService = {
 
         // If locations are being updated, resolve new IDs
         if (data.originalLocation) {
-            const city = await CityService.getCity(
-                data.originalLocation.city,
-                data.originalLocation.province
-            );
+            let city;
+            if (data.originalLocation.osmId && data.originalLocation.osmType) {
+                city = await CityService.getByOsmId(
+                    data.originalLocation.osmId,
+                    data.originalLocation.osmType
+                );
+
+                if (!city) {
+                    const nominatimData = await CityService.fetchByOsmId(
+                        data.originalLocation.osmId,
+                        data.originalLocation.osmType
+                    );
+                    if (!nominatimData) {
+                        throw new Error('Failed to fetch original city data from Nominatim');
+                    }
+                    city = await CityService.saveFromNominatim(nominatimData);
+                }
+            } else {
+                // （old) city name + province
+                city = await CityService.getCity(
+                    data.originalLocation.city,
+                    data.originalLocation.province
+                );
+            }
             storeData.originalCityId = city.id;
             finalOriginalCityId = city.id;
         }
 
         if (data.activeLocation) {
-            const city = await CityService.getCity(
-                data.activeLocation.city,
-                data.activeLocation.province
-            );
+            let city;
+            if (data.activeLocation.osmId && data.activeLocation.osmType) {
+                city = await CityService.getByOsmId(
+                    data.activeLocation.osmId,
+                    data.activeLocation.osmType
+                );
+
+                if (!city) {
+                    const nominatimData = await CityService.fetchByOsmId(
+                        data.activeLocation.osmId,
+                        data.activeLocation.osmType
+                    );
+                    if (!nominatimData) {
+                        throw new Error('Failed to fetch active city data from Nominatim');
+                    }
+                    city = await CityService.saveFromNominatim(nominatimData);
+                }
+            } else {
+                // （old) city name + province
+                city = await CityService.getCity(
+                    data.activeLocation.city,
+                    data.activeLocation.province
+                );
+            }
             storeData.activeCityId = city.id;
             finalActiveCityId = city.id;
         }

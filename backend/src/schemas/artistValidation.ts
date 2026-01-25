@@ -9,6 +9,8 @@ export const LocationSchema = z.object({
     city: z.string().min(1, "City is required"),
     province: z.string().min(1, "Province is required"),
     coordinates: CoordinatesSchema,
+    osmId: z.number().optional(),
+    osmType: z.string().optional(),
 });
 
 export const SocialLinksSchema = z.object({
