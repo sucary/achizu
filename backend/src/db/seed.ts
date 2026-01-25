@@ -5,7 +5,9 @@ import { ArtistService } from '../services/artistService';
 import pool from '../config/database';
 import { CreateArtistDTO } from '../types/artist';
 
+
 // Sample artist data to seed the database
+// Hardcoded OSM IDs for cities, DOES NOT VERIFY FUZZY SEARCH!
 
 const sampleArtists: CreateArtistDTO[] = [
     {
@@ -14,11 +16,15 @@ const sampleArtists: CreateArtistDTO[] = [
         originalLocation: {
             city: "Fukuoka",
             province: "Fukuoka",
+            osmId: 4008611,
+            osmType: "relation",
             coordinates: { lat: 33.5902, lng: 130.4017 }
         },
         activeLocation: {
             city: "Fukuoka",
             province: "Fukuoka",
+            osmId: 4008611,
+            osmType: "relation",
             coordinates: { lat: 33.5902, lng: 130.4017 }
         },
         socialLinks: {
@@ -31,11 +37,15 @@ const sampleArtists: CreateArtistDTO[] = [
         originalLocation: {
             city: "Okayama",
             province: "Okayama",
+            osmId: 3939644,
+            osmType: "relation",
             coordinates: { lat: 34.6551, lng: 133.9195 }
         },
         activeLocation: {
             city: "Tokyo",
             province: "Tokyo",
+            osmId: 19631009,  // Tokyo 23 wards, the heart of the world
+            osmType: "relation",
             coordinates: { lat: 35.6762, lng: 139.6503}
         },
         socialLinks: {
@@ -44,9 +54,9 @@ const sampleArtists: CreateArtistDTO[] = [
     }
 ];
 
-/* 
+/*
 / Generate dummy artists
-/ Note: Coordinates are placeholders (0,0). 
+/ Note: Coordinates are placeholders (0,0).
 / The backend will replace them with the official city center.
 */
 const dummyCoords = { lat: 0, lng: 0 };
@@ -58,11 +68,15 @@ for (let i = 1; i <= 15; i++) {
         originalLocation: {
             city: "Tokyo",
             province: "Tokyo",
+            osmId: 19631009,
+            osmType: "relation",
             coordinates: dummyCoords
         },
         activeLocation: {
             city: "Tokyo",
             province: "Tokyo",
+            osmId: 19631009,
+            osmType: "relation",
             coordinates: dummyCoords
         },
         socialLinks: {}
@@ -76,11 +90,15 @@ for (let i = 1; i <= 15; i++) {
         originalLocation: {
             city: "Kawasaki",
             province: "Kanagawa",
+            osmId: 2689476,
+            osmType: "relation",
             coordinates: dummyCoords
         },
         activeLocation: {
             city: "Kawasaki",
             province: "Kanagawa",
+            osmId: 2689476,
+            osmType: "relation",
             coordinates: dummyCoords
         },
         socialLinks: {}
@@ -88,29 +106,30 @@ for (let i = 1; i <= 15; i++) {
 }
 
 async function seedDatabase() {
-try {
-    console.log('Starting database seed...');
-    
-    await pool.query('DELETE FROM artists');
-    console.log('Cleared existing artists');
-    await pool.query('DELETE FROM city_boundaries');
-    console.log('Cleared existing cities');
+    try {
+        console.log('Starting database seed...');
+        console.log('Note: This may take ~30-60 seconds due to Nominatim rate limits\n');
 
-    for (const artist of sampleArtists) {
-        try {
-            await ArtistService.create(artist);
-            console.log(`Created artist: ${artist.name}`);
-        } catch (err) {
-            console.error(`Failed to create artist ${artist.name}:`, err);
+        await pool.query('DELETE FROM artists');
+        console.log('Cleared existing artists');
+        await pool.query('DELETE FROM city_boundaries');
+        console.log('Cleared existing cities\n');
+
+        for (const artist of sampleArtists) {
+            try {
+                await ArtistService.create(artist);
+                console.log(`Created artist: ${artist.name}`);
+            } catch (err) {
+                console.error(`Failed to create artist ${artist.name}:`, err);
+            }
         }
-    }
 
-    console.log('Database seeded successfully!');
-    process.exit(0);
-} catch (error) {
-    console.error('Error seeding database:', error);
-    process.exit(1);
-}
+        console.log('\nDatabase seeded successfully!');
+        process.exit(0);
+    } catch (error) {
+        console.error('Error seeding database:', error);
+        process.exit(1);
+    }
 }
 
 seedDatabase();
