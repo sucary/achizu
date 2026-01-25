@@ -282,7 +282,12 @@ export const CityService = {
      * Save city from Nominatim data
      */
     saveFromNominatim: async (data: NominatimResponse): Promise<City> => {
-        const city = data.address?.city || data.address?.town || data.address?.village || 'Unknown';
+        const city = data.address?.city
+                  || data.address?.administrative
+                  || data.address?.town
+                  || data.address?.village
+                  || data.name
+                  || 'Unknown';
         const province = data.address?.state || data.address?.province || data.address?.region || 'Unknown';
         const country = data.address?.country || 'Unknown';
 

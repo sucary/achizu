@@ -37,6 +37,7 @@ export interface NominatimResponse {
     boundingbox: string[];
     lat: string;
     lon: string;
+    name?: string;
     display_name: string;
     class: string;
     type: string;
@@ -47,6 +48,7 @@ export interface NominatimResponse {
     };
     address?: {
         city?: string;
+        administrative?: string;
         town?: string;
         village?: string;
         state?: string;
