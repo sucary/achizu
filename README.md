@@ -14,6 +14,7 @@ This application tracks two locations per artist: their original location (homet
 
 **Implemented:**
 - **Dual location tracking** with PostGIS geography points and city boundary polygons
+- **OSM ID-based city search** with fuzzy matching
 - **Nominatim API integration** for geocoding and GeoJSON city boundary retrieval
 - **Randomized display coordinates** within city boundaries using `ST_GeneratePoints`
 - Two views for original location and current location
@@ -29,6 +30,8 @@ This application tracks two locations per artist: their original location (homet
 ## Current State
 
 Not deployed to production. Requires environment configuration and authentication implementation for production use.
+
+The full application will be containerized with Docker when ready for production. Currently, only the database is containerized using Docker Compose.
 
 The application is functional in development. It includes a REST API with CRUD endpoints, PostgreSQL database with PostGIS, and a React frontend with Leaflet map integration. The Nominatim API is used for geocoding city names to coordinates and retrieving GeoJSON city boundaries.
 
@@ -56,8 +59,7 @@ The application is functional in development. It includes a REST API with CRUD e
 
 ### Prerequisites
 - Node.js (v18+)
-- PostgreSQL (v14+) with PostGIS extension installed
-- (optional) Docker and Docker Compose for running tests
+- Docker and Docker Compose
 
 ### Installation
 
@@ -67,35 +69,37 @@ The application is functional in development. It includes a REST API with CRUD e
    cd artist-location-map
    ```
 
-2. **Database Setup**
+2. **Environment Setup**
    ```bash
-   # Create the database in PostgreSQL
-   psql -U postgres -c "CREATE DATABASE artist_map;"
-
-   # Enable PostGIS extension
-   psql -U postgres -d artist_map -c "CREATE EXTENSION postgis;"
-   ```
-
-3. **Backend Setup**
-   ```bash
-   cd backend
-   npm install
-
-   # Create .env file with your PostgreSQL credentials
+   # Create root .env file for Docker
    cat > .env << EOF
+   DB_PASSWORD=your_secure_password
+   EOF
+
+   # Create backend .env file
+   cat > backend/.env << EOF
    DB_USER=postgres
    DB_HOST=localhost
    DB_NAME=artist_map
-   DB_PASSWORD=your_postgres_password
+   DB_PASSWORD=your_secure_password
    DB_PORT=5432
-   PORT=5000
+   PORT=3000
+   NODE_ENV=development
    EOF
+   ```
 
-   # Initialize database schema (creates tables and indexes)
-   npm run db:init
+3. **Database Setup**
+   ```bash
+   # Start PostgreSQL with PostGIS in Docker
+   docker-compose up -d
 
-   # (Optional) Seed with sample data
-   npm run db:seed
+   # Wait for database to be ready
+   docker-compose ps
+
+   # Initialize schema, import ocean data, and seed
+   cd backend
+   npm install
+   npm run db:setup
    ```
 
 4. **Frontend Setup**
@@ -106,52 +110,91 @@ The application is functional in development. It includes a REST API with CRUD e
 
 ### Running the Application
 
-1. **Start Backend**
+1. **Start Docker Database** (if not already running)
+   ```bash
+   docker-compose up -d
+   ```
+
+2. **Start Backend**
    ```bash
    cd backend
-   npm run dev  # Runs on http://localhost:5000
+   npm run dev  # Runs on http://localhost:3000
    ```
 
-2. **Start Frontend**
+3. **Start Frontend**
    ```bash
    cd frontend
-   npm run dev  # Runs on http://localhost:5173 (or next available port)
+   npm run dev  # Runs on http://localhost:5173
    ```
 
-3. **Access the application**
+4. **Access the application**
    - Open your browser to `http://localhost:5173`
-   - The map should load with any seeded artists
+   - The map should load with seeded artists
 
 ## Testing
 
-The project includes Vitest for backend testing with a dedicated test database running in Docker. Test infrastructure is set up for:
-- Unit tests for services and utilities
-- Integration tests for database operations
-- API endpoint testing
+### Automated Tests (Vitest)
 
-### Running Tests
+The project includes Vitest for backend testing with a test database running in Docker:
 
 ```bash
-# Backend tests (requires Docker)
 cd backend
-npm run test:db:up    # Start test database in Docker (port 5433)
-npm run test          # Run test suite
-npm run test:db:down  # Stop test database
 
-# Note: Tests use a separate PostgreSQL database in Docker (port 5433)
-# to avoid conflicts with the development database (port 5432)
+# Start test database in Docker (port 5433)
+npm run test:db:up
+
+# Run test suite
+npm test
+
+# Stop test database
+npm run test:db:down
+```
+
+### Manual API Testing
+
+Test API endpoints interactively without hitting Nominatim rate limits:
+
+```bash
+# Ensure Docker database is running
+docker-compose up -d
+
+# Start backend
+npm run dev
+
+# In another terminal, run manual tests
+npm run test:api
+```
+
+### Database Inspection
+
+```bash
+# View all artists
+npm run inspect:db artists
+
+# View all cities
+npm run inspect:db cities
 ```
 
 
 ## API Endpoints
 
+### Artists
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/health` | Health check |
-| GET | `/api/artists` | List all artists (supports query params: name, city, province) |
+| GET | `/api/artists` | List all artists (supports query params: name, city, province, view) |
 | GET | `/api/artists/:id` | Get single artist by ID |
-| POST | `/api/artists` | Create new artist |
+| POST | `/api/artists` | Create new artist (supports OSM ID-based location) |
 | PUT | `/api/artists/:id` | Update artist |
 | DELETE | `/api/artists/:id` | Delete artist |
 | GET | `/api/artists/stats/by-city` | Get artist count per city (supports view: original/active) |
+
+### Cities
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/cities/search?q=<query>` | Fuzzy search cities (local DB with pg_trgm) |
+| GET | `/api/cities/search/nominatim?q=<query>` | Search cities via Nominatim API |
+| GET | `/api/cities/:id` | Get city by ID (includes boundary GeoJSON) |
+| POST | `/api/cities/reverse` | Reverse geocode (coordinates → city) |
 
