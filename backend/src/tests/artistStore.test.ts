@@ -24,25 +24,27 @@ describe('ArtistStore', () => {
     let yokohamaId: string;
 
     // Create dummy cities
-    const createCity = async (name: string, province: string, lat: number, lng: number) => {
+    const createCity = async (name: string, province: string, lat: number, lng: number, osmId: number) => {
         const result = await pool.query(`
-            INSERT INTO city_boundaries (name, province, boundary, center)
+            INSERT INTO city_boundaries (name, province, boundary, center, osm_id, osm_type)
             VALUES (
                 $1,
                 $2,
                 ST_Multi(ST_Buffer(ST_SetSRID(ST_MakePoint($4, $3), 4326)::geometry, 0.1))::geography,
-                ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography
+                ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography,
+                $5,
+                'relation'
             )
             RETURNING id
-        `, [name, province, lat, lng]);
+        `, [name, province, lat, lng, osmId]);
         return result.rows[0].id;
     };
 
     beforeAll(async () => {
-        tokyoId = await createCity('Tokyo', 'Tokyo', 35.6762, 139.6503);
-        osakaId = await createCity('Osaka', 'Osaka', 34.6937, 135.5023);
-        kyotoId = await createCity('Kyoto', 'Kyoto', 35.0116, 135.7681);
-        yokohamaId = await createCity('Yokohama', 'Kanagawa', 35.4437, 139.6380);
+        tokyoId = await createCity('Tokyo', 'Tokyo', 35.6762, 139.6503, 1000001);
+        osakaId = await createCity('Osaka', 'Osaka', 34.6937, 135.5023, 1000002);
+        kyotoId = await createCity('Kyoto', 'Kyoto', 35.0116, 135.7681, 1000003);
+        yokohamaId = await createCity('Yokohama', 'Kanagawa', 35.4437, 139.6380, 1000004);
     });
 
     const getTestArtist = () => ({
