@@ -21,4 +21,18 @@ pool.on('error', (err) => {
     process.exit(-1);
 });
 
+
+export async function verifyDatabaseConnection() {
+    try {
+        const result = await pool.query('SELECT version() as version');
+        const version = result.rows[0].version;
+        const dbType = version.includes('PostgreSQL 15') ? '🐳 DOCKER' : '💻 LOCAL';
+        console.log(`Database: ${dbType} - ${version.split(',')[0]}`);
+        return { success: true };
+    } catch (error) {
+        console.error('Database connection failed:', error);
+        return { success: false };
+    }
+}
+
 export default pool;

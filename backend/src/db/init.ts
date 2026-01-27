@@ -1,9 +1,11 @@
-import pool from '../config/database';
+import pool, { verifyDatabaseConnection } from '../config/database';
 import fs from 'fs';
 import path from 'path';
 
 async function initDatabase() {
     try {
+        await verifyDatabaseConnection();
+
         const schemaSQL = fs.readFileSync(
             path.join(__dirname, 'schema.sql'),
             'utf-8'

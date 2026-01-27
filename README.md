@@ -100,6 +100,15 @@ The application is functional in development. It includes a REST API with CRUD e
    cd backend
    npm install
    npm run db:setup
+
+   ```
+
+   ```bash
+   # If you entcounter problems while setting up the databse, try to disable local PG service
+   net stop postgresql-x64-18
+   
+   # then retry setting up the database
+   npm run db:setup
    ```
 
 4. **Frontend Setup**

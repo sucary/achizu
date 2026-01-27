@@ -1,15 +1,17 @@
-import pool from '../config/database';
+import pool, { verifyDatabaseConnection } from '../config/database';
 import * as shapefile from 'shapefile';
 import path from 'path';
 
 async function importOceanData() {
+    await verifyDatabaseConnection();
+
     const customPath = process.argv[2];
     const shapefilePath = customPath
         ? path.resolve(customPath)
         : path.join(__dirname, '../../data/ne_10m_ocean.shp');
-    
+
     console.log('Starting import of ocean data from:', shapefilePath);
-    
+
     const client = await pool.connect();
     
     try {

@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import artistRoutes from './routes/artistRoutes';
 import cityRoutes from './routes/cityRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import { verifyDatabaseConnection } from './config/database';
 
 
 dotenv.config();
@@ -41,6 +42,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 // Global Error Handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
+    await verifyDatabaseConnection();
 });

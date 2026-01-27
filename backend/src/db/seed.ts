@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import { ArtistService } from '../services/artistService';
-import pool from '../config/database';
+import pool, { verifyDatabaseConnection } from '../config/database';
 import { CreateArtistDTO } from '../types/artist';
 
 
@@ -107,6 +107,8 @@ for (let i = 1; i <= 15; i++) {
 
 async function seedDatabase() {
     try {
+        await verifyDatabaseConnection();
+
         console.log('Starting database seed...');
         console.log('Note: This may take ~30-60 seconds due to Nominatim rate limits\n');
 
