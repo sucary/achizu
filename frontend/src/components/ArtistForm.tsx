@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import {  ChevronDownIcon, SearchIcon, MapPinIcon, ArrowDownIcon, EditIcon } from './Icons/FormIcons';
-import {  HomeIcon, MusicIcon, YoutubeIcon, InstagramIcon, XIcon } from './Icons/SocialIcons';
+import { ChevronDownIcon, ArrowDownIcon, EditIcon } from './Icons/FormIcons';
+import { HomeIcon, MusicIcon, YoutubeIcon, InstagramIcon, XIcon } from './Icons/SocialIcons';
+import { LocationSearch } from './LocationSearch';
+import type { SearchResult } from '../services/api';
 import type { Artist } from '../types/artist';
 
 interface ArtistFormProps {
@@ -25,6 +27,36 @@ const ArtistForm = ({ initialData, onCancel }: ArtistFormProps) => {
         setFormData(prev => ({
             ...prev,
             activeLocation: prev.originalLocation
+        }));
+    };
+
+    const handleOriginalLocationSelect = (result: SearchResult) => {
+        setFormData(prev => ({
+            ...prev,
+            originalLocation: {
+                city: result.name,
+                province: result.province,
+                country: result.country,
+                coordinates: result.center,
+                displayName: result.displayName,
+                osmId: result.osmId,
+                osmType: result.osmType
+            }
+        }));
+    };
+
+    const handleActiveLocationSelect = (result: SearchResult) => {
+        setFormData(prev => ({
+            ...prev,
+            activeLocation: {
+                city: result.name,
+                province: result.province,
+                country: result.country,
+                coordinates: result.center,
+                displayName: result.displayName,
+                osmId: result.osmId,
+                osmType: result.osmType
+            }
         }));
     };
 
@@ -86,27 +118,16 @@ const ArtistForm = ({ initialData, onCancel }: ArtistFormProps) => {
                     
                     {/* Locations */}
                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Original Location</label>
-                            <div className="flex items-center gap-2">
-                                <div className="relative flex-1">
-                                    <input
-                                        type="text"
-                                        placeholder="City, Province"
-                                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-[#FA2D48] focus:ring-1 focus:ring-inset focus:ring-[#FA2D48]"
-                                        value={formData.originalLocation?.city ? `${formData.originalLocation.city}, ${formData.originalLocation.province}` : ''}
-                                        onChange={() => {}}
-                                    />
-                                    <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                </div>
-                                <button className="p-2 text-gray-400 hover:text-[#FA2D48] transition-colors cursor-pointer" title="Manually select original location on map">
-                                    <MapPinIcon className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
+                        <LocationSearch
+                            value={formData.originalLocation?.displayName || (formData.originalLocation?.city && formData.originalLocation?.country ? `${formData.originalLocation.city}, ${formData.originalLocation.country}` : '')}
+                            onChange={handleOriginalLocationSelect}
+                            onManualPin={() => {/* TODO: Enable map picking mode */}}
+                            placeholder="Search original location"
+                            label="ORIGINAL LOCATION"
+                        />
 
                         <div className="flex justify-center -my-2 relative z-10">
-                            <button 
+                            <button
                                 onClick={copyOriginalToActive}
                                 className="bg-gray-100 hover:bg-gray-200 text-gray-500 p-1.5 rounded-full transition-colors border border-gray-200 cursor-pointer"
                                 title="Copy Original to Active"
@@ -115,24 +136,13 @@ const ArtistForm = ({ initialData, onCancel }: ArtistFormProps) => {
                             </button>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Active Location</label>
-                            <div className="flex items-center gap-2">
-                                <div className="relative flex-1">
-                                    <input
-                                        type="text"
-                                        placeholder="City, Province"
-                                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-[#FA2D48] focus:ring-1 focus:ring-inset focus:ring-[#FA2D48]"
-                                        value={formData.activeLocation?.city ? `${formData.activeLocation.city}, ${formData.activeLocation.province}` : ''}
-                                        onChange={() => {}}
-                                    />
-                                    <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                </div>
-                                <button className="p-2 text-gray-400 hover:text-[#FA2D48] transition-colors cursor-pointer" title="Manually select active location on map">
-                                    <MapPinIcon className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
+                        <LocationSearch
+                            value={formData.activeLocation?.displayName || (formData.activeLocation?.city && formData.activeLocation?.country ? `${formData.activeLocation.city}, ${formData.activeLocation.country}` : '')}
+                            onChange={handleActiveLocationSelect}
+                            onManualPin={() => {/* TODO: Enable map picking mode */}}
+                            placeholder="Search active location"
+                            label="ACTIVE LOCATION"
+                        />
                     </div>
 
                     {/* Social Media */}

@@ -12,7 +12,11 @@ export interface Coordinates {
 export interface Location {
     city: string;
     province: string;
+    country?: string;      // Country name for display
     coordinates: Coordinates;
+    displayName?: string;  // "Tokyo, Tokyo, Japan" from search results
+    osmId?: number;        // OpenStreetMap ID for database lookup
+    osmType?: string;      // "relation", "way", or "node"
 }
 
 /**
