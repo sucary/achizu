@@ -51,7 +51,7 @@ export const CityService = {
             boundary: row.boundary,
             rawBoundary: row.raw_boundary,
             center: { lat: row.lat, lng: row.lng },
-            osmId: row.osm_id,
+            osmId: parseInt(row.osm_id),
             osmType: row.osm_type,
             type: row.type,
             class: row.class,
@@ -87,7 +87,7 @@ export const CityService = {
             country: row.country,
             displayName: row.display_name,
             center: { lat: row.lat, lng: row.lng },
-            osmId: row.osm_id,
+            osmId: parseInt(row.osm_id),
             osmType: row.osm_type,
             type: row.type,
             class: row.class,
@@ -119,7 +119,7 @@ export const CityService = {
             country: row.country,
             displayName: row.display_name,
             center: { lat: row.lat, lng: row.lng },
-            osmId: row.osm_id,
+            osmId: parseInt(row.osm_id),
             osmType: row.osm_type,
             type: row.type,
             class: row.class,
@@ -239,7 +239,7 @@ export const CityService = {
             boundary: row.boundary,
             rawBoundary: row.raw_boundary,
             center: { lat: row.lat, lng: row.lng },
-            osmId: row.osm_id,
+            osmId: parseInt(row.osm_id),
             osmType: row.osm_type,
             type: row.type,
             class: row.class,
@@ -386,13 +386,16 @@ export const CityService = {
                 throw new Error('No geojson data from Nominatim');
             }
 
-            // Convert geometry to MultiPolygon format expected by database
-            // (ST_Force2D in the SQL handles Z coordinate stripping)
+            // Convert all geometries to MultiPolygon format for database consistency
             let geojson: any;
             const geometryType = (data.geojson as any).type;
 
             if (geometryType === 'Polygon') {
-                geojson = { type: 'MultiPolygon', coordinates: [(data.geojson as any).coordinates] };
+                // Wrap Polygon in MultiPolygon structure
+                geojson = {
+                    type: 'MultiPolygon',
+                    coordinates: [(data.geojson as any).coordinates]
+                };
             } else if (geometryType === 'Point') {
                 // Fallback: create a small square polygon if no parent city found
                 const coords = (data.geojson as any).coordinates as number[];
@@ -412,10 +415,13 @@ export const CityService = {
             } else if (geometryType === 'MultiPolygon') {
                 geojson = data.geojson;
             } else {
+                // For other geometry types, wrap in MultiPolygon
+                console.warn(`Unexpected geometry type: ${geometryType}, attempting to use as-is`);
                 geojson = data.geojson;
             }
 
             console.log('Original geojson type:', geometryType);
+            console.log('Converted to:', geojson.type);
             console.log('Processed geojson:', JSON.stringify(geojson).substring(0, 200));
 
             const result = await client.query(`
@@ -459,12 +465,14 @@ export const CityService = {
                 UPDATE city_boundaries
                 SET
                     boundary = COALESCE(
-                        ST_Difference(
-                            boundary::geometry,
-                            (
-                                SELECT ST_Union(geom::geometry)
-                                FROM water_polygons
-                                WHERE ST_Intersects(city_boundaries.boundary::geometry, water_polygons.geom::geometry)
+                        ST_Multi(
+                            ST_Difference(
+                                boundary::geometry,
+                                (
+                                    SELECT ST_Union(geom::geometry)
+                                    FROM water_polygons
+                                    WHERE ST_Intersects(city_boundaries.boundary::geometry, water_polygons.geom::geometry)
+                                )
                             )
                         )::geography,
                         boundary
@@ -477,12 +485,14 @@ export const CityService = {
                         ) > 0
                         THEN ST_PointOnSurface(
                             COALESCE(
-                                ST_Difference(
-                                    boundary::geometry,
-                                    (
-                                        SELECT ST_Union(geom::geometry)
-                                        FROM water_polygons
-                                        WHERE ST_Intersects(city_boundaries.boundary::geometry, water_polygons.geom::geometry)
+                                ST_Multi(
+                                    ST_Difference(
+                                        boundary::geometry,
+                                        (
+                                            SELECT ST_Union(geom::geometry)
+                                            FROM water_polygons
+                                            WHERE ST_Intersects(city_boundaries.boundary::geometry, water_polygons.geom::geometry)
+                                        )
                                     )
                                 ),
                                 boundary::geometry
@@ -535,7 +545,7 @@ export const CityService = {
                 country: row.country,
                 displayName: row.display_name,
                 center: { lat: row.lat, lng: row.lng },
-                osmId: row.osm_id,
+                osmId: parseInt(row.osm_id),
                 osmType: row.osm_type,
                 type: row.type,
                 class: row.class,
@@ -633,7 +643,7 @@ export const CityService = {
             boundary: row.boundary,
             rawBoundary: row.raw_boundary,
             center: { lat: row.lat, lng: row.lng },
-            osmId: row.osm_id,
+            osmId: parseInt(row.osm_id),
             osmType: row.osm_type,
             type: row.type,
             class: row.class,
