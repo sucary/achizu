@@ -86,7 +86,7 @@ const MapView = ({ selectionMode, onLocationPick }: MapViewProps) => {
                 onArtistDeselect={handleArtistDeselect}
             />
             {selectionMode?.active && (
-                <MapClickHandler onLocationPick={onLocationPick} />
+                <MapClickHandler onLocationPick={onLocationPick ?? null} />
             )}
             {selectedCity && selectedCity.boundary && (
                 <GeoJSON
