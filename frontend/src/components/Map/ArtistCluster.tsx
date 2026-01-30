@@ -16,9 +16,11 @@ interface ArtistClusterProps {
     view: LocationView;
     onArtistSelect?: (artist: Artist) => void;
     onArtistDeselect?: () => void;
+    onEditArtist?: (artist: Artist) => void;
+    onDeleteArtist?: (artist: Artist) => void;
 }
 
-const ArtistCluster = ({ artists, view, onArtistSelect, onArtistDeselect }: ArtistClusterProps) => {
+const ArtistCluster = ({ artists, view, onArtistSelect, onArtistDeselect, onEditArtist, onDeleteArtist }: ArtistClusterProps) => {
   const map = useMap();
 
 
@@ -56,9 +58,32 @@ const ArtistCluster = ({ artists, view, onArtistSelect, onArtistDeselect }: Arti
           minWidth: 320
       });
 
-      marker.on('popupopen', () => {
+      marker.on('popupopen', (e) => {
           if (onArtistSelect) {
               onArtistSelect(artist);
+          }
+
+          // Click handler for edit/delete buttons via event delegation
+          const popupElement = e.popup.getElement();
+          if (popupElement) {
+              const handleActionClick = (event: Event) => {
+                  const target = event.target as HTMLElement;
+                  const editButton = target.closest('[data-action="edit"]');
+                  const deleteButton = target.closest('[data-action="delete"]');
+
+                  if (editButton && onEditArtist) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      map.closePopup();
+                      onEditArtist(artist);
+                  } else if (deleteButton && onDeleteArtist) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      map.closePopup();
+                      onDeleteArtist(artist);
+                  }
+              };
+              popupElement.addEventListener('click', handleActionClick);
           }
       });
 
@@ -76,7 +101,7 @@ const ArtistCluster = ({ artists, view, onArtistSelect, onArtistDeselect }: Arti
     return () => {
       map.removeLayer(markerClusterGroup);
     };
-  }, [map, artists, view, onArtistSelect, onArtistDeselect]);
+  }, [map, artists, view, onArtistSelect, onArtistDeselect, onEditArtist, onDeleteArtist]);
 
   return null;
 };

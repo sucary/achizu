@@ -69,10 +69,15 @@ const ArtistForm = ({
         onRequestSelection?.(locationType);
     };
 
-    const getLocationDisplayValue = (location?: { displayName?: string; city?: string; country?: string }) => {
+    const getLocationDisplayValue = (location?: { displayName?: string; city?: string; province?: string; country?: string }) => {
         if (!location) return '';
         if (location.displayName) return location.displayName;
-        if (location.city && location.country) return `${location.city}, ${location.country}`;
+        if (location.city) {
+            const parts = [location.city];
+            if (location.province) parts.push(location.province);
+            if (location.country) parts.push(location.country);
+            return parts.join(', ');
+        }
         return '';
     };
 

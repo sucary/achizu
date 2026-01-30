@@ -1,10 +1,9 @@
 import type { Artist, Location } from '../types/artist';
 import { HomeIcon, MusicIcon, YoutubeIcon, InstagramIcon, XIcon } from './Icons/SocialIcons';
-import { EditIcon } from './Icons/FormIcons';
+import { EditIcon, TrashIcon } from './Icons/FormIcons';
 
 interface ArtistProfileProps {
     artist: Artist;
-    onEdit?: () => void;
 }
 
 const formatLocation = (location: Location): string => {
@@ -19,8 +18,14 @@ const ArtistProfile = ({ artist }: ArtistProfileProps) => {
     return (
         <div className="w-80 flex flex-col rounded-lg bg-white shadow-lg overflow-hidden">
             <style>{`
-                .artist-cover:hover .artist-edit-overlay {
+                .artist-cover:hover .artist-action-bar {
                     opacity: 1 !important;
+                }
+                .artist-action-edit:hover {
+                    background-color: rgba(0, 0, 0, 0.65) !important;
+                }
+                .artist-action-delete:hover {
+                    background-color: rgba(220, 38, 38, 0.95) !important;
                 }
             `}</style>
             {/* Header with cover image */}
@@ -28,18 +33,29 @@ const ArtistProfile = ({ artist }: ArtistProfileProps) => {
                 className="artist-cover relative w-full h-28 bg-gray-200 bg-cover bg-center"
                 style={{ backgroundImage: artist.profilePicture ? `url(${artist.profilePicture})` : undefined }}
             >
-                {/* Edit overlay - shows on hover */}
+                {/* Action bar - shows on hover */}
                 <div
-                    className="artist-edit-overlay absolute inset-0 flex items-center justify-center cursor-pointer"
-                    style={{
-                        opacity: 0,
-                        transition: 'opacity 0.2s ease-in-out',
-                        backgroundColor: 'rgba(0, 0, 0, 0.4)'
-                    }}
-                    data-action="edit"
-                    data-artist-id={artist.id}
+                    className="artist-action-bar absolute inset-0 flex"
+                    style={{ opacity: 0, transition: 'opacity 0.2s ease-in-out' }}
                 >
-                    <EditIcon className="w-6 h-6 text-white" />
+                    {/* Edit */}
+                    <div
+                        className="artist-action-edit flex items-center justify-center cursor-pointer"
+                        style={{ width: '80%', backgroundColor: 'rgba(0, 0, 0, 0.5)', transition: 'background-color 0.15s' }}
+                        data-action="edit"
+                        data-artist-id={artist.id}
+                    >
+                        <EditIcon className="w-6 h-6 text-white" />
+                    </div>
+                    {/* Delete */}
+                    <div
+                        className="artist-action-delete flex items-center justify-center cursor-pointer"
+                        style={{ width: '20%', backgroundColor: 'rgba(239, 68, 68, 0.85)', transition: 'background-color 0.15s' }}
+                        data-action="delete"
+                        data-artist-id={artist.id}
+                    >
+                        <TrashIcon className="w-5 h-5 text-white" />
+                    </div>
                 </div>
 
                 {/* Artist Name */}

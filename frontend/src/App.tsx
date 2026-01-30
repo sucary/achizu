@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import './App.css';
-import { checkHealth, type SearchResult } from './services/api';
+import { checkHealth, deleteArtist, type SearchResult } from './services/api';
 import MapView from './components/Map/MapView';
 import ArtistForm from './components/ArtistForm';
 import AddArtistButton from './components/Map/buttons/AddArtistButton';
-import type { SelectionMode } from './types/artist';
+import type { Artist, SelectionMode } from './types/artist';
 
 function App() {
+    const queryClient = useQueryClient();
     const [status, setStatus] = useState<string>('Checking connection...');
     const [showForm, setShowForm] = useState(false);
+    const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
     const [selectionMode, setSelectionMode] = useState<SelectionMode | null>(null);
     const [pendingLocationResult, setPendingLocationResult] = useState<SearchResult | null | undefined>(undefined);
 
@@ -49,6 +52,31 @@ function App() {
         setPendingLocationResult(undefined);
     };
 
+    const handleEditArtist = (artist: Artist) => {
+        setEditingArtist(artist);
+        setShowForm(true);
+    };
+
+    const handleCloseForm = () => {
+        setShowForm(false);
+        setEditingArtist(null);
+        setSelectionMode(null);
+    };
+
+    const handleDeleteArtist = async (artist: Artist) => {
+        if (!window.confirm(`Delete "${artist.name}"?`)) {
+            return;
+        }
+
+        try {
+            await deleteArtist(artist.id);
+            await queryClient.invalidateQueries({ queryKey: ['artists'] });
+        } catch (error) {
+            console.error('Failed to delete artist:', error);
+            alert('Failed to delete artist. Please try again.');
+        }
+    };
+
     /*
         TODO
             - Make shadowing consistent (shadow-xl/30 vs shadow-md)
@@ -69,10 +97,9 @@ function App() {
             {!showForm && <AddArtistButton onClick={() => setShowForm(true)} />}
             {showForm && (
                 <ArtistForm
-                    onCancel={() => {
-                        setShowForm(false);
-                        setSelectionMode(null);
-                    }}
+                    key={editingArtist?.id ?? 'new'}
+                    initialData={editingArtist ?? undefined}
+                    onCancel={handleCloseForm}
                     onRequestSelection={handleStartSelection}
                     pendingLocationResult={pendingLocationResult}
                     onConsumePendingResult={handleConsumeResult}
@@ -81,6 +108,8 @@ function App() {
             <MapView
                 selectionMode={selectionMode}
                 onLocationPick={handleLocationPick}
+                onEditArtist={handleEditArtist}
+                onDeleteArtist={handleDeleteArtist}
             />
         </div>
     );

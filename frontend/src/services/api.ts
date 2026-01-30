@@ -121,4 +121,14 @@ export const updateArtist = async (id: string, artistData: Partial<Artist>): Pro
     }
 };
 
+// Delete an artist
+export const deleteArtist = async (id: string): Promise<void> => {
+    try {
+        await api.delete(`/artists/${id}`);
+    } catch (error) {
+        console.error('Failed to delete artist:', error);
+        throw error;
+    }
+};
+
 export default api;

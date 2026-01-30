@@ -14,9 +14,11 @@ import { useQuery } from '@tanstack/react-query';
 interface MapViewProps {
     selectionMode?: SelectionMode | null;
     onLocationPick?: ((result: SearchResult | null) => void) | null;
+    onEditArtist?: (artist: Artist) => void;
+    onDeleteArtist?: (artist: Artist) => void;
 }
 
-const MapView = ({ selectionMode, onLocationPick }: MapViewProps) => {
+const MapView = ({ selectionMode, onLocationPick, onEditArtist, onDeleteArtist }: MapViewProps) => {
     const defaultCenter: LatLngExpression = [35.6762, 139.6503]; // Tokyo
     const defaultZoom = 4;
     const [view, setView] = useState<LocationView>('active');
@@ -84,6 +86,8 @@ const MapView = ({ selectionMode, onLocationPick }: MapViewProps) => {
                 view={view}
                 onArtistSelect={handleArtistSelect}
                 onArtistDeselect={handleArtistDeselect}
+                onEditArtist={onEditArtist}
+                onDeleteArtist={onDeleteArtist}
             />
             {selectionMode?.active && (
                 <MapClickHandler onLocationPick={onLocationPick ?? null} />
