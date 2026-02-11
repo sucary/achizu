@@ -43,6 +43,7 @@ export interface CropArea {
  */
 export interface Artist {
     id: string;
+    userId?: string;
     name: string;
     sourceImage?: string;
     avatarCrop?: CropArea;
@@ -75,6 +76,7 @@ export interface CreateArtistDTO {
  * Extended DTO for Store layer including resolved IDs and coordinates
  */
 export interface StoreArtistDTO extends CreateArtistDTO {
+    userId: string;
     originalCityId: string;
     activeCityId: string;
     originalLocationDisplayCoordinates: Coordinates;

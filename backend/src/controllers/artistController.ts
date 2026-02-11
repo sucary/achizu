@@ -3,6 +3,7 @@ import { ArtistService } from '../services/artistService';
 import { ArtistQueryParams, LocationView } from '../types/artist';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { ArtistInputSchema } from '../schemas/artistValidation';
+import { AuthenticatedRequest } from '../middleware/authMiddleware';
 
 export const getAllArtists = asyncHandler(async (req: Request, res: Response) => {
     const filters: ArtistQueryParams = {
@@ -24,11 +25,12 @@ export const getArtistById = asyncHandler(async (req: Request, res: Response) =>
     res.json(artist);
 });
 
-export const createArtist = asyncHandler(async (req: Request, res: Response) => {
+export const createArtist = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const data = ArtistInputSchema.parse(req.body);
+    const userId = req.user!.id;
 
     try {
-        const newArtist = await ArtistService.create(data);
+        const newArtist = await ArtistService.create(data, userId);
         res.status(201).json(newArtist);
     } catch (error) {
         if (error instanceof Error && error.message.includes('City not found')) {
@@ -38,16 +40,21 @@ export const createArtist = asyncHandler(async (req: Request, res: Response) => 
     }
 });
 
-export const updateArtist = asyncHandler(async (req: Request, res: Response) => {
-    // Allow partial updates
+export const updateArtist = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const data = ArtistInputSchema.partial().parse(req.body);
+    const userId = req.user!.id;
+
+    // Check ownership
+    const artist = await ArtistService.getById(req.params.id);
+    if (!artist) {
+        throw new AppError('Artist not found', 404);
+    }
+    if (artist.userId && artist.userId !== userId) {
+        throw new AppError('Not authorized to update this artist', 403);
+    }
 
     try {
         const updatedArtist = await ArtistService.update(req.params.id, data);
-        if (!updatedArtist) {
-            throw new AppError('Artist not found', 404);
-        }
-
         res.json(updatedArtist);
     } catch (error) {
         if (error instanceof Error && error.message.includes('City not found')) {
@@ -57,11 +64,19 @@ export const updateArtist = asyncHandler(async (req: Request, res: Response) => 
     }
 });
 
-export const deleteArtist = asyncHandler(async (req: Request, res: Response) => {
-    const success = await ArtistService.delete(req.params.id);
-    if (!success) {
+export const deleteArtist = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user!.id;
+
+    // Check ownership
+    const artist = await ArtistService.getById(req.params.id);
+    if (!artist) {
         throw new AppError('Artist not found', 404);
     }
+    if (artist.userId && artist.userId !== userId) {
+        throw new AppError('Not authorized to delete this artist', 403);
+    }
+
+    await ArtistService.delete(req.params.id);
     res.status(204).send();
 });
 

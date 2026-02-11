@@ -7,6 +7,7 @@ import pool from '../config/database';
 function rowToArtist(row: Record<string, unknown>): Artist {
     return {
         id: row.id as string,
+        userId: row.user_id as string | undefined,
         name: row.name as string,
         sourceImage: row.source_image as string | undefined,
         avatarCrop: row.avatar_crop as CropArea | undefined,
@@ -91,7 +92,7 @@ export const ArtistStore = {
 
             const result = await pool.query(`
                 SELECT
-                    id, name, source_image, avatar_crop, profile_crop,
+                    id, user_id, name, source_image, avatar_crop, profile_crop,
                     original_city, original_province, original_city_id,
                     ST_Y(original_coordinates::geometry) as original_lat,
                     ST_X(original_coordinates::geometry) as original_lng,
@@ -120,7 +121,7 @@ export const ArtistStore = {
         try {
             const result = await pool.query(`
                 SELECT
-                    id, name, source_image, avatar_crop, profile_crop,
+                    id, user_id, name, source_image, avatar_crop, profile_crop,
                     original_city, original_province, original_city_id,
                     ST_Y(original_coordinates::geometry) as original_lat,
                     ST_X(original_coordinates::geometry) as original_lng,
@@ -152,22 +153,22 @@ export const ArtistStore = {
         try {
             const result = await pool.query(`
                 INSERT INTO artists (
-                    name, source_image, avatar_crop, profile_crop,
+                    user_id, name, source_image, avatar_crop, profile_crop,
                     original_city, original_province, original_coordinates, original_city_id,
                     active_city, active_province, active_coordinates, active_city_id,
                     original_display_coordinates,
                     active_display_coordinates,
                     instagram_url, twitter_url, apple_music_url, website_url, youtube_url
                 ) VALUES (
-                    $1, $2, $3, $4,
-                    $5, $6, ST_SetSRID(ST_MakePoint($7, $8), 4326)::geography, $18,
-                    $9, $10, ST_SetSRID(ST_MakePoint($11, $12), 4326)::geography, $19,
-                    ST_SetSRID(ST_MakePoint($20, $21), 4326)::geography,
-                    ST_SetSRID(ST_MakePoint($22, $23), 4326)::geography,
-                    $13, $14, $15, $16, $17
+                    $1, $2, $3, $4, $5,
+                    $6, $7, ST_SetSRID(ST_MakePoint($8, $9), 4326)::geography, $19,
+                    $10, $11, ST_SetSRID(ST_MakePoint($12, $13), 4326)::geography, $20,
+                    ST_SetSRID(ST_MakePoint($21, $22), 4326)::geography,
+                    ST_SetSRID(ST_MakePoint($23, $24), 4326)::geography,
+                    $14, $15, $16, $17, $18
                 )
                 RETURNING
-                    id, name, source_image, avatar_crop, profile_crop,
+                    id, user_id, name, source_image, avatar_crop, profile_crop,
                     original_city, original_province, original_city_id,
                     ST_Y(original_coordinates::geometry) as original_lat,
                     ST_X(original_coordinates::geometry) as original_lng,
@@ -181,6 +182,7 @@ export const ArtistStore = {
                     instagram_url, twitter_url, apple_music_url, website_url, youtube_url,
                     created_at, updated_at
             `, [
+                data.userId,
                 data.name,
                 data.sourceImage || null,
                 data.avatarCrop ? JSON.stringify(data.avatarCrop) : null,
@@ -320,7 +322,7 @@ export const ArtistStore = {
                 SET ${updates.join(', ')}
                 WHERE id = $${paramIndex}
                 RETURNING
-                    id, name, source_image, avatar_crop, profile_crop,
+                    id, user_id, name, source_image, avatar_crop, profile_crop,
                     original_city, original_province, original_city_id,
                     ST_Y(original_coordinates::geometry) as original_lat,
                     ST_X(original_coordinates::geometry) as original_lng,

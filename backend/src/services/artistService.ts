@@ -11,7 +11,7 @@ export const ArtistService = {
         return await ArtistStore.getById(id);
     },
 
-    create: async (data: CreateArtistDTO): Promise<Artist> => {
+    create: async (data: CreateArtistDTO, userId: string): Promise<Artist> => {
         let originalCity, activeCity;
 
         // 1. Handle original location - support both OSM ID and city name + province
@@ -100,6 +100,7 @@ export const ArtistService = {
         // 5. Prepare data for Store
         const storeData: StoreArtistDTO = {
             ...data,
+            userId,
             originalCityId: originalCity.id,
             activeCityId: activeCity.id,
             originalLocationDisplayCoordinates: originalDisplayCoordinates,
