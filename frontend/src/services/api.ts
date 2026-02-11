@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { Artist, ArtistQueryParams } from '../types/artist';
 import type { City } from '../types/city';
+import { supabase } from '../lib/supabase';
 
 const API_URL = 'http://localhost:3000/api';
 
@@ -9,6 +10,15 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+});
+
+// Add auth token to requests
+api.interceptors.request.use(async (config) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+        config.headers.Authorization = `Bearer ${session.access_token}`;
+    }
+    return config;
 });
 
 export const checkHealth = async () => {

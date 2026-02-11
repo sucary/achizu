@@ -29,6 +29,8 @@ export const setupMarkerPopupEvents = ({
   onDeleteArtist,
   onBeforeAction,
 }: SetupPopupOptions): void => {
+  let currentClickHandler: ((event: Event) => void) | null = null;
+
   marker.on('popupopen', (e) => {
     if (onArtistSelect) {
       onArtistSelect(artist);
@@ -37,7 +39,12 @@ export const setupMarkerPopupEvents = ({
     // Click handler for edit/delete buttons via event delegation
     const popupElement = e.popup.getElement();
     if (popupElement) {
-      const handleActionClick = (event: Event) => {
+      // Remove previous handler if exists
+      if (currentClickHandler) {
+        popupElement.removeEventListener('click', currentClickHandler);
+      }
+
+      currentClickHandler = (event: Event) => {
         const target = event.target as HTMLElement;
         const editButton = target.closest('[data-action="edit"]');
         const deleteButton = target.closest('[data-action="delete"]');
@@ -56,11 +63,18 @@ export const setupMarkerPopupEvents = ({
           onDeleteArtist(artist);
         }
       };
-      popupElement.addEventListener('click', handleActionClick);
+      popupElement.addEventListener('click', currentClickHandler);
     }
   });
 
-  marker.on('popupclose', () => {
+  marker.on('popupclose', (e) => {
+    // Clean up click handler
+    const popupElement = e.popup?.getElement();
+    if (popupElement && currentClickHandler) {
+      popupElement.removeEventListener('click', currentClickHandler);
+      currentClickHandler = null;
+    }
+
     if (onArtistDeselect) {
       onArtistDeselect();
     }

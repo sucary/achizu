@@ -5,12 +5,17 @@ import { checkHealth, deleteArtist, type SearchResult } from './services/api';
 import MapView from './components/Map/MapView';
 import ArtistForm from './components/ArtistForm';
 import AddArtistButton from './components/Map/buttons/AddArtistButton';
+import { AuthModal } from './components/Auth/AuthModal';
+import { UserMenu } from './components/Auth/UserMenu';
+import { useAuth } from './context/AuthContext';
 import type { Artist, SelectionMode } from './types/artist';
 
 function App() {
     const queryClient = useQueryClient();
+    const { user, loading: authLoading } = useAuth();
     const [status, setStatus] = useState<string>('Checking connection...');
     const [showForm, setShowForm] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(false);
     const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
     const [selectionMode, setSelectionMode] = useState<SelectionMode | null>(null);
     const [pendingLocationResult, setPendingLocationResult] = useState<SearchResult | null | undefined>(undefined);
@@ -53,6 +58,10 @@ function App() {
     };
 
     const handleEditArtist = (artist: Artist) => {
+        if (!user) {
+            setShowAuthModal(true);
+            return;
+        }
         setEditingArtist(artist);
         setShowForm(true);
     };
@@ -64,6 +73,11 @@ function App() {
     };
 
     const handleDeleteArtist = async (artist: Artist) => {
+        if (!user) {
+            setShowAuthModal(true);
+            return;
+        }
+
         if (!window.confirm(`Delete "${artist.name}"?`)) {
             return;
         }
@@ -77,6 +91,14 @@ function App() {
         }
     };
 
+    const handleAddArtistClick = () => {
+        if (!user) {
+            setShowAuthModal(true);
+        } else {
+            setShowForm(true);
+        }
+    };
+
     /*
         TODO
             - Make shadowing consistent (shadow-xl/30 vs shadow-md)
@@ -87,6 +109,7 @@ function App() {
 
     return (
         <div className="h-screen w-screen flex flex-col">
+            {/* Status bar */}
             <div className="absolute top-2 left-2 z-[1000] bg-white p-2 rounded-md shadow-md">
                 <div className="text-xs">
                     Backend: <span className={`font-bold ${status.includes('running') ? 'text-green-600' : 'text-red-600'}`}>
@@ -94,7 +117,27 @@ function App() {
                     </span>
                 </div>
             </div>
-            {!showForm && <AddArtistButton onClick={() => setShowForm(true)} />}
+
+            {/* Auth UI - top right */}
+            <div className="absolute top-2 right-2 z-[1000]">
+                {!authLoading && (
+                    user ? (
+                        <UserMenu />
+                    ) : (
+                        <button
+                            onClick={() => setShowAuthModal(true)}
+                            className="px-4 py-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow text-sm font-medium text-gray-700"
+                        >
+                            Sign In
+                        </button>
+                    )
+                )}
+            </div>
+
+            {/* Auth Modal */}
+            <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+
+            {!showForm && <AddArtistButton onClick={handleAddArtistClick} />}
             {showForm && (
                 <ArtistForm
                     key={editingArtist?.id ?? 'new'}
