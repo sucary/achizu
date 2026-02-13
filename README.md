@@ -17,12 +17,11 @@ This application tracks two locations per artist: their original location (homet
 - **OSM ID-based city search** with fuzzy matching
 - **Nominatim API integration** for geocoding and GeoJSON city boundary retrieval
 - **Randomized display coordinates** within city boundaries using `ST_GeneratePoints`
-- **View toggle** for switching between original and active locations
+- **Map view toggle** for switching between original and active locations
 - **Supabase authentication** with email/password sign-in and user management
-- **Image upload** with cropping support via Cloudinary
+- **Artist Image upload** with cropping support via Cloudinary
 - **Artist clustering** with marker clustering for better map visualization
 - **Interactive location selection** - click on map to pick locations
-- RESTful API with filtering by name, city, and province
 
 **Planned:**
 - A search engine for artists and cities
