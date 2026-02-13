@@ -7,7 +7,7 @@ import {
     deleteArtist,
     getArtistCountByCity
 } from '../controllers/artistController';
-import { requireAuth } from '../middleware/authMiddleware';
+import { requireAuth, requireApproval } from '../middleware/authMiddleware';
 
 const router = Router();
 
@@ -17,8 +17,8 @@ router.get('/stats/by-city', getArtistCountByCity);
 router.get('/:id', getArtistById);
 
 // Protected routes
-router.post('/', requireAuth, createArtist);
-router.put('/:id', requireAuth, updateArtist);
-router.delete('/:id', requireAuth, deleteArtist);
+router.post('/', requireAuth, requireApproval, createArtist);
+router.put('/:id', requireAuth, requireApproval, updateArtist);
+router.delete('/:id', requireAuth, requireApproval, deleteArtist);
 
 export default router;

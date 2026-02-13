@@ -15,6 +15,18 @@ export const checkUsernameAvailability = asyncHandler(async (req: Request, res: 
     res.json({ available });
 });
 
+export const checkEmailAvailability = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.query;
+
+    if (!email || typeof email !== 'string') {
+        res.status(400).json({ error: 'Email required' });
+        return;
+    }
+
+    const available = await ProfileStore.checkEmailAvailable(email);
+    res.json({ available });
+});
+
 export const getProfile = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user!.id;
     const profile = await ProfileStore.getByUserId(userId);
@@ -25,4 +37,33 @@ export const getProfile = asyncHandler(async (req: AuthenticatedRequest, res: Re
     }
 
     res.json(profile);
+});
+
+export const getPendingUsers = asyncHandler(async (req: Request, res: Response) => {
+    const pendingUsers = await ProfileStore.getPendingUsers();
+    res.json(pendingUsers);
+});
+
+export const approveUser = asyncHandler(async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    if (!userId) {
+        res.status(400).json({ error: 'User ID required' });
+        return;
+    }
+
+    await ProfileStore.approveUser(userId);
+    res.json({ message: 'User approved successfully' });
+});
+
+export const rejectUser = asyncHandler(async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    if (!userId) {
+        res.status(400).json({ error: 'User ID required' });
+        return;
+    }
+
+    await ProfileStore.rejectUser(userId);
+    res.json({ message: 'User rejected and removed' });
 });

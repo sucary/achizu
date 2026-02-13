@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabaseAdmin } from '../config/supabase';
+import pool from '../config/database';
 
 export interface AuthUser {
     id: string;
@@ -79,4 +80,72 @@ export async function optionalAuth(
     }
 
     next();
+}
+
+/**
+ * Middleware that requires user to be approved
+ * Use after requireAuth
+ */
+export async function requireApproval(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) {
+    const userId = req.user!.id;
+
+    try {
+        const result = await pool.query(
+            `SELECT is_approved FROM profiles WHERE id = $1`,
+            [userId]
+        );
+
+        const profile = result.rows[0];
+
+        if (!profile || !profile.is_approved) {
+            res.status(403).json({
+                error: 'Account pending approval',
+                message: 'Your account is awaiting admin approval. You will be notified once approved.'
+            });
+            return;
+        }
+
+        next();
+    } catch (error) {
+        console.error('Approval check error:', error);
+        res.status(500).json({ error: 'Failed to check approval status' });
+    }
+}
+
+/**
+ * Middleware that requires user to be admin
+ * Use after requireAuth
+ */
+export async function requireAdmin(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) {
+    const userId = req.user!.id;
+
+    try {
+        const result = await pool.query(
+            `SELECT is_admin FROM profiles WHERE id = $1`,
+            [userId]
+        );
+
+        const profile = result.rows[0];
+
+        if (!profile || !profile.is_admin) {
+            res.status(403).json({
+                error: 'Admin access required',
+                message: 'You do not have permission to access this resource.'
+            });
+            return;
+        }
+
+        next();
+    } catch (error) {
+        console.error('Admin check error:', error);
+        res.status(500).json({ error: 'Failed to check admin status' });
+    }
 }
