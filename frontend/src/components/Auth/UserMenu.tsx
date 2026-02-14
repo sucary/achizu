@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
-export function UserMenu() {
+interface UserMenuProps {
+    onOpenAdminDashboard?: () => void;
+}
+
+export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
     const { user, profile, signOut } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -30,17 +34,20 @@ export function UserMenu() {
         <div ref={menuRef} className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow"
+                className={`flex items-center justify-between gap-2 px-4 py-2 bg-white shadow-md hover:shadow-lg transition-shadow w-56 ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
             >
-                {/* Avatar */}
-                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">
-                    {displayName.charAt(0).toUpperCase()}
+                <div className="flex flex-col items-start min-w-0 flex-1">
+                    {profile.username && (
+                        <span className="text-sm font-medium text-gray-900  truncate w-left">
+                            {profile.username}
+                        </span>
+                    )}
+                    <span className="text-xs text-gray-400 truncate w-left">
+                        {user.email}
+                    </span>
                 </div>
-                <span className="text-sm font-medium text-gray-700 max-w-[120px] truncate">
-                    {displayName}
-                </span>
                 <svg
-                    className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -51,24 +58,22 @@ export function UserMenu() {
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-[1001]">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm text-gray-500">Signed in as</p>
-                        {profile.username ? (
-                            <>
-                                <p className="text-sm font-medium text-gray-900 truncate">
-                                    {profile.username}
-                                </p>
-                                <p className="text-xs text-gray-400 truncate mt-0.5">
-                                    {user.email}
-                                </p>
-                            </>
-                        ) : (
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                                {user.email}
-                            </p>
-                        )}
-                    </div>
+                <div className="absolute right-0 w-56 bg-white rounded-b-lg shadow-lg border-t border-gray-100 py-1 z-[1001]">
+                    {profile.isAdmin && onOpenAdminDashboard && (
+                        <button
+                            onClick={() => {
+                                onOpenAdminDashboard();
+                                setIsOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        >
+                            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Admin Dashboard
+                        </button>
+                    )}
                     <button
                         onClick={handleSignOut}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"

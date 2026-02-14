@@ -6,9 +6,10 @@ interface AccountButtonProps {
     showAuthModal: boolean;
     onOpenAuthModal: () => void;
     onCloseAuthModal: () => void;
+    onOpenAdminDashboard?: () => void;
 }
 
-export function AccountButton({ showAuthModal, onOpenAuthModal, onCloseAuthModal }: AccountButtonProps) {
+export function AccountButton({ showAuthModal, onOpenAuthModal, onCloseAuthModal, onOpenAdminDashboard }: AccountButtonProps) {
     const { user, loading } = useAuth();
 
     if (loading) {
@@ -19,7 +20,7 @@ export function AccountButton({ showAuthModal, onOpenAuthModal, onCloseAuthModal
         <>
             <div className="absolute top-2 right-2 z-[1100]">
                 {user ? (
-                    <UserMenu />
+                    <UserMenu onOpenAdminDashboard={onOpenAdminDashboard} />
                 ) : (
                     <button
                         onClick={onOpenAuthModal}

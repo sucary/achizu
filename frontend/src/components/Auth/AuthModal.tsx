@@ -12,7 +12,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
     const [usernameError, setUsernameError] = useState<string | null>(null);
+    const [emailError, setEmailError] = useState<string | null>(null);
     const [checkingUsername, setCheckingUsername] = useState(false);
+    const [checkingEmail, setCheckingEmail] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
@@ -53,6 +55,29 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }
     };
 
+    const checkEmailAvailability = async (email: string) => {
+        if (!email || !email.includes('@')) {
+            setEmailError('Please enter a valid email');
+            return;
+        }
+
+        setCheckingEmail(true);
+        setEmailError(null);
+        try {
+            const response = await fetch(
+                `http://localhost:3000/api/auth/check-email?email=${encodeURIComponent(email)}`
+            );
+            const data = await response.json();
+            if (!data.available) {
+                setEmailError('Email already registered');
+            }
+        } catch (error) {
+            console.error('Failed to check email:', error);
+        } finally {
+            setCheckingEmail(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -61,7 +86,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
         try {
             if (isSignUp) {
-                // Validate username
+                // Validate email and username
+                if (emailError || usernameError) {
+                    setError('Please fix the errors before submitting');
+                    setLoading(false);
+                    return;
+                }
+
                 if (!username || !validateUsername(username)) {
                     setError('Please enter a valid username');
                     setLoading(false);
@@ -172,10 +203,26 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         <input
                             type="email"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setEmail(value);
+                                setEmailError(null);
+                                if (isSignUp && value.includes('@')) {
+                                    setTimeout(() => checkEmailAvailability(value), 500);
+                                }
+                            }}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                             required
                         />
+                        {isSignUp && checkingEmail && (
+                            <p className="text-xs text-gray-500 mt-1">Checking availability...</p>
+                        )}
+                        {isSignUp && emailError && (
+                            <p className="text-xs text-red-500 mt-1">{emailError}</p>
+                        )}
+                        {isSignUp && !emailError && email && !checkingEmail && email.includes('@') && (
+                            <p className="text-xs text-green-600 mt-1">✓ Email available!</p>
+                        )}
                     </div>
 
                     {isSignUp && (

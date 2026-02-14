@@ -6,15 +6,18 @@ import MapView from './components/Map/MapView';
 import ArtistForm from './components/ArtistForm';
 import AddArtistButton from './components/Map/buttons/AddArtistButton';
 import { AccountButton } from './components/Auth/AccountButton';
+import { ApprovalPending } from './components/Auth/ApprovalPending';
+import { AdminDashboard } from './components/Admin/AdminDashboard';
 import { useAuth } from './context/AuthContext';
 import type { Artist, SelectionMode } from './types/artist';
 
 function App() {
     const queryClient = useQueryClient();
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const [status, setStatus] = useState<string>('Checking connection...');
     const [showForm, setShowForm] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showAdminDashboard, setShowAdminDashboard] = useState(false);
     const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
     const [selectionMode, setSelectionMode] = useState<SelectionMode | null>(null);
     const [pendingLocationResult, setPendingLocationResult] = useState<SearchResult | null | undefined>(undefined);
@@ -121,7 +124,10 @@ function App() {
                 showAuthModal={showAuthModal}
                 onOpenAuthModal={() => setShowAuthModal(true)}
                 onCloseAuthModal={() => setShowAuthModal(false)}
+                onOpenAdminDashboard={() => setShowAdminDashboard(true)}
             />
+
+            {user && profile && !profile.isApproved && <ApprovalPending />}
 
             {!showForm && <AddArtistButton onClick={handleAddArtistClick} />}
             {showForm && (
@@ -133,6 +139,9 @@ function App() {
                     pendingLocationResult={pendingLocationResult}
                     onConsumePendingResult={handleConsumeResult}
                 />
+            )}
+            {showAdminDashboard && (
+                <AdminDashboard onClose={() => setShowAdminDashboard(false)} />
             )}
             <MapView
                 selectionMode={selectionMode}

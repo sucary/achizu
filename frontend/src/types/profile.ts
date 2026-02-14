@@ -3,4 +3,12 @@ export interface Profile {
   email: string;
   username: string | null;
   isAdmin: boolean;
+  isApproved: boolean;
+}
+
+export interface PendingUser {
+  id: string;
+  email: string;
+  username: string | null;
+  createdAt: string;
 }
