@@ -11,6 +11,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
     const [usernameError, setUsernameError] = useState<string | null>(null);
     const [emailError, setEmailError] = useState<string | null>(null);
     const [checkingUsername, setCheckingUsername] = useState(false);
@@ -106,7 +107,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     setMessage('Registration successful! Check your email for confirmation.');
                 }
             } else {
-                const { error } = await signIn(email, password);
+                const { error } = await signIn(email, password, rememberMe);
                 if (error) {
                     setError(error.message);
                 } else {
@@ -269,6 +270,21 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             minLength={6}
                         />
                     </div>
+
+                    {!isSignUp && (
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="rememberMe"
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                className="w-4 h-4 border-gray-300 rounded cursor-pointer accent-primary"
+                            />
+                            <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-700 cursor-pointer">
+                                Remember me
+                            </label>
+                        </div>
+                    )}
 
                     {error && (
                         <p className="text-red-500 text-sm">{error}</p>

@@ -9,7 +9,7 @@ interface AuthContextType {
     session: Session | null;
     loading: boolean;
     profile: Profile | null;
-    signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+    signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: Error | null }>;
     signUp: (email: string, password: string, username: string) => Promise<{ error: Error | null }>;
     signOut: () => Promise<void>;
     signInWithGoogle: () => Promise<void>;
@@ -52,11 +52,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [user]);
 
-    const signIn = async (email: string, password: string) => {
+    const signIn = async (email: string, password: string, rememberMe = true) => {
+        // Set storage mode BEFORE login so custom storage adapter uses the right storage
+        if (!rememberMe) {
+            sessionStorage.setItem('session-only', 'true');
+        } else {
+            sessionStorage.removeItem('session-only');
+        }
+
         const { error } = await supabase.auth.signInWithPassword({
             email,
             password,
         });
+
         return { error };
     };
 
@@ -75,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signOut = async () => {
         await supabase.auth.signOut();
+        sessionStorage.removeItem('session-only');
     };
 
     const signInWithGoogle = async () => {
