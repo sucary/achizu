@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { SearchIcon, MapPinIcon, LoaderIcon } from './Icons/FormIcons';
-import { searchCities, searchCitiesNominatim, type SearchResult } from '../services/api';
+import { searchCities, type SearchResult } from '../services/api';
 import { useDebounce } from '../hooks/useDebounce';
 
 interface LocationSearchProps {
@@ -18,13 +18,22 @@ export const LocationSearch = ({ displayValue = '', onChange, onManualPin, place
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [source, setSource] = useState<'local' | 'nominatim'>('local');
-    const [hasMore, setHasMore] = useState(false);
+    const [source, setSource] = useState<'local' | 'nominatim' | 'combined'>('combined');
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLDivElement>(null);
 
     const debouncedQuery = useDebounce(query ?? '', 1000);
+
+    // Reset internal query when displayValue is changed externally (e.g. copy original to active)
+    const prevDisplayValue = useRef(displayValue);
+    useEffect(() => {
+        if (prevDisplayValue.current !== displayValue) {
+            prevDisplayValue.current = displayValue;
+            setQuery(null);
+            setIsOpen(false);
+        }
+    }, [displayValue]);
 
     // Update dropdown position when opening
     useEffect(() => {
@@ -76,36 +85,10 @@ export const LocationSearch = ({ displayValue = '', onChange, onManualPin, place
             const response = await searchCities(searchQuery);
             setResults(response.results);
             setSource(response.source);
-            setHasMore(response.hasMore || false);
             setIsOpen(true);
-
-            // Auto-search Nominatim if local DB has no results
-            if (response.results.length === 0) {
-                await handleSearchNominatim(searchQuery);
-            }
         } catch (err) {
             setError('Failed to search locations. Please try again.');
             console.error('Search failed:', err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleSearchNominatim = async (searchQuery?: string) => {
-        const queryToSearch = searchQuery || debouncedQuery.trim();
-        if (queryToSearch.length < 2) return;
-
-        setIsLoading(true);
-        setError(null);
-        try {
-            const response = await searchCitiesNominatim(queryToSearch);
-            setResults(response.results);
-            setSource('nominatim');
-            setHasMore(false);
-            setIsOpen(true);
-        } catch (err) {
-            setError('Failed to search Nominatim. Please try again.');
-            console.error('Nominatim search failed:', err);
         } finally {
             setIsLoading(false);
         }
@@ -197,12 +180,6 @@ export const LocationSearch = ({ displayValue = '', onChange, onManualPin, place
                         width: `${dropdownPosition.width}px`
                     }}
                 >
-                    {source === 'local' && (
-                        <div className="px-3 py-1.5 text-xs text-gray-500 bg-gray-50 border-b">
-                            From your database
-                        </div>
-                    )}
-
                     {results.map((result, index) => (
                         <button
                             key={`${result.osmId}-${index}`}
@@ -215,23 +192,15 @@ export const LocationSearch = ({ displayValue = '', onChange, onManualPin, place
                                     <span className="inline-block w-2 h-2 bg-primary rounded-full mr-2" />
                                 )}
                                 {result.displayName}
+                                {result.isLocal && (
+                                    <span className="ml-2 text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">in DB</span>
+                                )}
                             </div>
                             {result.type && (
                                 <div className="text-xs text-gray-500 capitalize mt-0.5">{result.type}</div>
                             )}
                         </button>
                     ))}
-
-                    {source === 'local' && hasMore && (
-                        <button
-                            onClick={() => handleSearchNominatim()}
-                            disabled={isLoading}
-                            type="button"
-                            className="w-full px-3 py-2 text-sm text-primary hover:bg-gray-50 font-medium border-t disabled:opacity-50"
-                        >
-                            {isLoading ? 'Searching...' : 'Search Nominatim for more'}
-                        </button>
-                    )}
                 </div>,
                 document.body
             )}

@@ -250,6 +250,26 @@ export const CityService = {
     },
 
     /**
+     * Check which OSM IDs already exist in local DB (for cross-referencing Nominatim results)
+     */
+    getExistingOsmIds: async (osmPairs: Array<{ osmId: number; osmType: string }>): Promise<Map<string, string>> => {
+        if (osmPairs.length === 0) return new Map();
+
+        const conditions = osmPairs.map((_, i) => `(osm_id = $${i * 2 + 1} AND osm_type = $${i * 2 + 2})`).join(' OR ');
+        const params = osmPairs.flatMap(p => [p.osmId, p.osmType]);
+
+        const result = await pool.query(`
+            SELECT osm_id, osm_type, id FROM city_boundaries WHERE ${conditions}
+        `, params);
+
+        const map = new Map<string, string>();
+        for (const row of result.rows) {
+            map.set(`${row.osm_id}:${row.osm_type}`, row.id);
+        }
+        return map;
+    },
+
+    /**
      * Fetch full city data from Nominatim by OSM ID (includes boundary)
      */
     fetchByOsmId: async (osmId: number, osmType: string): Promise<NominatimResponse | null> => {

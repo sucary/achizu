@@ -22,36 +22,43 @@ router.get('/search', searchLimiter, asyncHandler(async (req, res) => {
         throw new AppError('Query must be at least 2 characters', 400);
     }
 
-    const priorityResults = await CityService.getPriorityLocations(query.trim());
-    const localResults = await CityService.searchLocal(query.trim(), limit);
+    // Search local DB and Nominatim in parallel
+    const [priorityResults, localResults, nominatimResults] = await Promise.all([
+        CityService.getPriorityLocations(query.trim()),
+        CityService.searchLocal(query.trim(), limit),
+        CityService.searchNominatim(query.trim(), limit)
+    ]);
 
-    const combinedResults = [
-        ...priorityResults,
-        ...localResults.filter(local =>
-            !priorityResults.some(priority => priority.osmId === local.osmId && priority.osmType === local.osmType)
-        )
-    ].slice(0, limit);
+    // Mark local results with isLocal flag
+    const localWithFlag = localResults.map(r => ({ ...r, isLocal: true }));
+    const priorityWithFlag = priorityResults.map(r => ({ ...r, isLocal: true }));
 
-    res.json({
-        results: combinedResults,
-        source: 'local',
-        hasMore: localResults.length >= limit
-    });
-}));
+    // Cross-reference Nominatim results with local DB
+    const osmPairs = nominatimResults.map(r => ({ osmId: r.osmId, osmType: r.osmType }));
+    const existingMap = await CityService.getExistingOsmIds(osmPairs);
 
-router.get('/search/nominatim', searchLimiter, asyncHandler(async (req, res) => {
-    const query = req.query.q as string;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const nominatimWithFlag = nominatimResults.map(r => ({
+        ...r,
+        id: existingMap.get(`${r.osmId}:${r.osmType}`),
+        isLocal: existingMap.has(`${r.osmId}:${r.osmType}`)
+    }));
 
-    if (!query || query.trim().length < 2) {
-        throw new AppError('Query must be at least 2 characters', 400);
+    // Combine: priority first, then local, then nominatim (deduplicated by osmId)
+    const seenOsmIds = new Set<string>();
+    const allResults = [...priorityWithFlag, ...localWithFlag, ...nominatimWithFlag];
+    const combinedResults: Array<typeof allResults[number]> = [];
+
+    for (const result of allResults) {
+        const key = `${result.osmId}:${result.osmType}`;
+        if (!seenOsmIds.has(key)) {
+            seenOsmIds.add(key);
+            combinedResults.push(result);
+        }
     }
 
-    const results = await CityService.searchNominatim(query.trim(), limit);
-
     res.json({
-        results,
-        source: 'nominatim'
+        results: combinedResults.slice(0, limit),
+        source: 'combined'
     });
 }));
 

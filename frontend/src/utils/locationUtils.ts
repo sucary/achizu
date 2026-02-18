@@ -25,8 +25,12 @@ interface AddressFields {
  * Handles edge cases like ISO province codes (e.g., JP-13) and missing fields.
  */
 export const extractLocationData = (result: SearchResult): ExtractedLocation => {
-    const coordinates = result.center;
-    const address = ((result as unknown as { address?: AddressFields }).address) || {};
+    // Nominatim search results return lat/lng as top-level fields instead of a center object
+    const raw = result as unknown as { lat?: number; lng?: number; address?: AddressFields };
+    const coordinates = result.center ?? (raw.lat != null && raw.lng != null
+        ? { lat: raw.lat, lng: raw.lng }
+        : { lat: 0, lng: 0 });
+    const address = raw.address || {};
 
     let city = result.name || address.city || address.locality || address.town || address.village || '';
     let province = result.province || address.province || address.state || '';

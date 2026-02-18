@@ -63,12 +63,12 @@ export interface SearchResult {
     type?: string;
     importance?: number;
     isPriority?: boolean;
+    isLocal?: boolean;
 }
 
 export interface SearchResponse {
     results: SearchResult[];
-    source: 'local' | 'nominatim';
-    hasMore?: boolean;
+    source: 'local' | 'nominatim' | 'combined';
 }
 
 // Search cities in local database
