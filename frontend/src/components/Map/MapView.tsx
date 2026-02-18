@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useCallback, useState } from 'react';
-import { MapContainer, TileLayer, ZoomControl, GeoJSON, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, ScaleControl, AttributionControl, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression } from 'leaflet';
 import { getArtists, getCityById, type SearchResult } from '../../services/api';
 import type { Artist, LocationView, SelectionMode } from '../../types/artist';
 import { getDisplayArtists } from '../../utils/mapUtils';
-import LocateControl from './buttons/LocateMeButton';
+import MapControls from './buttons/MapControls';
 import ArtistCluster from './ArtistCluster';
-import ViewToggleButton from './buttons/ViewToggleButton';
 import MapClickHandler from './MapClickHandler';
 import { useQuery } from '@tanstack/react-query';
 
@@ -93,16 +92,15 @@ const MapView = ({ selectionMode, onLocationPick, onEditArtist, onDeleteArtist, 
             zoom={defaultZoom}
             className="h-full w-full"
             zoomControl={false}
+            attributionControl={false}
         >
-            <div className="absolute bottom-7 right-14 z-[1000]">
-                <ViewToggleButton view={view} setView={setView} />
-            </div>
-            <ZoomControl position="bottomright" />
+            <MapControls view={view} setView={setView} />
+            <ScaleControl position="bottomleft" imperial={false} />
+            <AttributionControl position="bottomright" />
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <LocateControl />
             <ArtistCluster
                 artists={displayArtists}
                 view={view}

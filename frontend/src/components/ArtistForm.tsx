@@ -168,7 +168,7 @@ const ArtistForm = ({
             />
         )}
 
-        <div className="absolute top-28 right-4 z-modal w-80 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-8rem)] font-sans">
+        <div className="absolute top-28 right-2 z-modal w-80 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-8rem)] font-sans">
             <div className="overflow-y-auto flex-1">
                 {/* Header with background and avatar */}
                 <ArtistFormHeader

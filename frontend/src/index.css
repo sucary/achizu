@@ -16,3 +16,18 @@
 @utility text-shadow-overlay {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
+
+/* Scale control styling */
+.leaflet-control-scale-line {
+  text-align: center;
+  border-bottom: none !important;
+  border-left: 2px solid #333 !important;
+  border-right: 2px solid #333 !important;
+  border-top: none !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  line-height: 1.2;
+  height: auto !important;
+  padding: 0 4px;
+  text-shadow: none !important;
+}
+

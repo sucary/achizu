@@ -13,10 +13,9 @@ export const BackendStatus = () => {
                 if (mounted) {
                     setStatus(data.message);
                 }
-            } catch (error) {
+            } catch {
                 if (mounted) {
                     setStatus('Connection failed. Is the backend running?');
-                    console.error(error);
                 }
             }
         };

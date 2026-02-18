@@ -8,7 +8,7 @@ const ViewToggleButton = ({ view, setView }: { view: LocationView; setView: (vie
                 className={`px-4 py-2 text-sm font-medium ${
                     view === 'original'
                         ? 'bg-red-500 text-white rounded-lg'
-                        : 'text-gray-800'
+                        : 'text-gray-800 hover:bg-gray-100'
                 }`}
             >
                 original
@@ -18,7 +18,7 @@ const ViewToggleButton = ({ view, setView }: { view: LocationView; setView: (vie
                 className={`px-4 py-2 text-sm font-medium ${
                     view === 'active'
                         ? 'bg-red-500 text-white rounded-lg'
-                        : 'text-gray-800'
+                        : 'text-gray-800 hover:bg-gray-100'
                 }`}
             >
                 active
