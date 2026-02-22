@@ -165,6 +165,11 @@ const ArtistForm = ({
                 initialMode={cropperInitialMode}
                 onSave={handleCropSave}
                 onCancel={handleCropperCancel}
+                onReupload={() => {
+                    setIsCropperOpen(false);
+                    setCropperImageSrc(null);
+                    fileInputRef.current?.click();
+                }}
             />
         )}
 

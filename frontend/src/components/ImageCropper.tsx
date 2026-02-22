@@ -16,6 +16,7 @@ interface ImageCropperProps {
     initialMode?: CropMode;
     onSave: (result: CropResult) => void;
     onCancel: () => void;
+    onReupload?: () => void;
 }
 
 type CropMode = 'avatar' | 'profile';
@@ -46,7 +47,8 @@ const ImageCropper = ({
     initialProfileCrop,
     initialMode = 'avatar',
     onSave,
-    onCancel
+    onCancel,
+    onReupload
 }: ImageCropperProps) => {
     const [mode, setMode] = useState<CropMode>(initialMode);
 
@@ -153,6 +155,21 @@ const ImageCropper = ({
 
                 {/* Crop area */}
                 <div ref={cropAreaRef} className="relative h-80 bg-black">
+                    {/* Re-upload button */}
+                    {onReupload && (
+                        <button
+                            onClick={onReupload}
+                            className="absolute left-3 top-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-white/80 bg-black/40 hover:bg-black/60 hover:text-white transition-colors"
+                            type="button"
+                            title="Upload a different image"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            Re-upload
+                        </button>
+                    )}
+
                     <Cropper
                         image={imageSrc}
                         crop={cropState.crop}

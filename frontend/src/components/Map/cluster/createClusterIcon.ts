@@ -29,7 +29,9 @@ const calculateGeometricBounds = (markers: L.Marker[]) => {
 };
 
 const generateHueFromCoordinates = (latLng: L.LatLng): number => {
-  return Math.abs((latLng.lat * 100 + latLng.lng * 100) % 360);
+  // Pseudo-random distribution from coordinates for color variety
+  const hash = Math.sin(latLng.lat * 1234.5) * Math.cos(latLng.lng * 5678.9) * 10000;
+  return Math.abs(hash % 360);
 };
 
 export const createClusterIconFactory = ({ map }: ClusterIconOptions) => {
@@ -67,8 +69,15 @@ export const createClusterIconFactory = ({ map }: ClusterIconOptions) => {
 
     // Color using geometric center as seed
     const hue = generateHueFromCoordinates(geometricLatLng);
-    const color = `hsla(${hue}, 70%, 50%, 0.4)`;
-    const borderColor = `hsla(${hue}, 70%, 40%, 0.6)`;
+
+    // Scale saturation and lightness based on artist count
+    // More artists = more saturated (30-70%) and darker (50-30%)
+    const countFactor = Math.min(1, count / 10);
+    const saturation = 30 + countFactor * 40;
+    const lightness = 50 - countFactor * 20;
+
+    const color = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.4)`;
+    const borderColor = `hsla(${hue}, ${saturation}%, ${lightness - 10}%, 0.6)`;
 
     const fontSize = Math.max(12, Math.min(28, size / 5));
 
