@@ -50,11 +50,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (_event, session) => {
+            (event, session) => {
                 setSession(session);
                 setLoading(false);
-                // Refetch artists when auth state changes
-                queryClient.invalidateQueries({ queryKey: ['artists'] });
+
+                // Only refetch on actual login, not logout
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                    queryClient.invalidateQueries({ queryKey: ['artists'] });
+                    queryClient.invalidateQueries({ queryKey: ['profile'] });
+                } else if (event === 'SIGNED_OUT') {
+                    // Clear cached data on logout
+                    queryClient.removeQueries({ queryKey: ['artists'] });
+                    queryClient.removeQueries({ queryKey: ['profile'] });
+                    queryClient.removeQueries({ queryKey: ['pendingUsers'] });
+                }
             }
         );
 
@@ -91,10 +100,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const signOut = async () => {
-        await supabase.auth.signOut();
         sessionStorage.removeItem('session-only');
+        // Remove queries before signing out to prevent refetch with invalid token
         queryClient.removeQueries({ queryKey: ['profile'] });
-        queryClient.invalidateQueries({ queryKey: ['artists'] });
+        queryClient.removeQueries({ queryKey: ['artists'] });
+        queryClient.removeQueries({ queryKey: ['pendingUsers'] });
+        await supabase.auth.signOut();
     };
 
     const signInWithOAuth = async (provider: 'google' | 'github') => {

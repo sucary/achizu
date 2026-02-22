@@ -7,11 +7,13 @@ import MapView from './components/Map/MapView';
 import ArtistForm from './components/ArtistForm';
 import AddArtistButton from './components/Map/buttons/AddArtistButton';
 import { AccountButton } from './components/Auth/AccountButton';
-import { ApprovalPending } from './components/Auth/ApprovalPending';
+import { NotificationButton } from './components/Notifications/NotificationButton';
 import { AdminDashboard } from './components/Admin/AdminDashboard';
 import { BackendStatus } from './components/BackendStatus';
 import { useAuth } from './context/AuthContext';
 import type { Artist, SelectionMode } from './types/artist';
+import { UsernamePrompt } from './components/Auth/UsernamePrompt';
+
 
 function App() {
     const { username } = useParams<{ username?: string }>();
@@ -30,6 +32,8 @@ function App() {
             navigate('/', { replace: true });
         }
     }, [username, profile, loading, isViewingOther, isOwnUsername, navigate]);
+
+    
     const [showForm, setShowForm] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showAdminDashboard, setShowAdminDashboard] = useState(false);
@@ -96,14 +100,23 @@ function App() {
         <div className="h-screen w-screen flex flex-col">
             <BackendStatus />
 
-            <AccountButton
-                showAuthModal={showAuthModal}
-                onOpenAuthModal={() => setShowAuthModal(true)}
-                onCloseAuthModal={() => setShowAuthModal(false)}
-                onOpenAdminDashboard={() => setShowAdminDashboard(true)}
-            />
+            {/* Top right controls */}
+            <div className="absolute top-2 right-2 z-[1100] flex items-center gap-2">
+                {user && <NotificationButton />}
+                <AccountButton
+                    showAuthModal={showAuthModal}
+                    onOpenAuthModal={() => setShowAuthModal(true)}
+                    onCloseAuthModal={() => setShowAuthModal(false)}
+                    onOpenAdminDashboard={() => setShowAdminDashboard(true)}
+                />
+            </div>
 
-            {user && profile && !profile.isApproved && <ApprovalPending />}
+            {/* Show username prompt for OAuth users without username */}
+            {user && profile && !profile.username && (
+                <UsernamePrompt onComplete={() => {
+                    queryClient.invalidateQueries({ queryKey: ['profile'] });
+                }} />
+            )}
 
             {!showForm && user && profile?.isApproved && !isViewingOther && (
                 <AddArtistButton onClick={handleAddArtistClick} />
