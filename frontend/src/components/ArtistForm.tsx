@@ -5,7 +5,7 @@ import { LocationSearch } from './LocationSearch';
 import SocialLinkInput, { type SocialLinkField } from './SocialLinkInput';
 import ImageCropper, { type CropResult } from './ImageCropper';
 import ArtistFormHeader from './ArtistFormHeader';
-import { useArtistForm, useMapSelectionHandler } from '../hooks/useArtistForm';
+import { useArtistForm } from '../hooks/useArtistForm';
 import { getAvatarUrl, getProfileUrl } from '../utils/cloudinaryUrl';
 import type { SearchResult } from '../services/api';
 import type { Artist } from '../types/artist';
@@ -16,8 +16,8 @@ interface ArtistFormProps {
     onSubmit?: (data: Partial<Artist>) => void;
     onCancel?: () => void;
     onRequestSelection?: (targetField: 'originalLocation' | 'activeLocation') => void;
-    pendingLocationResult?: SearchResult | null;
-    onConsumePendingResult?: () => void;
+    pendingCoordinates?: { lat: number; lng: number } | null;
+    onConsumePendingCoordinates?: () => void;
 }
 
 const SOCIAL_FIELDS: SocialLinkField[] = [
@@ -33,8 +33,8 @@ const ArtistForm = ({
     onSubmit,
     onCancel,
     onRequestSelection,
-    pendingLocationResult,
-    onConsumePendingResult
+    pendingCoordinates,
+    onConsumePendingCoordinates
 }: ArtistFormProps) => {
     const [isSocialExpanded, setIsSocialExpanded] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,18 +66,20 @@ const ArtistForm = ({
         onCancel
     });
 
-    // Handle map selection coordination with proper dependencies
-    useMapSelectionHandler(
-        pendingField,
-        pendingLocationResult,
-        handleLocationSelect,
-        clearPendingField,
-        onConsumePendingResult
-    );
-
     const handleManualPin = (locationType: 'originalLocation' | 'activeLocation') => {
         startManualPinSelection(locationType);
         onRequestSelection?.(locationType);
+    };
+
+    // Get pending coordinates for the correct field
+    const getPendingCoordinatesFor = (field: 'originalLocation' | 'activeLocation') => {
+        return pendingField === field ? pendingCoordinates : null;
+    };
+
+    // Handle consuming coordinates for a specific field
+    const handleCoordinatesConsumed = () => {
+        clearPendingField();
+        onConsumePendingCoordinates?.();
     };
 
     const getLocationDisplayValue = (location?: { displayName?: string; city?: string; province?: string; country?: string }) => {
@@ -203,6 +205,8 @@ const ArtistForm = ({
                             onManualPin={() => handleManualPin('originalLocation')}
                             placeholder="Search original location"
                             label="Original location"
+                            pendingCoordinates={getPendingCoordinatesFor('originalLocation')}
+                            onCoordinatesConsumed={handleCoordinatesConsumed}
                         />
 
                         <div className="flex justify-center -my-2 relative z-10">
@@ -222,6 +226,8 @@ const ArtistForm = ({
                             onManualPin={() => handleManualPin('activeLocation')}
                             placeholder="Search active location"
                             label="Active location"
+                            pendingCoordinates={getPendingCoordinatesFor('activeLocation')}
+                            onCoordinatesConsumed={handleCoordinatesConsumed}
                         />
                     </div>
 

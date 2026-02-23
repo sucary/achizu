@@ -137,7 +137,7 @@ export const CityService = {
             format: 'json',
             addressdetails: '1',
             limit: String(limit),
-            polygon_geojson: '0',
+            polygon_geojson: '1',
             dedupe: '0'
         });
 
@@ -154,9 +154,13 @@ export const CityService = {
 
             const data = await response.json() as NominatimResponse[];
 
-            console.log(`Nominatim search for "${query}" returned ${data.length} results`);
-            console.log('Nominatim URL:', url);
-            data.forEach((item, i) => console.log(`  ${i + 1}. ${item.display_name} (${item.type})`));
+            // Save all results to city_boundaries in background instantly
+            for (const item of data) {
+                if (item.geojson) {
+                    CityService.saveFromNominatim(item).catch(() => {
+                    });
+                }
+            }
 
             return data.map(item => ({
                 displayName: item.display_name,
@@ -259,7 +263,7 @@ export const CityService = {
         if (osmPairs.length === 0) return new Map();
 
         const conditions = osmPairs.map((_, i) => `(osm_id = $${i * 2 + 1} AND osm_type = $${i * 2 + 2})`).join(' OR ');
-        const params = osmPairs.flatMap(p => [p.osmId, p.osmType]);
+        const params = osmPairs.flatMap(p => [String(p.osmId), p.osmType]);
 
         const result = await pool.query(`
             SELECT osm_id, osm_type, id FROM city_boundaries WHERE ${conditions}
@@ -267,7 +271,7 @@ export const CityService = {
 
         const map = new Map<string, string>();
         for (const row of result.rows) {
-            map.set(`${row.osm_id}:${row.osm_type}`, row.id);
+            map.set(`${String(row.osm_id)}:${row.osm_type}`, row.id);
         }
         return map;
     },
@@ -546,6 +550,38 @@ export const CityService = {
     /**
      * Find city by coordinates
      */
+    /**
+     * Get all local boundaries containing the given coordinates
+     * Returns multiple results ordered by area (smallest/most specific first)
+     */
+    reverseGeocodeAll: async (lat: number, lng: number, limit: number = 10): Promise<City[]> => {
+        const result = await pool.query(`
+            SELECT
+                id, name, province, country, display_name,
+                osm_id, osm_type, type, class, importance,
+                ST_Y(center::geometry) as lat,
+                ST_X(center::geometry) as lng
+            FROM city_boundaries
+            WHERE ST_Contains(boundary::geometry, ST_SetSRID(ST_MakePoint($1, $2), 4326))
+            ORDER BY ST_Area(boundary::geometry) ASC
+            LIMIT $3
+        `, [lng, lat, limit]);
+
+        return result.rows.map(row => ({
+            id: row.id,
+            name: row.name,
+            province: row.province,
+            country: row.country,
+            displayName: row.display_name,
+            center: { lat: row.lat, lng: row.lng },
+            osmId: parseInt(row.osm_id),
+            osmType: row.osm_type,
+            type: row.type,
+            class: row.class,
+            importance: row.importance
+        }));
+    },
+
     reverseGeocode: async (lat: number, lng: number): Promise<City | null> => {
         // 1. Check local DB first
         const result = await pool.query(`
@@ -556,6 +592,7 @@ export const CityService = {
                 ST_X(center::geometry) as lng
             FROM city_boundaries
             WHERE ST_Contains(boundary::geometry, ST_SetSRID(ST_MakePoint($1, $2), 4326))
+            ORDER BY ST_Area(boundary::geometry) ASC
             LIMIT 1
         `, [lng, lat]);
 

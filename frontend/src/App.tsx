@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import './App.css';
-import { deleteArtist, type SearchResult } from './services/api';
+import { deleteArtist } from './services/api';
 import MapView from './components/Map/MapView';
 import ArtistForm from './components/ArtistForm';
 import AddArtistButton from './components/Map/buttons/AddArtistButton';
@@ -39,19 +39,19 @@ function App() {
     const [showAdminDashboard, setShowAdminDashboard] = useState(false);
     const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
     const [selectionMode, setSelectionMode] = useState<SelectionMode | null>(null);
-    const [pendingLocationResult, setPendingLocationResult] = useState<SearchResult | null | undefined>(undefined);
+    const [pendingCoordinates, setPendingCoordinates] = useState<{ lat: number; lng: number } | null>(null);
 
     const handleStartSelection = (targetField: 'originalLocation' | 'activeLocation') => {
         setSelectionMode({ active: true, targetField });
     };
 
-    const handleLocationPick = (result: SearchResult | null) => {
-        setPendingLocationResult(result);
+    const handleLocationPick = (coordinates: { lat: number; lng: number } | null) => {
+        setPendingCoordinates(coordinates);
         setSelectionMode(null);
     };
 
-    const handleConsumeResult = () => {
-        setPendingLocationResult(undefined);
+    const handleConsumeCoordinates = () => {
+        setPendingCoordinates(null);
     };
 
     const handleEditArtist = (artist: Artist) => {
@@ -127,8 +127,8 @@ function App() {
                     initialData={editingArtist ?? undefined}
                     onCancel={handleCloseForm}
                     onRequestSelection={handleStartSelection}
-                    pendingLocationResult={pendingLocationResult}
-                    onConsumePendingResult={handleConsumeResult}
+                    pendingCoordinates={pendingCoordinates}
+                    onConsumePendingCoordinates={handleConsumeCoordinates}
                 />
             )}
             {showAdminDashboard && (

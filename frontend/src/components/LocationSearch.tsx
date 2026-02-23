@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { SearchIcon, MapPinIcon, LoaderIcon } from './Icons/FormIcons';
-import { searchCities, type SearchResult } from '../services/api';
+import { searchCities, reverseSearchCities, type SearchResult } from '../services/api';
 import { useDebounce } from '../hooks/useDebounce';
 
 interface LocationSearchProps {
@@ -10,20 +10,73 @@ interface LocationSearchProps {
     onManualPin: () => void;
     placeholder?: string;
     label?: string;
+    pendingCoordinates?: { lat: number; lng: number } | null;
+    onCoordinatesConsumed?: () => void;
 }
 
-export const LocationSearch = ({ displayValue = '', onChange, onManualPin, placeholder, label }: LocationSearchProps) => {
+export const LocationSearch = ({
+    displayValue = '',
+    onChange,
+    onManualPin,
+    placeholder,
+    label,
+    pendingCoordinates,
+    onCoordinatesConsumed
+}: LocationSearchProps) => {
     const [query, setQuery] = useState<string | null>(null);
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [source, setSource] = useState<'local' | 'nominatim' | 'combined'>('combined');
+    const [source, setSource] = useState<'local' | 'nominatim' | 'cache'>('local');
+    const [hasMore, setHasMore] = useState(false);
+    const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLDivElement>(null);
 
     const debouncedQuery = useDebounce(query ?? '', 1000);
+
+    // Handle pending coordinates from manual map pin
+    useEffect(() => {
+        if (!pendingCoordinates) return;
+
+        const handleReverseSearch = async () => {
+            setIsLoading(true);
+            setError(null);
+            setClickedCoords(pendingCoordinates);
+
+            try {
+                const response = await reverseSearchCities(pendingCoordinates.lat, pendingCoordinates.lng);
+
+                // If only one result, auto-select it
+                if (response.results.length === 1) {
+                    const result = response.results[0];
+                    const finalResult = { ...result, center: pendingCoordinates };
+                    onChange(finalResult);
+                    setIsOpen(false);
+                    setClickedCoords(null);
+                    setQuery(null);
+                } else {
+                    // Multiple results - show dropdown for user to choose
+                    setResults(response.results);
+                    setSource(response.source);
+                    setHasMore(response.hasMore);
+                    setIsOpen(true);
+                    setQuery(null);
+                }
+            } catch (err) {
+                setError('No locations found at this point. Try another spot.');
+                console.error('Reverse search failed:', err);
+            } finally {
+                setIsLoading(false);
+                onCoordinatesConsumed?.();
+            }
+        };
+
+        handleReverseSearch();
+    }, [pendingCoordinates, onCoordinatesConsumed, onChange]);
 
     // Reset internal query when displayValue is changed externally (e.g. copy original to active)
     const prevDisplayValue = useRef(displayValue);
@@ -32,6 +85,7 @@ export const LocationSearch = ({ displayValue = '', onChange, onManualPin, place
             prevDisplayValue.current = displayValue;
             setQuery(null);
             setIsOpen(false);
+            setClickedCoords(null);
         }
     }, [displayValue]);
 
@@ -78,27 +132,73 @@ export const LocationSearch = ({ displayValue = '', onChange, onManualPin, place
 
     }, [debouncedQuery]);
 
-    const handleSearch = async (searchQuery: string) => {
-        setIsLoading(true);
+    const handleSearch = async (searchQuery: string, searchSource: 'auto' | 'nominatim' = 'auto') => {
+        if (searchSource === 'nominatim') {
+            setIsLoadingMore(true);
+        } else {
+            setIsLoading(true);
+        }
         setError(null);
+
         try {
-            const response = await searchCities(searchQuery);
+            const response = await searchCities(searchQuery, 20, searchSource);
             setResults(response.results);
             setSource(response.source);
+            setHasMore(response.hasMore);
             setIsOpen(true);
         } catch (err) {
             setError('Failed to search locations. Please try again.');
             console.error('Search failed:', err);
         } finally {
             setIsLoading(false);
+            setIsLoadingMore(false);
+        }
+    };
+
+    const handleSearchMore = async () => {
+        setIsLoadingMore(true);
+        setError(null);
+
+        try {
+            // If we have clicked coordinates, this is a reverse search
+            if (clickedCoords) {
+                const response = await reverseSearchCities(
+                    clickedCoords.lat,
+                    clickedCoords.lng,
+                    20,
+                    'nominatim'
+                );
+                setResults(response.results);
+                setSource(response.source);
+                setHasMore(response.hasMore);
+            } else {
+                // Normal text search
+                const searchQuery = query ?? debouncedQuery;
+                if (searchQuery.trim().length >= 2) {
+                    const response = await searchCities(searchQuery.trim(), 20, 'nominatim');
+                    setResults(response.results);
+                    setSource(response.source);
+                    setHasMore(response.hasMore);
+                }
+            }
+        } catch (err) {
+            setError('Failed to search for more results.');
+            console.error('Search more failed:', err);
+        } finally {
+            setIsLoadingMore(false);
         }
     };
 
     const handleSelect = (result: SearchResult) => {
-        onChange(result);
+        // If we have clicked coordinates (from manual pin), use those instead of city center
+        const finalResult = clickedCoords
+            ? { ...result, center: clickedCoords }
+            : result;
+        onChange(finalResult);
         setIsOpen(false);
         setQuery(null);
         setError(null);
+        setClickedCoords(null);
     };
 
     const handleRetry = () => {
@@ -201,6 +301,17 @@ export const LocationSearch = ({ displayValue = '', onChange, onManualPin, place
                             )}
                         </button>
                     ))}
+                    {/* Search more button */}
+                    {hasMore && (
+                        <button
+                            onClick={handleSearchMore}
+                            type="button"
+                            disabled={isLoadingMore}
+                            className="w-full px-3 py-2 text-center text-sm text-primary hover:bg-primary/5 border-t border-gray-200 font-medium disabled:opacity-50"
+                        >
+                            {isLoadingMore ? 'Searching...' : 'Search for more results'}
+                        </button>
+                    )}
                 </div>,
                 document.body
             )}

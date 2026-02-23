@@ -78,14 +78,18 @@ export interface SearchResult {
 
 export interface SearchResponse {
     results: SearchResult[];
-    source: 'local' | 'nominatim' | 'combined';
+    source: 'local' | 'nominatim' | 'cache';
+    hasMore: boolean;
 }
 
-// Search cities in local database
-export const searchCities = async (query: string, limit: number = 20): Promise<SearchResponse> => {
+export const searchCities = async (
+    query: string,
+    limit: number = 20,
+    source: 'local' | 'nominatim' | 'auto' = 'auto'
+): Promise<SearchResponse> => {
     try {
         const response = await api.get<SearchResponse>('/cities/search', {
-            params: { q: query, limit }
+            params: { q: query, limit, source }
         });
         return response.data;
     } catch (error) {
@@ -115,6 +119,25 @@ export const reverseGeocode = async (lat: number, lng: number, withBoundary: boo
         return response.data;
     } catch (error) {
         console.error('Failed to reverse geocode:', error);
+        throw error;
+    }
+};
+
+// Reverse search - get all matching boundaries for coordinates
+export const reverseSearchCities = async (
+    lat: number,
+    lng: number,
+    limit: number = 10,
+    source: 'auto' | 'nominatim' = 'auto'
+): Promise<SearchResponse> => {
+    try {
+        const response = await api.post<SearchResponse>(
+            `/cities/reverse/search?limit=${limit}&source=${source}`,
+            { lat, lng }
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Failed to reverse search:', error);
         throw error;
     }
 };
