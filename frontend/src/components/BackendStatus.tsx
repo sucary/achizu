@@ -38,8 +38,8 @@ export const BackendStatus = () => {
             aria-atomic="true"
         >
             <div className="text-xs flex items-center gap-2">
-                <span 
-                    className={`font-bold ${isChecking ? 'text-black' : isConnected ? 'text-cyan-600' : 'text-primary'}`}
+                <span
+                    className={`font-bold ${isChecking ? 'text-black' : isConnected ? 'text-decor' : 'text-primary'}`}
                     aria-label={`Connection status: ${status}`}
                 >
                     {status}
