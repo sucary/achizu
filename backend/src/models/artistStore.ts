@@ -14,6 +14,7 @@ const ARTIST_SELECT_COLUMNS = `
     ST_Y(active_display_coordinates::geometry) as active_display_lat,
     ST_X(active_display_coordinates::geometry) as active_display_lng,
     instagram_url, twitter_url, apple_music_url, website_url, youtube_url,
+    debut_year, inactive_year,
     created_at, updated_at
 `;
 
@@ -51,6 +52,8 @@ function rowToArtist(row: Record<string, unknown>): Artist {
             website: (row.website_url as string) || undefined,
             youtube: (row.youtube_url as string) || undefined
         },
+        debutYear: row.debut_year as number | undefined,
+        inactiveYear: row.inactive_year as number | undefined,
         createdAt: row.created_at as Date,
         updatedAt: row.updated_at as Date,
         originalLocationDisplayCoordinates: row.original_display_lat ? {
@@ -154,14 +157,16 @@ export const ArtistStore = {
                     active_city, active_province, active_coordinates, active_city_id,
                     original_display_coordinates,
                     active_display_coordinates,
-                    instagram_url, twitter_url, apple_music_url, website_url, youtube_url
+                    instagram_url, twitter_url, apple_music_url, website_url, youtube_url,
+                    debut_year, inactive_year
                 ) VALUES (
                     $1, $2, $3, $4, $5,
                     $6, $7, ST_SetSRID(ST_MakePoint($8, $9), 4326)::geography, $19,
                     $10, $11, ST_SetSRID(ST_MakePoint($12, $13), 4326)::geography, $20,
                     ST_SetSRID(ST_MakePoint($21, $22), 4326)::geography,
                     ST_SetSRID(ST_MakePoint($23, $24), 4326)::geography,
-                    $14, $15, $16, $17, $18
+                    $14, $15, $16, $17, $18,
+                    $25, $26
                 )
                 RETURNING ${ARTIST_SELECT_COLUMNS}
             `, [
@@ -188,7 +193,9 @@ export const ArtistStore = {
                 data.originalLocationDisplayCoordinates.lng,
                 data.originalLocationDisplayCoordinates.lat,
                 data.activeLocationDisplayCoordinates.lng,
-                data.activeLocationDisplayCoordinates.lat
+                data.activeLocationDisplayCoordinates.lat,
+                data.debutYear || null,
+                data.inactiveYear || null
             ]);
 
             return rowToArtist(result.rows[0]);
@@ -290,6 +297,16 @@ export const ArtistStore = {
                     updates.push(`youtube_url = $${paramIndex++}`);
                     values.push(data.socialLinks.youtube || null);
                 }
+            }
+
+            if (data.debutYear !== undefined) {
+                updates.push(`debut_year = $${paramIndex++}`);
+                values.push(data.debutYear || null);
+            }
+
+            if (data.inactiveYear !== undefined) {
+                updates.push(`inactive_year = $${paramIndex++}`);
+                values.push(data.inactiveYear || null);
             }
 
             if (updates.length === 0) {

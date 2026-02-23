@@ -51,6 +51,8 @@ export interface Artist {
     originalLocation: Location;
     activeLocation: Location;
     socialLinks?: SocialLinks;
+    debutYear?: number;
+    inactiveYear?: number;
     createdAt: Date | string;
     updatedAt: Date | string;
     originalLocationDisplayCoordinates: Coordinates;
@@ -70,6 +72,8 @@ export interface CreateArtistDTO {
     originalLocation: Location;
     activeLocation: Location;
     socialLinks?: SocialLinks;
+    debutYear?: number;
+    inactiveYear?: number;
 }
 
 /**
@@ -94,6 +98,8 @@ export interface UpdateArtistDTO {
     originalLocation?: Location;
     activeLocation?: Location;
     socialLinks?: SocialLinks;
+    debutYear?: number;
+    inactiveYear?: number;
 }
 
 /**

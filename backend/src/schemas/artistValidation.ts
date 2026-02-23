@@ -36,6 +36,8 @@ export const ArtistInputSchema = z.object({
     originalLocation: LocationSchema,
     activeLocation: LocationSchema,
     socialLinks: SocialLinksSchema.optional(),
+    debutYear: z.number().int().min(1900).max(2100).optional().nullable().transform(val => val ?? undefined),
+    inactiveYear: z.number().int().min(1900).max(2100).optional().nullable().transform(val => val ?? undefined),
 });
 
 export type ArtistFormData = z.infer<typeof ArtistInputSchema>;
