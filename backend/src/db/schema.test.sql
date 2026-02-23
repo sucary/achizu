@@ -1,0 +1,195 @@
+-- Test Schema for Local PostgreSQL (Docker)
+-- Mirrors production Supabase schema but with local auth
+
+-- Enable extensions
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Drop tables if they exist (reverse dependency order)
+DROP TABLE IF EXISTS artists CASCADE;
+DROP TABLE IF EXISTS city_boundaries CASCADE;
+DROP TABLE IF EXISTS priority_locations CASCADE;
+DROP TABLE IF EXISTS water_polygons CASCADE;
+DROP TABLE IF EXISTS search_cache CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+-- ============================================
+-- Local Users Table (replaces Supabase auth.users)
+-- ============================================
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT UNIQUE NOT NULL,
+    role TEXT DEFAULT 'user',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- Auto-update timestamp function
+-- ============================================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- ============================================
+-- City Boundaries
+-- ============================================
+CREATE TABLE IF NOT EXISTS city_boundaries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    province VARCHAR(100) NOT NULL,
+    country VARCHAR(100),
+
+    boundary GEOGRAPHY(MULTIPOLYGON, 4326) NOT NULL,
+    raw_boundary GEOGRAPHY(MULTIPOLYGON, 4326),
+    center GEOGRAPHY(POINT, 4326) NOT NULL,
+
+    osm_id BIGINT NOT NULL,
+    osm_type VARCHAR(20) NOT NULL,
+    display_name TEXT,
+    type VARCHAR(50),
+    class VARCHAR(50),
+    importance DECIMAL(5,4),
+    bounding_box DECIMAL[4],
+    address_components JSONB,
+
+    last_updated TIMESTAMP DEFAULT NOW(),
+    needs_refresh BOOLEAN DEFAULT FALSE,
+
+    CONSTRAINT uq_city_province UNIQUE (name, province),
+    CONSTRAINT uq_city_osm UNIQUE (osm_id, osm_type)
+);
+
+-- ============================================
+-- Priority Locations (search boosting)
+-- ============================================
+CREATE TABLE IF NOT EXISTS priority_locations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    search_query VARCHAR(100) NOT NULL,
+    osm_id BIGINT NOT NULL,
+    osm_type VARCHAR(20) NOT NULL,
+    display_name TEXT NOT NULL,
+    rank INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- Water Polygons
+-- ============================================
+CREATE TABLE IF NOT EXISTS water_polygons (
+    gid SERIAL PRIMARY KEY,
+    geom GEOGRAPHY(MULTIPOLYGON, 4326)
+);
+
+-- ============================================
+-- Search Cache (Nominatim results)
+-- ============================================
+CREATE TABLE IF NOT EXISTS search_cache (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    keyword TEXT NOT NULL UNIQUE,
+    results JSONB NOT NULL,
+    result_count INTEGER NOT NULL DEFAULT 0,
+    hit_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+-- ============================================
+-- Artists
+-- ============================================
+CREATE TABLE IF NOT EXISTS artists (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    name VARCHAR(255) NOT NULL,
+
+    -- Image fields (after migration 002)
+    source_image TEXT,
+    avatar_crop JSONB,
+    profile_crop JSONB,
+
+    -- Original location
+    original_city VARCHAR(100) NOT NULL,
+    original_province VARCHAR(100) NOT NULL,
+    original_coordinates GEOGRAPHY(POINT, 4326) NOT NULL,
+    original_city_id UUID REFERENCES city_boundaries(id),
+    original_display_coordinates GEOGRAPHY(POINT, 4326),
+
+    -- Active location
+    active_city VARCHAR(100) NOT NULL,
+    active_province VARCHAR(100) NOT NULL,
+    active_coordinates GEOGRAPHY(POINT, 4326) NOT NULL,
+    active_city_id UUID REFERENCES city_boundaries(id),
+    active_display_coordinates GEOGRAPHY(POINT, 4326),
+
+    -- Social links (after migration 003)
+    instagram_url TEXT,
+    twitter_url TEXT,
+    apple_music_url TEXT,
+    youtube_url TEXT,
+    website_url TEXT,
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- Indexes
+-- ============================================
+
+-- City boundaries indexes
+CREATE INDEX IF NOT EXISTS idx_city_boundaries_boundary ON city_boundaries USING GIST(boundary);
+CREATE INDEX IF NOT EXISTS idx_city_boundaries_raw_boundary ON city_boundaries USING GIST(raw_boundary);
+CREATE INDEX IF NOT EXISTS idx_city_name_trgm ON city_boundaries USING gin(name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_city_display_name_trgm ON city_boundaries USING gin(display_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_city_importance ON city_boundaries(importance DESC);
+
+-- Priority locations indexes
+CREATE INDEX IF NOT EXISTS idx_priority_search_query ON priority_locations(search_query);
+
+-- Water polygons indexes
+CREATE INDEX IF NOT EXISTS idx_water_polygons_geom ON water_polygons USING GIST(geom);
+
+-- Search cache indexes
+CREATE INDEX IF NOT EXISTS idx_search_cache_keyword ON search_cache(keyword);
+CREATE INDEX IF NOT EXISTS idx_search_cache_expires ON search_cache(expires_at);
+
+-- Artists indexes
+CREATE INDEX IF NOT EXISTS idx_artists_user_id ON artists(user_id);
+CREATE INDEX IF NOT EXISTS idx_artists_original_coords ON artists USING GIST(original_coordinates);
+CREATE INDEX IF NOT EXISTS idx_artists_active_coords ON artists USING GIST(active_coordinates);
+CREATE INDEX IF NOT EXISTS idx_artists_original_display_coords ON artists USING GIST(original_display_coordinates);
+CREATE INDEX IF NOT EXISTS idx_artists_active_display_coords ON artists USING GIST(active_display_coordinates);
+CREATE INDEX IF NOT EXISTS idx_artists_name ON artists(name);
+CREATE INDEX IF NOT EXISTS idx_artists_original_city ON artists(original_city);
+CREATE INDEX IF NOT EXISTS idx_artists_active_city ON artists(active_city);
+CREATE INDEX IF NOT EXISTS idx_artists_original_city_id ON artists(original_city_id);
+CREATE INDEX IF NOT EXISTS idx_artists_active_city_id ON artists(active_city_id);
+
+-- ============================================
+-- Triggers
+-- ============================================
+CREATE TRIGGER update_artists_updated_at
+    BEFORE UPDATE ON artists
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- Seed Data
+-- ============================================
+
+-- Priority locations
+INSERT INTO priority_locations (search_query, osm_id, osm_type, display_name, rank) VALUES
+    ('tokyo', 1543125, 'relation', 'Tokyo, Japan', 0),
+    ('tokyo', 19631009, 'relation', 'Tokyo 23 Special Wards, Japan', 1),
+    ('new york', 175905, 'relation', 'New York, New York, USA', 0)
+ON CONFLICT DO NOTHING;
+
+-- Test user for testing
+INSERT INTO users (id, email, role) VALUES
+    ('00000000-0000-0000-0000-000000000001', 'test@test.com', 'user'),
+    ('00000000-0000-0000-0000-000000000002', 'admin@test.com', 'admin')
+ON CONFLICT DO NOTHING;
