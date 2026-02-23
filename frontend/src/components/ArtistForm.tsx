@@ -5,9 +5,9 @@ import { LocationSearch } from './LocationSearch';
 import SocialLinkInput, { type SocialLinkField } from './SocialLinkInput';
 import ImageCropper, { type CropResult } from './ImageCropper';
 import ArtistFormHeader from './ArtistFormHeader';
+import YearSelect from './YearSelect';
 import { useArtistForm } from '../hooks/useArtistForm';
 import { getAvatarUrl, getProfileUrl } from '../utils/cloudinaryUrl';
-import type { SearchResult } from '../services/api';
 import type { Artist } from '../types/artist';
 
 
@@ -24,7 +24,7 @@ const SOCIAL_FIELDS: SocialLinkField[] = [
     { key: 'website', icon: HomeIcon, placeholder: 'Website URL' },
     { key: 'instagram', icon: InstagramIcon, placeholder: 'Instagram URL' },
     { key: 'twitter', icon: XIcon, placeholder: 'Twitter/X URL' },
-    { key: 'appleMusic', icon: MusicIcon, placeholder: 'Apple Music URL' },
+    { key: 'appleMusic', icon: MusicIcon, placeholder: 'Music URL' },
     { key: 'youtube', icon: YoutubeIcon, placeholder: 'YouTube URL' },
 ];
 
@@ -37,6 +37,7 @@ const ArtistForm = ({
     onConsumePendingCoordinates
 }: ArtistFormProps) => {
     const [isSocialExpanded, setIsSocialExpanded] = useState(false);
+    const [showInactive, setShowInactive] = useState(() => !!initialData?.inactiveYear);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [cropperInitialMode, setCropperInitialMode] = useState<'avatar' | 'profile'>('avatar');
 
@@ -58,6 +59,8 @@ const ArtistForm = ({
         clearPendingField,
         updateSocialLink,
         updateName,
+        updateDebutYear,
+        updateInactiveYear,
         handleImageUpload,
         updateCrops,
     } = useArtistForm({
@@ -231,19 +234,75 @@ const ArtistForm = ({
                         />
                     </div>
 
+                    {/* Career years */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">
+                            Career Years
+                        </label>
+                        <div className="flex items-center gap-2">
+                            <div className="relative flex-1 flex gap-2">
+                                <div className="flex-1">
+                                    <YearSelect
+                                        value={formData.debutYear}
+                                        onChange={updateDebutYear}
+                                        placeholder="Debut"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    {showInactive ? (
+                                        <YearSelect
+                                            value={formData.inactiveYear}
+                                            onChange={updateInactiveYear}
+                                            placeholder="Inactive"
+                                        />
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center">
+                                            <span className="px-3 py-1 text-sm font-medium text-gray-500 bg-gray-100 rounded-full">Present</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const newValue = !showInactive;
+                                    setShowInactive(newValue);
+                                    if (!newValue) updateInactiveYear(undefined);
+                                }}
+                                className="p-2 text-gray-400 hover:text-primary transition-colors"
+                                title={showInactive ? 'Artist is inactive' : 'Mark as inactive'}
+                            >
+                                {showInactive ? (
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        {/* Double note icon */}
+                                        <path d="M8 20V4l13-3v16" />
+                                        <circle cx="4.5" cy="20" r="3.5" />
+                                        <circle cx="17.5" cy="17" r="3.5" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        {/* Zzz icon */}
+                                        <path d="M4 4h8l-8 8h8" />
+                                        <path d="M14 12h6l-6 6h6" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Social Media section */}
-                    <div className="border-t border-gray-100 pt-0 mt-0">
+                    <div>
                         <button
                             onClick={() => setIsSocialExpanded(!isSocialExpanded)}
-                            className="flex items-center justify-between w-[calc(100%+2rem)] py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-none px-4 -mx-4 transition-colors"
+                            className={`flex items-center justify-between w-full px-3 py-2 text-sm font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors ${isSocialExpanded ? 'rounded-b-none' : ''}`}
                             type="button"
                         >
-                            <span className="font-semibold text-gray-700">Social Media</span>
-                            <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isSocialExpanded ? 'rotate-180' : ''}`} />
+                            <span>Social Media</span>
+                            <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isSocialExpanded ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isSocialExpanded && (
-                            <div className="mt-2 pb-2 flex flex-col gap-3 px-0 animate-in slide-in-from-top-2 duration-200">
+                            <div className="px-3 py-3 flex flex-col gap-3 bg-gray-50 rounded-b-md">
                                 {SOCIAL_FIELDS.map((field) => (
                                     <SocialLinkInput
                                         key={field.key}
@@ -259,7 +318,7 @@ const ArtistForm = ({
             </div>
 
             {/* Footer with error and buttons */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50">
+            <div className="p-4 border-gray-100 bg-white">
                 {error && (
                     <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
                         {error}

@@ -54,6 +54,8 @@ export interface Artist {
     originalLocationDisplayCoordinates: Coordinates;
     activeLocationDisplayCoordinates: Coordinates;
     socialLinks?: SocialLinks;
+    debutYear?: number;
+    inactiveYear?: number;
     createdAt: Date | string;
     updatedAt: Date | string;
     originalCityId: string;

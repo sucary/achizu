@@ -30,6 +30,8 @@ export interface UseArtistFormReturn {
     clearError: () => void;
     updateSocialLink: (key: SocialLinkKey, value: string) => void;
     updateName: (name: string) => void;
+    updateDebutYear: (year: number | undefined) => void;
+    updateInactiveYear: (year: number | undefined) => void;
 
     // Image handling
     isUploadingImage: boolean;
@@ -107,6 +109,14 @@ export const useArtistForm = ({
 
     const updateName = useCallback((name: string) => {
         setFormData(prev => ({ ...prev, name }));
+    }, []);
+
+    const updateDebutYear = useCallback((year: number | undefined) => {
+        setFormData(prev => ({ ...prev, debutYear: year }));
+    }, []);
+
+    const updateInactiveYear = useCallback((year: number | undefined) => {
+        setFormData(prev => ({ ...prev, inactiveYear: year }));
     }, []);
 
     // Upload image to Cloudinary and return the URL
@@ -220,6 +230,8 @@ export const useArtistForm = ({
         clearError,
         updateSocialLink,
         updateName,
+        updateDebutYear,
+        updateInactiveYear,
         handleImageUpload,
         clearUploadError,
         updateCrops,

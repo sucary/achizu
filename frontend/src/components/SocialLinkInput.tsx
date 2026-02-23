@@ -41,7 +41,7 @@ const SocialLinkInput = ({ field, value, onChange }: SocialLinkInputProps) => {
             <input
                 type="text"
                 placeholder={placeholder}
-                className="w-full pl-9 pr-3 py-2 text-sm border rounded border-gray-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
                 value={value}
                 onChange={(e) => handleChange(e.target.value)}
                 onBlur={handleBlur}

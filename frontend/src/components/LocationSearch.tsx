@@ -209,7 +209,7 @@ export const LocationSearch = ({
     };
 
     return (
-        <div className="mb-4">
+        <div>
             {label && (
                 <label className="block text-sm font-bold text-gray-700 mb-1">
                     {label}

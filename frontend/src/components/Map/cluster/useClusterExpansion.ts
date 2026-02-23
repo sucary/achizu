@@ -5,14 +5,13 @@ import { CLUSTER_CONFIG } from './clusterConstants';
 import { generateGridPositions, groupMarkersByCity } from './gridLayout';
 import {
   setupMarkerPopupEvents,
-  createCollapseButton,
   type PopupEventHandlers,
 } from './setupMarkerPopup';
 
 interface ExpandedClusterState {
   originalCluster: L.MarkerCluster;
   expandedMarkers: L.Marker[];
-  centerMarker: L.Marker;
+  centerMarker?: L.Marker;
 }
 
 interface UseClusterExpansionOptions extends PopupEventHandlers {
@@ -42,11 +41,13 @@ export const useClusterExpansion = ({
     const state = expandedStatesRef.current.get(key);
     if (!state) return;
 
-    // Remove expanded markers from map and center button
+    // Remove expanded markers from map
     state.expandedMarkers.forEach((marker) => {
       map.removeLayer(marker);
     });
-    map.removeLayer(state.centerMarker);
+    if (state.centerMarker) {
+      map.removeLayer(state.centerMarker);
+    }
 
     // Show the original cluster marker again (only if still in DOM)
     const clusterIcon = (state.originalCluster as any)._icon as HTMLElement | undefined;
@@ -137,11 +138,6 @@ export const useClusterExpansion = ({
         expandedMarkers.push(expandedMarker);
       });
 
-      const collapsePixel = clusterPixel.add(collapseOffset);
-      const collapseLatLng = map.layerPointToLatLng(collapsePixel);
-      const centerMarker = createCollapseButton(collapseLatLng, collapseThisCluster);
-      centerMarker.addTo(map);
-
       // Hide the original cluster marker
       const clusterIcon = (cluster as any)._icon as HTMLElement | undefined;
       if (clusterIcon) {
@@ -152,7 +148,6 @@ export const useClusterExpansion = ({
       expandedStatesRef.current.set(clusterKey, {
         originalCluster: cluster,
         expandedMarkers,
-        centerMarker,
       });
     },
     [

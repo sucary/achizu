@@ -15,7 +15,7 @@ export const HomeIcon: React.FC<IconProps> = ({ className = "w-5 h-5" }) => (
 );
 
 export const MusicIcon: React.FC<IconProps> = ({ className = "w-5 h-5" }) => (
-    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <svg viewBox="1 1 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <path d="M6 12V3.33333L14 2V10.6667" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M4 14C5.10457 14 6 13.1046 6 12C6 10.8954 5.10457 10 4 10C2.89543 10 2 10.8954 2 12C2 13.1046 2.89543 14 4 14Z" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M12 12.6667C13.1046 12.6667 14 11.7712 14 10.6667C14 9.5621 13.1046 8.66667 12 8.66667C10.8954 8.66667 10 9.5621 10 10.6667C10 11.7712 10.8954 12.6667 12 12.6667Z" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
@@ -23,7 +23,7 @@ export const MusicIcon: React.FC<IconProps> = ({ className = "w-5 h-5" }) => (
 );
 
 export const YoutubeIcon: React.FC<IconProps> = ({ className = "w-5 h-5" }) => (
-    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <svg viewBox="1 2.5 14 11" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <path d="M1.66667 11.3333C1.20095 9.13551 1.20095 6.86449 1.66667 4.66667C1.72786 4.44347 1.8461 4.24005 2.00974 4.0764C2.17339 3.91276 2.37681 3.79453 2.6 3.73333C6.17564 3.14097 9.82437 3.14097 13.4 3.73333C13.6232 3.79453 13.8266 3.91276 13.9903 4.0764C14.1539 4.24005 14.2721 4.44347 14.3333 4.66667C14.7991 6.86449 14.7991 9.13551 14.3333 11.3333C14.2721 11.5565 14.1539 11.7599 13.9903 11.9236C13.8266 12.0872 13.6232 12.2055 13.4 12.2667C9.82438 12.8591 6.17563 12.8591 2.6 12.2667C2.37681 12.2055 2.17339 12.0872 2.00974 11.9236C1.8461 11.7599 1.72786 11.5565 1.66667 11.3333Z" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M6.66666 10L10 8L6.66666 6V10Z" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>

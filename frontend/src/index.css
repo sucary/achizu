@@ -1,24 +1,44 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
 
 @theme {
+  --font-sans: 'Noto Sans', 'Noto Sans JP', 'Noto Sans SC', sans-serif;
+
   /* Brand colors */
   --color-primary: #FA233B;
   --color-primary-hover: #E11D38;
   --color-primary-ring: #FA233B;
   --color-decor: #00C9A7;
-  --color-secondary: #818181;
-  --color-background: #000000;
-  --color-surface: #212124;
-  --color-card: #161618;
-  --color-elevated: #1C1C1E;
-  --color-muted: #C2CAD7;
-  --color-focus: #007AFF;
-  --color-error: #b91c1c;
+
+  /* Text colors */
+  --color-text: #252525;
+  --color-text-secondary: #7e7e7e;
+  --color-text-muted: #9ca3af;
+
+  /* Surface colors */
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f9fafb;
+  --color-surface-muted: #f3f4f6;
+
+  /* Border colors */
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+
+  /* Status colors */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
 
   /* Z-index scale */
   --z-index-dropdown: 100;
   --z-index-modal: 1000;
   --z-index-cropper: 2000;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+  }
 }
 
 /* Custom utility for text shadow on image overlays */

@@ -113,32 +113,44 @@ const ArtistProfile = ({ artist }: ArtistProfileProps) => {
                 {/* Divider */}
                 <div className="h-px w-full bg-gray-200 my-1" />
 
-                {/* Links row */}
-                <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">Links</span>
-                    <div className="flex gap-1">
+                {/* Footer row */}
+                <div className="flex items-center justify-between min-h-6">
+                    {/* Year */}
+                    {artist.debutYear && (
+                        <div className="flex items-center gap-0.5 text-sm text-gray-500 font-sans">
+                            <span className="font-medium">{artist.debutYear}</span>
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                            <span className="px-3 py-1 text-sm font-medium text-gray-500 bg-gray-100 rounded-full">
+                                {artist.inactiveYear || 'Present'}
+                            </span>
+                        </div>
+                    )}
+                    {/* Social icons */}
+                    <div className="flex gap-3">
                         {artist.socialLinks?.website && (
-                            <a href={safeUrl(artist.socialLinks.website)} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#E53935] transition-colors">
+                            <a href={safeUrl(artist.socialLinks.website)} target="_blank" rel="noopener noreferrer" className="!text-gray-400 hover:!text-[#FA233B] visited:!text-gray-400 transition-colors">
                                 <HomeIcon className="w-5 h-5" />
                             </a>
                         )}
                         {artist.socialLinks?.appleMusic && (
-                            <a href={safeUrl(artist.socialLinks.appleMusic)} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#E53935] transition-colors">
+                            <a href={safeUrl(artist.socialLinks.appleMusic)} target="_blank" rel="noopener noreferrer" className="!text-gray-400 hover:!text-[#FA233B] visited:!text-gray-400 transition-colors">
                                 <MusicIcon className="w-5 h-5" />
                             </a>
                         )}
                         {artist.socialLinks?.youtube && (
-                            <a href={safeUrl(artist.socialLinks.youtube)} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#E53935] transition-colors">
+                            <a href={safeUrl(artist.socialLinks.youtube)} target="_blank" rel="noopener noreferrer" className="!text-gray-400 hover:!text-[#FA233B] visited:!text-gray-400 transition-colors">
                                 <YoutubeIcon className="w-5 h-5" />
                             </a>
                         )}
                         {artist.socialLinks?.instagram && (
-                            <a href={safeUrl(artist.socialLinks.instagram)} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#E53935] transition-colors">
+                            <a href={safeUrl(artist.socialLinks.instagram)} target="_blank" rel="noopener noreferrer" className="!text-gray-400 hover:!text-[#FA233B] visited:!text-gray-400 transition-colors">
                                 <InstagramIcon className="w-5 h-5" />
                             </a>
                         )}
                         {artist.socialLinks?.twitter && (
-                            <a href={safeUrl(artist.socialLinks.twitter)} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#E53935] transition-colors">
+                            <a href={safeUrl(artist.socialLinks.twitter)} target="_blank" rel="noopener noreferrer" className="!text-gray-400 hover:!text-[#FA233B] visited:!text-gray-400 transition-colors">
                                 <XIcon className="w-5 h-5" />
                             </a>
                         )}
