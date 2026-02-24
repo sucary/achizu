@@ -69,9 +69,9 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" />
-            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Enter your username</h2>
-                <p className="text-gray-600 mb-6">This will be used for identifying you and searching for other users.</p>
+            <div className="relative bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+                <h2 className="text-2xl font-bold text-text mb-4">Enter your username</h2>
+                <p className="text-text-secondary mb-6">This will be used for identifying you and searching for other users.</p>
 
                 <form onSubmit={handleSubmit}>
                     <input
@@ -84,12 +84,12 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
                             }
                         }}
                         placeholder="username"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2"
+                        className="w-full px-3 py-2 border border-border-strong rounded-lg mb-2"
                         autoFocus
                     />
 
-                    {checking && <p className="text-xs text-gray-500 mb-2">Checking availability...</p>}
-                    {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
+                    {checking && <p className="text-xs text-text-secondary mb-2">Checking availability...</p>}
+                    {error && <p className="text-xs text-error mb-2">{error}</p>}
                     {!error && username.length >= 3 && !checking && (
                         <p className="text-xs text-green-600 mb-2">✓ Username available!</p>
                     )}

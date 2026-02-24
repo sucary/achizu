@@ -13,7 +13,7 @@ const LocateMeButton = () => {
         <div className="absolute bottom-[130px] right-[10px] z-[1000]">
             <button
                 onClick={handleLocate}
-                className="bg-white w-10 h-10 flex items-center justify-center rounded-md shadow-md hover:bg-gray-100 transition-colors text-gray-700"
+                className="bg-surface w-10 h-10 flex items-center justify-center rounded-md shadow-md hover:bg-surface-muted transition-colors text-text"
                 title="Locate Me"
             >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

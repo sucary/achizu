@@ -37,7 +37,7 @@ const ArtistProfile = ({ artist }: ArtistProfileProps) => {
     const backgroundImageUrl = getProfileUrl(artist.sourceImage, artist.profileCrop) || getPlaceholderUrl(artist.name);
     
     return (
-        <div className="w-80 flex flex-col rounded-lg bg-white shadow-lg overflow-hidden">
+        <div className="w-80 flex flex-col rounded-lg bg-surface shadow-lg overflow-hidden">
             <style>{`
                 .artist-cover:hover .artist-action-bar {
                     opacity: 1 !important;
@@ -51,9 +51,12 @@ const ArtistProfile = ({ artist }: ArtistProfileProps) => {
             `}</style>
             {/* Header with cover image */}
             <div
-                className="artist-cover relative w-full h-28 bg-gray-200 bg-cover bg-center"
+                className="artist-cover relative w-full h-28 bg-surface-muted bg-cover bg-center"
                 style={{ backgroundImage: `url(${backgroundImageUrl})` }}
             >
+                {/* Bottom gradient for name readability */}
+                <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/40 via-black/20 to-transparent pointer-events-none" />
+
                 {/* Action bar - shows on hover */}
                 <div
                     className="artist-action-bar absolute inset-0 flex"
@@ -81,7 +84,7 @@ const ArtistProfile = ({ artist }: ArtistProfileProps) => {
 
                 {/* Artist Name */}
                 <h3
-                    className="absolute bottom-3 left-4 text-lg font-semibold text-white z-10 select-text cursor-text"
+                    className="absolute bottom-3 left-4 text-lg font-semibold text-white z-10 select-text cursor-text leading-none"
                     style={{ textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}
                 >
                     {artist.name}
@@ -89,40 +92,40 @@ const ArtistProfile = ({ artist }: ArtistProfileProps) => {
             </div>
 
             {/* Content section */}
-            <div className="px-4 py-3 flex flex-col gap-2.5">
+            <div className="px-4 pt-3 pb-2.5 flex flex-col gap-2.5">
                 {/* Origin row */}
                 <div className="flex items-center gap-4">
-                    <span className="px-2 py-0.5 text-xs font-medium text-[#E53935] border border-[#E53935] rounded">
+                    <span className="px-1 py-0.5 text-xs font-semibold bg-primary-light text-white border border-primary-light rounded">
                         Origin
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-text-secondary">
                         {formatLocation(artist.originalLocation)}
                     </span>
                 </div>
 
                 {/* Active row */}
                 <div className="flex items-center gap-4">
-                    <span className="px-2 py-0.5 text-xs font-medium text-[#E53935] border border-[#E53935] rounded">
+                    <span className="px-1 py-0.5 text-xs font-bold bg-primary-light text-white border border-primary-light rounded">
                         Active
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-text-secondary">
                         {formatLocation(artist.activeLocation)}
                     </span>
                 </div>
 
                 {/* Divider */}
-                <div className="h-px w-full bg-gray-200 my-1" />
+                <div className="h-px w-full bg-border" />
 
                 {/* Footer row */}
-                <div className="flex items-center justify-between min-h-6">
+                <div className="flex items-center justify-between min-h-7">
                     {/* Year */}
                     {artist.debutYear && (
-                        <div className="flex items-center gap-0.5 text-sm text-gray-500 font-sans">
+                        <div className="flex items-center gap-0.5 text-sm text-text-secondary font-sans">
                             <span className="font-medium">{artist.debutYear}</span>
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <polyline points="9 18 15 12 9 6" />
                             </svg>
-                            <span className="px-3 py-1 text-sm font-medium text-gray-500 bg-gray-100 rounded-full">
+                            <span className="px-3 py-1 text-sm font-medium text-text-secondary bg-surface-muted rounded-full">
                                 {artist.inactiveYear || 'Present'}
                             </span>
                         </div>
@@ -130,27 +133,27 @@ const ArtistProfile = ({ artist }: ArtistProfileProps) => {
                     {/* Social icons */}
                     <div className="flex gap-3">
                         {artist.socialLinks?.website && (
-                            <a href={safeUrl(artist.socialLinks.website)} target="_blank" rel="noopener noreferrer" className="!text-gray-400 hover:!text-[#FA233B] visited:!text-gray-400 transition-colors">
+                            <a href={safeUrl(artist.socialLinks.website)} target="_blank" rel="noopener noreferrer" className="!text-text-muted hover:!text-primary visited:!text-text-muted transition-colors">
                                 <HomeIcon className="w-5 h-5" />
                             </a>
                         )}
                         {artist.socialLinks?.appleMusic && (
-                            <a href={safeUrl(artist.socialLinks.appleMusic)} target="_blank" rel="noopener noreferrer" className="!text-gray-400 hover:!text-[#FA233B] visited:!text-gray-400 transition-colors">
+                            <a href={safeUrl(artist.socialLinks.appleMusic)} target="_blank" rel="noopener noreferrer" className="!text-text-muted hover:!text-primary visited:!text-text-muted transition-colors">
                                 <MusicIcon className="w-5 h-5" />
                             </a>
                         )}
                         {artist.socialLinks?.youtube && (
-                            <a href={safeUrl(artist.socialLinks.youtube)} target="_blank" rel="noopener noreferrer" className="!text-gray-400 hover:!text-[#FA233B] visited:!text-gray-400 transition-colors">
+                            <a href={safeUrl(artist.socialLinks.youtube)} target="_blank" rel="noopener noreferrer" className="!text-text-muted hover:!text-primary visited:!text-text-muted transition-colors">
                                 <YoutubeIcon className="w-5 h-5" />
                             </a>
                         )}
                         {artist.socialLinks?.instagram && (
-                            <a href={safeUrl(artist.socialLinks.instagram)} target="_blank" rel="noopener noreferrer" className="!text-gray-400 hover:!text-[#FA233B] visited:!text-gray-400 transition-colors">
+                            <a href={safeUrl(artist.socialLinks.instagram)} target="_blank" rel="noopener noreferrer" className="!text-text-muted hover:!text-primary visited:!text-text-muted transition-colors">
                                 <InstagramIcon className="w-5 h-5" />
                             </a>
                         )}
                         {artist.socialLinks?.twitter && (
-                            <a href={safeUrl(artist.socialLinks.twitter)} target="_blank" rel="noopener noreferrer" className="!text-gray-400 hover:!text-[#FA233B] visited:!text-gray-400 transition-colors">
+                            <a href={safeUrl(artist.socialLinks.twitter)} target="_blank" rel="noopener noreferrer" className="!text-text-muted hover:!text-primary visited:!text-text-muted transition-colors">
                                 <XIcon className="w-5 h-5" />
                             </a>
                         )}

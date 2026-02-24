@@ -32,6 +32,11 @@ export const setupMarkerPopupEvents = ({
   let currentClickHandler: ((event: Event) => void) | null = null;
 
   marker.on('popupopen', (e) => {
+    const markerElement = marker.getElement();
+    if (markerElement) {
+      markerElement.classList.add('marker-focused');
+    }
+
     if (onArtistSelect) {
       onArtistSelect(artist);
     }
@@ -68,6 +73,11 @@ export const setupMarkerPopupEvents = ({
   });
 
   marker.on('popupclose', (e) => {
+    const markerElement = marker.getElement();
+    if (markerElement) {
+      markerElement.classList.remove('marker-focused');
+    }
+
     // Clean up click handler
     const popupElement = e.popup?.getElement();
     if (popupElement && currentClickHandler) {
@@ -89,7 +99,7 @@ export const createCollapseButton = (
   onCollapse: () => void
 ): L.Marker => {
   const collapseIcon = L.divIcon({
-    html: `<div class="flex items-center justify-center w-6 h-6 bg-white text-black rounded-full font-bold border border-black shadow-lg cursor-pointer hover:bg-gray-100 text-sm">×</div>`,
+    html: `<div class="flex items-center justify-center w-6 h-6 bg-surface text-text rounded-full font-bold border border-text shadow-lg cursor-pointer hover:bg-surface-muted text-sm">×</div>`,
     className: 'cluster-center-marker expanded-cluster-marker',
     iconSize: [24, 24],
     iconAnchor: [12, 12],

@@ -55,7 +55,7 @@ export function NotificationButton() {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 // w h - 13, its 12 + 1 for exceed badge padding
-                className="w-13 h-13 flex items-center justify-center bg-white rounded-lg shadow-md hover:bg-gray-100 transition-colors text-gray-700 relative"
+                className="w-13 h-13 flex items-center justify-center bg-surface rounded-lg shadow-md hover:bg-surface-muted transition-colors text-text relative"
             >
                 {/* Bell Icon */}
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -75,15 +75,15 @@ export function NotificationButton() {
                         className="fixed inset-0 z-[1099]"
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-[1100]">
-                        <div className="p-3 border-b border-gray-100">
-                            <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+                    <div className="absolute right-0 mt-2 w-72 bg-surface rounded-lg shadow-lg border border-border z-[1100]">
+                        <div className="p-3 border-b border-border">
+                            <h3 className="text-sm font-semibold text-text">Notifications</h3>
                         </div>
                         <div className="max-h-64 overflow-y-auto">
                             {notifications.map((notification, index) => (
                                 <div
                                     key={index}
-                                    className="p-3 border-b border-gray-50 last:border-b-0 hover:bg-gray-50"
+                                    className="p-3 border-b border-surface-secondary last:border-b-0 hover:bg-surface-secondary"
                                 >
                                     <div className="flex items-start gap-2">
                                         {notification.type === 'warning' && (
@@ -97,9 +97,9 @@ export function NotificationButton() {
                                             </svg>
                                         )}
                                         <div>
-                                            <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                                            <p className="text-sm font-medium text-text">{notification.message}</p>
                                             {notification.detail && (
-                                                <p className="text-xs text-gray-500 mt-0.5">{notification.detail}</p>
+                                                <p className="text-xs text-text-secondary mt-0.5">{notification.detail}</p>
                                             )}
                                         </div>
                                     </div>

@@ -9,7 +9,7 @@ const AddArtistButton = ({ onClick }: AddArtistButtonProps) => {
         <div className="absolute top-28 right-2 z-[1000]">
             <button
                 onClick={onClick}
-                className="bg-white p-3 rounded-md shadow-md hover:bg-primary hover:text-white transition-colors text-gray-700"
+                className="bg-surface p-3 rounded-md shadow-md hover:bg-primary hover:text-white transition-colors text-text"
                 title="Add New Artist"
             >
                 <PlusIcon className="w-6 h-6" />

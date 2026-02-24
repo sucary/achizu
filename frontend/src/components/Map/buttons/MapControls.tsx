@@ -13,7 +13,7 @@ const MapControls = ({ view, setView }: MapControlsProps) => {
     const handleZoomOut = () => map.zoomOut();
     const handleLocate = () => map.locate({ setView: true, maxZoom: 15 });
 
-    const buttonClass = "bg-white w-10 h-10 flex items-center justify-center hover:bg-gray-100 transition-colors text-gray-700";
+    const buttonClass = "bg-surface w-10 h-10 flex items-center justify-center hover:bg-surface-muted transition-colors text-text";
 
     return (
         <div className="absolute bottom-6 right-2 z-[1000] flex flex-col gap-2 items-end">
@@ -33,7 +33,7 @@ const MapControls = ({ view, setView }: MapControlsProps) => {
             <div className="flex flex-col rounded-md shadow-md overflow-hidden">
                 <button
                     onClick={handleZoomIn}
-                    className={`${buttonClass} border-b border-gray-200`}
+                    className={`${buttonClass} border-b border-border`}
                     title="Zoom In"
                 >
                     <span className="text-lg font-medium">+</span>
@@ -48,13 +48,13 @@ const MapControls = ({ view, setView }: MapControlsProps) => {
             </div>
 
             {/* View Toggle */}
-            <div className="flex bg-white rounded-md overflow-hidden shadow-md">
+            <div className="flex bg-surface rounded-md overflow-hidden shadow-md">
                 <button
                     onClick={() => setView('original')}
                     className={`px-3 py-2 text-sm font-medium transition-colors ${
                         view === 'original'
                             ? 'bg-primary text-white'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            : 'text-text hover:bg-surface-muted'
                     }`}
                 >
                     Origin
@@ -64,7 +64,7 @@ const MapControls = ({ view, setView }: MapControlsProps) => {
                     className={`px-3 py-2 text-sm font-medium transition-colors ${
                         view === 'active'
                             ? 'bg-primary text-white'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            : 'text-text hover:bg-surface-muted'
                     }`}
                 >
                     Active

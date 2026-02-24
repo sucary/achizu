@@ -8,6 +8,7 @@
   --color-primary: #FA233B;
   --color-primary-hover: #E11D38;
   --color-primary-ring: #FA233B;
+  --color-primary-light:#FF4E6B;
   --color-decor: #00C9A7;
 
   /* Text colors */
@@ -39,11 +40,19 @@
   body {
     font-family: var(--font-sans);
   }
+
 }
 
 /* Custom utility for text shadow on image overlays */
 @utility text-shadow-overlay {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Artist marker focus */
+.custom-artist-marker.marker-focused > div,
+.custom-artist-marker:has(+ .leaflet-popup) > div {
+  transform: scale(1.25);
+  transition: transform 0.15s ease-out;
 }
 
 /* Scale control styling */

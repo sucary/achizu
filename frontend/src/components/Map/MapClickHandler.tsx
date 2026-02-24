@@ -62,7 +62,7 @@ const MapClickHandler = ({ onLocationPick }: MapClickHandlerProps) => {
                     </div>
                     <button
                         onClick={() => onLocationPick?.(null)}
-                        className="px-4 py-1.5 text-sm bg-white text-primary hover:bg-gray-100 rounded-md font-medium transition-colors"
+                        className="px-4 py-1.5 text-sm bg-surface text-primary hover:bg-surface-muted rounded-md font-medium transition-colors"
                         style={{ cursor: 'default' }}
                     >
                         Cancel

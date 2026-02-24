@@ -70,7 +70,7 @@ const YearSelect = ({
     return (
         <div>
             {label && (
-                <label className="block text-sm font-bold text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-text mb-1">
                     {label}
                 </label>
             )}
@@ -78,18 +78,18 @@ const YearSelect = ({
                 ref={buttonRef}
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md text-left flex items-center justify-between focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
+                className="w-full px-3 py-2 text-sm border border-border rounded-md text-left flex items-center justify-between focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
             >
-                <span className={value ? 'text-gray-900' : 'text-gray-400'}>
+                <span className={value ? 'text-text' : 'text-text-muted'}>
                     {value || placeholder}
                 </span>
-                <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDownIcon className={`w-4 h-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isOpen && createPortal(
                 <div
                     ref={dropdownRef}
-                    className="fixed z-[9999] bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto"
+                    className="fixed z-[9999] bg-surface border border-border-strong rounded-md shadow-lg max-h-48 overflow-y-auto"
                     style={{
                         top: `${dropdownPosition.top + 4}px`,
                         left: `${dropdownPosition.left}px`,
@@ -100,7 +100,7 @@ const YearSelect = ({
                         <button
                             type="button"
                             onClick={handleClear}
-                            className="w-full px-3 py-2 text-left text-sm text-gray-500 hover:bg-gray-50 border-b border-gray-100"
+                            className="w-full px-3 py-2 text-left text-sm text-text-secondary hover:bg-surface-secondary border-b border-border"
                         >
                             Clear
                         </button>
@@ -110,8 +110,8 @@ const YearSelect = ({
                             key={year}
                             type="button"
                             onClick={() => handleSelect(year)}
-                            className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${
-                                year === value ? 'bg-primary/5 text-primary font-medium' : 'text-gray-900'
+                            className={`w-full px-3 py-2 text-left text-sm hover:bg-surface-secondary ${
+                                year === value ? 'bg-primary/5 text-primary font-medium' : 'text-text'
                             }`}
                         >
                             {year}

@@ -1,7 +1,7 @@
 export const CLUSTER_CONFIG = {
   disableClusteringAtZoomLevel: 8,
   maxClusterRadius: 100,
-  gridSpacing: 22,
+  gridSpacing: 32,
 
   minClusterSize: 28,
   maxClusterSize: 400,

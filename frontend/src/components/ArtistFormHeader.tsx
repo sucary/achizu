@@ -68,7 +68,7 @@ const ArtistFormHeader = ({
 
     return (
         <div
-            className="relative w-full h-32 bg-gray-200 bg-cover bg-center group/profile cursor-pointer"
+            className="relative w-full h-32 bg-surface-muted bg-cover bg-center group/profile cursor-pointer"
             style={{ backgroundImage: profileUrl ? `url(${profileUrl})` : undefined }}
             onMouseDown={(e) => mouseDownPos.current = { x: e.clientX, y: e.clientY }}
             onClick={handleProfileClick}
@@ -80,15 +80,15 @@ const ArtistFormHeader = ({
 
             {/* Avatar */}
             <div
-                className="absolute -bottom-8 left-4 w-20 h-20 rounded-full border-4 border-white bg-gray-300 overflow-hidden z-10 shadow-md group/avatar cursor-pointer"
+                className="absolute -bottom-8 left-4 w-20 h-20 rounded-full border-4 border-surface bg-border overflow-hidden z-10 shadow-md group/avatar cursor-pointer"
                 onMouseDown={(e) => mouseDownPos.current = { x: e.clientX, y: e.clientY }}
                 onClick={handleAvatarClick}
                 onMouseEnter={() => setHoverTarget('avatar')}
                 onMouseLeave={() => setHoverTarget(null)}
             >
                 {isUploading ? (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-400">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                    <div className="w-full h-full flex items-center justify-center bg-border-strong">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-surface"></div>
                     </div>
                 ) : (
                     <>
@@ -118,7 +118,7 @@ const ArtistFormHeader = ({
                         onChange={(e) => onNameChange(e.target.value)}
                         onBlur={() => setIsEditingName(false)}
                         onKeyDown={(e) => e.key === 'Enter' && setIsEditingName(false)}
-                        className="w-full bg-transparent border-b-2 border-white/80 text-lg font-bold text-white outline-none placeholder-white/50 text-shadow-overlay p-0 m-0 leading-tight"
+                        className="w-full bg-transparent border-b-2 border-surface/80 text-lg font-bold text-white outline-none placeholder-white/50 text-shadow-overlay p-0 m-0 leading-tight"
                         autoFocus
                         maxLength={MAX_NAME_LENGTH}
                     />

@@ -211,7 +211,7 @@ export const LocationSearch = ({
     return (
         <div>
             {label && (
-                <label className="block text-sm font-bold text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-text mb-1">
                     {label}
                 </label>
             )}
@@ -221,7 +221,7 @@ export const LocationSearch = ({
                         <input
                             type="text"
                             placeholder={placeholder || "Search location..."}
-                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
+                            className="w-full pl-9 pr-3 py-2 border border-border-strong rounded-md text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
                             value={query !== null ? query : displayValue}
                             onChange={(e) => {
                                 setQuery(e.target.value);
@@ -241,15 +241,15 @@ export const LocationSearch = ({
                             }}
                         />
                         {isLoading ? (
-                            <LoaderIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 animate-spin" />
+                            <LoaderIcon className="absolute left-3 top-2.5 w-4 h-4 text-text-muted animate-spin" />
                         ) : (
-                            <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                            <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-text-muted" />
                         )}
                     </div>
                     <button
                         onClick={onManualPin}
                         type="button"
-                        className="p-2 text-gray-400 hover:text-primary transition-colors"
+                        className="p-2 text-text-muted hover:text-primary transition-colors"
                         title="Manually select on map"
                     >
                         <MapPinIcon className="w-5 h-5" />
@@ -258,7 +258,7 @@ export const LocationSearch = ({
 
                 {/* Error message */}
                 {error && (
-                    <div className="mt-1 text-red-500 text-sm flex items-center justify-between">
+                    <div className="mt-1 text-error text-sm flex items-center justify-between">
                         <span>{error}</span>
                         <button
                             onClick={handleRetry}
@@ -273,7 +273,7 @@ export const LocationSearch = ({
             {/* Dropdown Portal*/}
             {isOpen && results.length > 0 && createPortal(
                 <div
-                    className="location-search-dropdown fixed z-[9999] bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-y-auto"
+                    className="location-search-dropdown fixed z-[9999] bg-surface border border-border-strong rounded-md shadow-lg max-h-80 overflow-y-auto"
                     style={{
                         top: `${dropdownPosition.top + 4}px`,
                         left: `${dropdownPosition.left}px`,
@@ -285,9 +285,9 @@ export const LocationSearch = ({
                             key={`${result.osmId}-${index}`}
                             onClick={() => handleSelect(result)}
                             type="button"
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-surface-secondary border-b border-border last:border-b-0"
                         >
-                            <div className="font-medium text-gray-900 flex items-start">
+                            <div className="font-medium text-text flex items-start">
                                 {result.isPriority && (
                                     <span className="inline-block w-2 h-2 bg-primary rounded-full mr-2 mt-1.5" />
                                 )}
@@ -295,7 +295,7 @@ export const LocationSearch = ({
                             </div>
                             <div className="flex items-center justify-between mt-0.5">
                                 {result.type && (
-                                    <span className="text-xs text-gray-500 capitalize">{result.type}</span>
+                                    <span className="text-xs text-text-secondary capitalize">{result.type}</span>
                                 )}
                                 {result.isLocal && (
                                     <span className="text-xs text-secondary bg-secondary/10 px-1.5 py-0.5 rounded ml-auto">DB</span>
@@ -309,7 +309,7 @@ export const LocationSearch = ({
                             onClick={handleSearchMore}
                             type="button"
                             disabled={isLoadingMore}
-                            className="w-full px-3 py-2 text-center text-sm text-primary hover:bg-primary/5 border-t border-gray-200 font-medium disabled:opacity-50"
+                            className="w-full px-3 py-2 text-center text-sm text-primary hover:bg-primary/5 border-t border-border font-medium disabled:opacity-50"
                         >
                             {isLoadingMore ? 'Searching...' : 'Search for more results'}
                         </button>
@@ -321,7 +321,7 @@ export const LocationSearch = ({
             {/* No results Portal */}
             {isOpen && results.length === 0 && !isLoading && !error && query !== null && debouncedQuery.trim().length >= 2 && createPortal(
                 <div
-                    className="location-search-dropdown fixed z-[9999] bg-white border border-gray-300 rounded-md shadow-lg p-3 text-sm text-gray-500 text-center"
+                    className="location-search-dropdown fixed z-[9999] bg-surface border border-border-strong rounded-md shadow-lg p-3 text-sm text-text-secondary text-center"
                     style={{
                         top: `${dropdownPosition.top + 4}px`,
                         left: `${dropdownPosition.left}px`,

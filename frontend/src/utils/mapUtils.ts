@@ -23,7 +23,7 @@ export const createArtistMarker = (artist: Artist) => {
   // Use Cloudinary transformation to get avatar image
   const imageUrl = getAvatarUrl(artist.sourceImage, artist.avatarCrop) || getPlaceholderUrl(artist.name);
   const iconHtml = `
-    <div class="relative w-7 h-7 rounded-full border border-white shadow-lg overflow-hidden bg-gray-200 group">
+    <div class="relative w-7 h-7 rounded-full border-2 border-white shadow-lg overflow-hidden bg-gray-200 group">
       <img
         src="${imageUrl}"
         class="w-full h-full object-cover object-center"

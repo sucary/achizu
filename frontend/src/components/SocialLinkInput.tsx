@@ -41,14 +41,14 @@ const SocialLinkInput = ({ field, value, onChange }: SocialLinkInputProps) => {
             <input
                 type="text"
                 placeholder={placeholder}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
                 value={value}
                 onChange={(e) => handleChange(e.target.value)}
                 onBlur={handleBlur}
             />
-            <Icon className={`absolute left-3 top-2.5 w-4 h-4 transition-colors ${isValid ? 'text-primary' : 'text-gray-400'}`} />
+            <Icon className={`absolute left-3 top-2.5 w-4 h-4 transition-colors ${isValid ? 'text-primary' : 'text-text-muted'}`} />
             {touched && error && (
-                <p className="text-xs text-red-700 mt-1">{error}</p>
+                <p className="text-xs text-error mt-1">{error}</p>
             )}
         </div>
     );

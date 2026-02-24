@@ -126,16 +126,16 @@ const ImageCropper = ({
 
     return (
         <div className="fixed inset-0 z-cropper flex items-center justify-center bg-black/70">
-            <div className="bg-white rounded-lg shadow-xl w-[90vw] max-w-md overflow-hidden">
+            <div className="bg-surface rounded-lg shadow-xl w-[90vw] max-w-md overflow-hidden">
                 {/* Tabs */}
-                <div className="flex border-b border-gray-200">
+                <div className="flex border-b border-border">
                     <button
                         type="button"
                         onClick={() => switchMode('avatar')}
                         className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
                             mode === 'avatar'
                                 ? 'text-primary border-b-2 border-primary -mb-px'
-                                : 'text-gray-500 hover:text-gray-700'
+                                : 'text-text-secondary hover:text-text'
                         }`}
                     >
                         Avatar
@@ -146,7 +146,7 @@ const ImageCropper = ({
                         className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
                             mode === 'profile'
                                 ? 'text-primary border-b-2 border-primary -mb-px'
-                                : 'text-gray-500 hover:text-gray-700'
+                                : 'text-text-secondary hover:text-text'
                         }`}
                     >
                         Profile
@@ -212,7 +212,7 @@ const ImageCropper = ({
                         </svg>
                         <button
                             onClick={handleReset}
-                            className="mt-1 px-2 py-0.5 rounded text-[10px] font-medium text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors"
+                            className="mt-1 px-2 py-0.5 rounded text-[10px] font-medium text-white/60 hover:text-white/90 hover:bg-surface/10 transition-colors"
                             type="button"
                             title="Reset to default"
                         >
@@ -222,10 +222,10 @@ const ImageCropper = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 p-4 border-t border-gray-100">
+                <div className="flex gap-3 p-4 border-t border-border">
                     <button
                         onClick={onCancel}
-                        className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                        className="flex-1 px-4 py-2 text-sm font-medium text-text bg-surface border border-border-strong rounded-md hover:bg-surface-secondary transition-colors"
                         type="button"
                     >
                         Cancel

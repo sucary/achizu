@@ -178,7 +178,7 @@ const ArtistForm = ({
             />
         )}
 
-        <div className="absolute top-28 right-2 z-[1050] w-80 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-8rem)] font-sans">
+        <div className="absolute top-28 right-2 z-[1050] w-80 bg-surface rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-8rem)] font-sans">
             <div className="overflow-y-auto flex-1">
                 {/* Header with background and avatar */}
                 <ArtistFormHeader
@@ -195,7 +195,7 @@ const ArtistForm = ({
                 <div className="mt-10 px-4 flex flex-col gap-4">
                     {/* Upload error */}
                     {uploadError && (
-                        <div className="p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                        <div className="p-2 bg-error/10 border border-error/30 rounded text-sm text-error">
                             {uploadError}
                         </div>
                     )}
@@ -215,7 +215,7 @@ const ArtistForm = ({
                         <div className="flex justify-center -my-2 relative z-10">
                             <button
                                 onClick={copyOriginalToActive}
-                                className="bg-gray-100 hover:bg-gray-200 text-gray-500 p-1.5 rounded-full transition-colors border border-gray-200 cursor-pointer"
+                                className="bg-surface-muted hover:bg-border text-text-secondary p-1.5 rounded-full transition-colors border border-border cursor-pointer"
                                 title="Copy Original to Active"
                                 type="button"
                             >
@@ -236,7 +236,7 @@ const ArtistForm = ({
 
                     {/* Career years */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">
+                        <label className="block text-sm font-bold text-text mb-1">
                             Career Years
                         </label>
                         <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ const ArtistForm = ({
                                         />
                                     ) : (
                                         <div className="h-full flex items-center justify-center">
-                                            <span className="px-3 py-1 text-sm font-medium text-gray-500 bg-gray-100 rounded-full">Present</span>
+                                            <span className="px-3 py-1 text-sm font-medium text-text-secondary bg-surface-muted rounded-full">Present</span>
                                         </div>
                                     )}
                                 </div>
@@ -269,7 +269,7 @@ const ArtistForm = ({
                                     setShowInactive(newValue);
                                     if (!newValue) updateInactiveYear(undefined);
                                 }}
-                                className="p-2 text-gray-400 hover:text-primary transition-colors"
+                                className="p-2 text-text-muted hover:text-primary transition-colors"
                                 title={showInactive ? 'Artist is inactive' : 'Mark as inactive'}
                             >
                                 {showInactive ? (
@@ -294,15 +294,15 @@ const ArtistForm = ({
                     <div>
                         <button
                             onClick={() => setIsSocialExpanded(!isSocialExpanded)}
-                            className={`flex items-center justify-between w-full px-3 py-2 text-sm font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors ${isSocialExpanded ? 'rounded-b-none' : ''}`}
+                            className={`flex items-center justify-between w-full px-3 py-2 text-sm font-bold text-text bg-surface-secondary hover:bg-surface-muted rounded-md transition-colors ${isSocialExpanded ? 'rounded-b-none' : ''}`}
                             type="button"
                         >
                             <span>Social Media</span>
-                            <ChevronDownIcon className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isSocialExpanded ? 'rotate-180' : ''}`} />
+                            <ChevronDownIcon className={`w-4 h-4 text-text-muted transition-transform duration-200 ${isSocialExpanded ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isSocialExpanded && (
-                            <div className="px-3 py-3 flex flex-col gap-3 bg-gray-50 rounded-b-md">
+                            <div className="px-3 py-3 flex flex-col gap-3 bg-surface-secondary rounded-b-md">
                                 {SOCIAL_FIELDS.map((field) => (
                                     <SocialLinkInput
                                         key={field.key}
@@ -318,9 +318,9 @@ const ArtistForm = ({
             </div>
 
             {/* Footer with error and buttons */}
-            <div className="p-4 border-gray-100 bg-white">
+            <div className="p-4 border-border bg-surface">
                 {error && (
-                    <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                    <div className="mb-3 p-2 bg-error/10 border border-error/30 rounded text-sm text-error">
                         {error}
                     </div>
                 )}
@@ -328,7 +328,7 @@ const ArtistForm = ({
                     <button
                         onClick={onCancel}
                         disabled={isSaving}
-                        className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 px-4 py-2 text-sm font-medium text-text bg-surface border border-border-strong rounded-md hover:bg-surface-secondary focus:outline-none focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                         type="button"
                     >
                         Cancel
