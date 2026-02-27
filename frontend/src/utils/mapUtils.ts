@@ -63,6 +63,15 @@ export const createArtistMarker = (artist: Artist) => {
   });
 };
 
+export const createDotMarker = () => {
+  return L.divIcon({
+    html: '<div style="width:10px;height:10px;border-radius:50%;background:var(--color-primary);"></div>',
+    className: 'artist-dot-marker',
+    iconSize: [10, 10],
+    iconAnchor: [5, 5],
+  });
+};
+
   export const getDisplayArtists = (_filters: {}, _view: string, artists: Artist[]) => {
       return artists.map(artist => ({
           ...artist,

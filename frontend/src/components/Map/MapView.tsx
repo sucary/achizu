@@ -7,8 +7,18 @@ import type { Artist, LocationView, SelectionMode } from '../../types/artist';
 import { getDisplayArtists } from '../../utils/mapUtils';
 import MapControls from './buttons/MapControls';
 import ArtistCluster from './ArtistCluster';
+import ArtistProgressiveView from './ArtistProgressiveView';
 import MapClickHandler from './MapClickHandler';
 import { useQuery } from '@tanstack/react-query';
+
+const ZoomLogger = () => {
+    useMapEvents({
+        zoomend: (e) => {
+            console.log(`[MapView] Zoom level: ${e.target.getZoom()}`);
+        },
+    });
+    return null;
+};
 
 // Component to handle clicks on empty map areas
 const MapEmptyClickHandler = ({ onClick }: { onClick: () => void }) => {
@@ -46,7 +56,17 @@ interface MapViewProps {
 const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick }: MapViewProps) => {
     const defaultCenter: LatLngExpression = [35.6762, 139.6503]; // Tokyo
     const defaultZoom = 4;
-    const [view, setView] = useState<LocationView>('active');
+    const [view, setViewState] = useState<LocationView>('active');
+    const [displayMode, setDisplayModeState] = useState<'cluster' | 'progressive'>('cluster');
+
+    const setView = (v: LocationView) => {
+        console.log(`[MapView] Location view: ${v}`);
+        setViewState(v);
+    };
+    const setDisplayMode = (m: 'cluster' | 'progressive') => {
+        console.log(`[MapView] Display mode: ${m}`);
+        setDisplayModeState(m);
+    };
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
 
     const {data: artists, isLoading} = useQuery({
@@ -95,21 +115,33 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
             zoomControl={false}
             attributionControl={false}
         >
-            <MapControls view={view} setView={setView} />
+            <ZoomLogger />
+            <MapControls view={view} setView={setView} displayMode={displayMode} setDisplayMode={setDisplayMode} />
             <ScaleControl position="bottomleft" imperial={false} />
             <AttributionControl position="bottomright" />
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <ArtistCluster
-                artists={displayArtists}
-                view={view}
-                onArtistSelect={handleArtistSelect}
-                onArtistDeselect={handleArtistDeselect}
-                onEditArtist={onEditArtist}
-                onDeleteArtist={onDeleteArtist}
-            />
+            {displayMode === 'cluster' ? (
+                <ArtistCluster
+                    artists={displayArtists}
+                    view={view}
+                    onArtistSelect={handleArtistSelect}
+                    onArtistDeselect={handleArtistDeselect}
+                    onEditArtist={onEditArtist}
+                    onDeleteArtist={onDeleteArtist}
+                />
+            ) : (
+                <ArtistProgressiveView
+                    artists={displayArtists}
+                    view={view}
+                    onArtistSelect={handleArtistSelect}
+                    onArtistDeselect={handleArtistDeselect}
+                    onEditArtist={onEditArtist}
+                    onDeleteArtist={onDeleteArtist}
+                />
+            )}
             {selectionMode?.active && (
                 <MapClickHandler onLocationPick={onLocationPick ?? null} />
             )}

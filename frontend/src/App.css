@@ -20,6 +20,12 @@
   border: none;
 }
 
+.leaflet-div-icon.artist-dot-marker {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
 .leaflet-div-icon.custom-cluster-marker {
   background: transparent;
   border: none;
