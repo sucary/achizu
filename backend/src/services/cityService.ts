@@ -83,7 +83,9 @@ export const CityService = {
                 name ILIKE $1
                 OR province ILIKE $1
                 OR display_name ILIKE $1
-            ORDER BY importance DESC NULLS LAST
+            ORDER BY 
+                ST_Area(boundary::geometry) DESC,
+                importance DESC NULLS LAST
             LIMIT $2
         `, [`%${query}%`, limit]);
 

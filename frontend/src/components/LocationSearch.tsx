@@ -46,7 +46,7 @@ export const LocationSearch = ({
         onCoordinatesConsumed,
     });
 
-    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, maxHeight: 320 });
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLDivElement>(null);
 
@@ -54,10 +54,19 @@ export const LocationSearch = ({
     useEffect(() => {
         if (isOpen && inputRef.current) {
             const rect = inputRef.current.getBoundingClientRect();
+            // Find the outer form panel to cap dropdown within it
+            const formContainer = inputRef.current.closest('.rounded-lg.shadow-xl');
+            const containerBottom = formContainer
+                ? formContainer.getBoundingClientRect().bottom
+                : window.innerHeight;
+            const gap = 4;
+            const maxHeight = Math.max(120, containerBottom - rect.bottom - gap);
+            
             setDropdownPosition({
                 top: rect.bottom + window.scrollY,
                 left: rect.left + window.scrollX,
-                width: rect.width
+                width: rect.width,
+                maxHeight
             });
         }
     }, [isOpen]);
@@ -152,46 +161,49 @@ export const LocationSearch = ({
             {/* Dropdown Portal */}
             {isOpen && results.length > 0 && createPortal(
                 <div
-                    className="location-search-dropdown fixed z-[9999] bg-surface border border-border-strong rounded-md shadow-lg max-h-80 overflow-y-auto"
+                    className="location-search-dropdown fixed z-[9999] bg-surface border border-border-strong rounded-md shadow-lg overflow-hidden"
                     style={{
                         top: `${dropdownPosition.top + 4}px`,
                         left: `${dropdownPosition.left}px`,
-                        width: `${dropdownPosition.width}px`
+                        width: `${dropdownPosition.width}px`,
+                        maxHeight: `${dropdownPosition.maxHeight}px`
                     }}
                 >
-                    {results.map((result, index) => (
-                        <button
-                            key={`${result.osmId}-${index}`}
-                            onClick={() => handleSelect(result)}
-                            type="button"
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-surface-secondary border-b border-border last:border-b-0"
-                        >
-                            <div className="font-medium text-text flex items-start">
-                                {result.isPriority && (
-                                    <span className="inline-block w-2 h-2 bg-primary rounded-full mr-2 mt-1.5" />
-                                )}
-                                {result.displayName}
-                            </div>
-                            <div className="flex items-center justify-between mt-0.5">
-                                {result.type && (
-                                    <span className="text-xs text-text-secondary capitalize">{result.type}</span>
-                                )}
-                                {result.isLocal && (
-                                    <span className="text-xs text-secondary bg-secondary/10 px-1.5 py-0.5 rounded ml-auto">DB</span>
-                                )}
-                            </div>
-                        </button>
-                    ))}
-                    {hasMore && (
-                        <button
-                            onClick={handleSearchMore}
-                            type="button"
-                            disabled={isLoadingMore}
-                            className="w-full px-3 py-2 text-center text-sm text-primary hover:bg-primary/5 border-t border-border font-medium disabled:opacity-50"
-                        >
-                            {isLoadingMore ? 'Searching...' : 'Search for more results'}
-                        </button>
-                    )}
+                    <div className="overflow-y-auto" style={{ maxHeight: `${dropdownPosition.maxHeight - 2}px` }}>
+                        {results.map((result, index) => (
+                            <button
+                                key={`${result.osmId}-${index}`}
+                                onClick={() => handleSelect(result)}
+                                type="button"
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-surface-secondary border-b border-border last:border-b-0"
+                            >
+                                <div className="font-medium text-text flex items-start">
+                                    {result.isPriority && (
+                                        <span className="inline-block w-2 h-2 bg-primary rounded-full mr-2 mt-1.5" />
+                                    )}
+                                    {result.displayName}
+                                </div>
+                                <div className="flex items-center justify-between mt-0.5">
+                                    {result.type && (
+                                        <span className="text-xs text-text-secondary capitalize">{result.type}</span>
+                                    )}
+                                    {result.isLocal && (
+                                        <span className="text-xs text-secondary bg-secondary/10 px-1.5 py-0.5 rounded ml-auto">DB</span>
+                                    )}
+                                </div>
+                            </button>
+                        ))}
+                        {hasMore && (
+                            <button
+                                onClick={handleSearchMore}
+                                type="button"
+                                disabled={isLoadingMore}
+                                className="w-full px-3 py-2 text-center text-sm text-primary hover:bg-primary/5 border-t border-border font-medium disabled:opacity-50"
+                            >
+                                {isLoadingMore ? 'Searching...' : 'Search for more results'}
+                            </button>
+                        )}
+                    </div>
                 </div>,
                 document.body
             )}

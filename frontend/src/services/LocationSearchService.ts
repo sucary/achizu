@@ -74,7 +74,7 @@ export class LocationSearchService {
         this.callbacks.onStart(source === 'nominatim');
 
         try {
-            const response = await searchCities(query, 20, source, this.abortController.signal);
+            const response = await searchCities(query, 50, source, this.abortController.signal);
             this.clearTimeout();
             this.callbacks.onSuccess(response);
         } catch (err) {
@@ -97,7 +97,7 @@ export class LocationSearchService {
         this.callbacks.onStart(source === 'nominatim');
 
         try {
-            const response = await reverseSearchCities(lat, lng, 20, source, this.abortController.signal);
+            const response = await reverseSearchCities(lat, lng, 50, source, this.abortController.signal);
             this.clearTimeout();
             this.callbacks.onSuccess(response);
         } catch (err) {
