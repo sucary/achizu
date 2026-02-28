@@ -9,64 +9,6 @@ function getDisplayType(type: string, addresstype?: string): string {
 }
 
 export const CityService = {
-    /**
-     * (old) Get city data, fetching from Nominatim if not in DB
-     */
-    getCity: async (name: string, province: string): Promise<City> => {
-        // 1. Check DB
-        const existingCity = await CityService.getFromDb(name, province);
-        if (existingCity) {
-            return existingCity;
-        }
-
-        // 2. Fetch from Nominatim
-        const nominatimData = await CityService.fetchFromNominatim(name, province);
-        if (!nominatimData) {
-            throw new Error(`City not found: ${name}, ${province}`);
-        }
-
-        // 3. Save to DB and return
-        return await CityService.saveFromNominatim(nominatimData);
-    },
-
-    /**
-     * Fetch city data from DB by name and province
-     */
-    getFromDb: async (name: string, province: string): Promise<City | null> => {
-        const result = await pool.query(`
-            SELECT
-                id, name, province, country,
-                display_name, osm_id, osm_type, type, class, importance,
-                ST_AsGeoJSON(boundary)::json as boundary,
-                ST_AsGeoJSON(raw_boundary)::json as raw_boundary,
-                ST_Y(center::geometry) as lat,
-                ST_X(center::geometry) as lng,
-                last_updated, needs_refresh
-            FROM city_boundaries
-            WHERE name = $1 AND province = $2
-        `, [name, province]);
-
-        if (result.rows.length === 0) return null;
-
-        const row = result.rows[0];
-        return {
-            id: row.id,
-            name: row.name,
-            province: row.province,
-            country: row.country,
-            displayName: row.display_name,
-            boundary: row.boundary,
-            rawBoundary: row.raw_boundary,
-            center: { lat: row.lat, lng: row.lng },
-            osmId: parseInt(row.osm_id),
-            osmType: row.osm_type,
-            type: row.type,
-            class: row.class,
-            importance: row.importance,
-            lastUpdated: row.last_updated,
-            needsRefresh: row.needs_refresh
-        };
-    },
 
     /**
      * Search cities in local DB with fuzzy matching
@@ -192,40 +134,6 @@ export const CityService = {
         } catch (error) {
             console.error('Error searching Nominatim:', error);
             throw error;
-        }
-    },
-
-    /**
-     * (old) Fetch from Nominatim API by city and state
-     */
-    fetchFromNominatim: async (city: string, state: string): Promise<NominatimResponse | null> => {
-        const params = new URLSearchParams({
-            city: city,
-            state: state,
-            format: 'json',
-            polygon_geojson: '1',
-            addressdetails: '1',
-            limit: '1'
-        });
-
-        const url = `https://nominatim.openstreetmap.org/search?${params.toString()}`;
-
-        try {
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'ArtistLocationMap/1.0'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Nominatim API error: ${response.statusText}`);
-            }
-
-            const data = await response.json() as NominatimResponse[];
-            return data.length > 0 ? data[0] : null;
-        } catch (error) {
-            console.error('Error fetching from Nominatim:', error);
-            return null;
         }
     },
 

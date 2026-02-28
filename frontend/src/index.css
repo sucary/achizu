@@ -49,6 +49,10 @@
 }
 
 /* Artist marker focus */
+.custom-artist-marker.marker-focused,
+.custom-artist-marker:has(+ .leaflet-popup) {
+  z-index: 10000 !important;
+}
 .custom-artist-marker.marker-focused > div,
 .custom-artist-marker:has(+ .leaflet-popup) > div {
   transform: scale(1.25);

@@ -86,46 +86,4 @@ export const SearchCacheService = {
             // Don't throw - caching failure shouldn't break the search
         }
     },
-
-    /**
-     * Remove expired cache entries
-     * Returns number of deleted entries
-     */
-    async cleanup(): Promise<number> {
-        try {
-            const result = await pool.query(`
-                DELETE FROM search_cache WHERE expires_at < NOW()
-            `);
-            return result.rowCount || 0;
-        } catch (error) {
-            console.error('Error cleaning up search cache:', error);
-            return 0;
-        }
-    },
-
-    /**
-     * Get cache statistics
-     */
-    async getStats(): Promise<{ totalEntries: number; totalHits: number; avgHitsPerEntry: number }> {
-        try {
-            const result = await pool.query(`
-                SELECT
-                    COUNT(*) as total_entries,
-                    COALESCE(SUM(hit_count), 0) as total_hits,
-                    COALESCE(AVG(hit_count), 0) as avg_hits
-                FROM search_cache
-                WHERE expires_at > NOW()
-            `);
-
-            const row = result.rows[0];
-            return {
-                totalEntries: parseInt(row.total_entries),
-                totalHits: parseInt(row.total_hits),
-                avgHitsPerEntry: parseFloat(row.avg_hits)
-            };
-        } catch (error) {
-            console.error('Error getting cache stats:', error);
-            return { totalEntries: 0, totalHits: 0, avgHitsPerEntry: 0 };
-        }
-    }
 };

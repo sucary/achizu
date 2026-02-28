@@ -1,6 +1,30 @@
 import { ArtistStore } from '../models/artistStore';
 import { CityService } from './cityService';
-import { CreateArtistDTO, UpdateArtistDTO, Artist, StoreArtistDTO, UpdateStoreArtistDTO, ArtistQueryParams } from '../types/artist';
+import { CreateArtistDTO, UpdateArtistDTO, Artist, StoreArtistDTO, UpdateStoreArtistDTO, ArtistQueryParams, Coordinates } from '../types/artist';
+import { City } from '../types/city';
+
+const COORD_TOLERANCE = 0.0001;
+
+function coordsMatch(a: Coordinates, b: Coordinates): boolean {
+    return Math.abs(a.lat - b.lat) < COORD_TOLERANCE &&
+           Math.abs(a.lng - b.lng) < COORD_TOLERANCE;
+}
+
+function isManualSelection(coords: Coordinates, cityCenter: Coordinates): boolean {
+    return !coordsMatch(coords, cityCenter);
+}
+
+async function resolveCity(osmId: number, osmType: string): Promise<City> {
+    let city = await CityService.getByOsmId(osmId, osmType);
+    if (!city) {
+        const nominatimData = await CityService.fetchByOsmId(osmId, osmType);
+        if (!nominatimData) {
+            throw new Error('Failed to fetch city data from Nominatim');
+        }
+        city = await CityService.saveFromNominatim(nominatimData);
+    }
+    return city;
+}
 
 export const ArtistService = {
     getAll: async (params: ArtistQueryParams) => {
@@ -12,95 +36,42 @@ export const ArtistService = {
     },
 
     create: async (data: CreateArtistDTO, userId: string): Promise<Artist> => {
-        let originalCity, activeCity;
-
-        // 1. Handle original location - support both OSM ID and city name + province
-        if (data.originalLocation.osmId && data.originalLocation.osmType) {
-            originalCity = await CityService.getByOsmId(
-                data.originalLocation.osmId,
-                data.originalLocation.osmType
-            );
-
-            if (!originalCity) {
-                const nominatimData = await CityService.fetchByOsmId(
-                    data.originalLocation.osmId,
-                    data.originalLocation.osmType
-                );
-                if (!nominatimData) {
-                    throw new Error('Failed to fetch original city data from Nominatim');
-                }
-                originalCity = await CityService.saveFromNominatim(nominatimData);
-            }
-        } else {
-            // （old) city name + province for testing/seeding
-            originalCity = await CityService.getCity(
-                data.originalLocation.city,
-                data.originalLocation.province
-            );
+        // 1. Resolve cities
+        if (!data.originalLocation.osmId || !data.originalLocation.osmType) {
+            throw new Error('Original location must include osmId and osmType');
+        }
+        if (!data.activeLocation.osmId || !data.activeLocation.osmType) {
+            throw new Error('Active location must include osmId and osmType');
         }
 
-        // 2. Handle active location
-        if (data.activeLocation.osmId && data.activeLocation.osmType) {
-            activeCity = await CityService.getByOsmId(
-                data.activeLocation.osmId,
-                data.activeLocation.osmType
-            );
+        const originalCity = await resolveCity(data.originalLocation.osmId, data.originalLocation.osmType);
+        const activeCity = await resolveCity(data.activeLocation.osmId, data.activeLocation.osmType);
 
-            if (!activeCity) {
-                const nominatimData = await CityService.fetchByOsmId(
-                    data.activeLocation.osmId,
-                    data.activeLocation.osmType
-                );
-                if (!nominatimData) {
-                    throw new Error('Failed to fetch active city data from Nominatim');
-                }
-                activeCity = await CityService.saveFromNominatim(nominatimData);
-            }
-        } else {
-            // （old) city name + province for testing/seeding
-            activeCity = await CityService.getCity(
-                data.activeLocation.city,
-                data.activeLocation.province
-            );
-        }
-
-        // 3. Determine if coordinates were manually selected
-        // If provided coordinates differ from city center, they were manually selected
-        const originalIsManualSelection = data.originalLocation.coordinates &&
-            (Math.abs(data.originalLocation.coordinates.lat - originalCity.center.lat) > 0.0001 ||
-             Math.abs(data.originalLocation.coordinates.lng - originalCity.center.lng) > 0.0001);
-
-        const activeIsManualSelection = data.activeLocation.coordinates &&
-            (Math.abs(data.activeLocation.coordinates.lat - activeCity.center.lat) > 0.0001 ||
-             Math.abs(data.activeLocation.coordinates.lng - activeCity.center.lng) > 0.0001);
-
-        // 4. Check if active was copied from original (same coordinates)
+        // 2. Determine coordinate selection method
+        const originalManual = data.originalLocation.coordinates &&
+            isManualSelection(data.originalLocation.coordinates, originalCity.center);
+        const activeManual = data.activeLocation.coordinates &&
+            isManualSelection(data.activeLocation.coordinates, activeCity.center);
         const isCopiedFromOriginal = data.originalLocation.coordinates && data.activeLocation.coordinates &&
-            Math.abs(data.originalLocation.coordinates.lat - data.activeLocation.coordinates.lat) < 0.0001 &&
-            Math.abs(data.originalLocation.coordinates.lng - data.activeLocation.coordinates.lng) < 0.0001;
+            coordsMatch(data.originalLocation.coordinates, data.activeLocation.coordinates);
 
         // 5. Set coordinates and display coordinates based on selection method
         let originalDisplayCoordinates, activeDisplayCoordinates;
 
-        if (originalIsManualSelection) {
-            // Manual selection
+        if (originalManual) {
             originalDisplayCoordinates = data.originalLocation.coordinates;
         } else {
-            // Search-based selection
             data.originalLocation.coordinates = originalCity.center;
             const randomPoint = await CityService.generateRandomPoint(originalCity.id);
             originalDisplayCoordinates = randomPoint || originalCity.center;
         }
 
         if (isCopiedFromOriginal) {
-            // Copied from original
             data.activeLocation.coordinates = data.originalLocation.coordinates;
             activeDisplayCoordinates = originalDisplayCoordinates;
-        } else if (activeIsManualSelection) {
-            // Manual selection
+        } else if (activeManual) {
             activeDisplayCoordinates = data.activeLocation.coordinates;
         } else {
-            // Search-based selection
             data.activeLocation.coordinates = activeCity.center;
             const randomPoint = await CityService.generateRandomPoint(activeCity.id);
             activeDisplayCoordinates = randomPoint || activeCity.center;
@@ -133,91 +104,41 @@ export const ArtistService = {
         let finalActiveCityId = currentArtist.activeCityId;
 
         // If locations are being updated, resolve new IDs
-        let originalCity, activeCity;
+        let originalCity: City | undefined, activeCity: City | undefined;
 
         if (data.originalLocation) {
-            let city;
-            if (data.originalLocation.osmId && data.originalLocation.osmType) {
-                city = await CityService.getByOsmId(
-                    data.originalLocation.osmId,
-                    data.originalLocation.osmType
-                );
-
-                if (!city) {
-                    const nominatimData = await CityService.fetchByOsmId(
-                        data.originalLocation.osmId,
-                        data.originalLocation.osmType
-                    );
-                    if (!nominatimData) {
-                        throw new Error('Failed to fetch original city data from Nominatim');
-                    }
-                    city = await CityService.saveFromNominatim(nominatimData);
-                }
-            } else {
-                // （old) city name + province
-                city = await CityService.getCity(
-                    data.originalLocation.city,
-                    data.originalLocation.province
-                );
+            if (!data.originalLocation.osmId || !data.originalLocation.osmType) {
+                throw new Error('Original location must include osmId and osmType');
             }
-            originalCity = city;
-            storeData.originalCityId = city.id;
-            finalOriginalCityId = city.id;
+            originalCity = await resolveCity(data.originalLocation.osmId, data.originalLocation.osmType);
+            storeData.originalCityId = originalCity.id;
+            finalOriginalCityId = originalCity.id;
         }
 
         if (data.activeLocation) {
-            let city;
-            if (data.activeLocation.osmId && data.activeLocation.osmType) {
-                city = await CityService.getByOsmId(
-                    data.activeLocation.osmId,
-                    data.activeLocation.osmType
-                );
-
-                if (!city) {
-                    const nominatimData = await CityService.fetchByOsmId(
-                        data.activeLocation.osmId,
-                        data.activeLocation.osmType
-                    );
-                    if (!nominatimData) {
-                        throw new Error('Failed to fetch active city data from Nominatim');
-                    }
-                    city = await CityService.saveFromNominatim(nominatimData);
-                }
-            } else {
-                // （old) city name + province
-                city = await CityService.getCity(
-                    data.activeLocation.city,
-                    data.activeLocation.province
-                );
+            if (!data.activeLocation.osmId || !data.activeLocation.osmType) {
+                throw new Error('Active location must include osmId and osmType');
             }
-            activeCity = city;
-            storeData.activeCityId = city.id;
-            finalActiveCityId = city.id;
+            activeCity = await resolveCity(data.activeLocation.osmId, data.activeLocation.osmType);
+            storeData.activeCityId = activeCity.id;
+            finalActiveCityId = activeCity.id;
         }
 
-        // Determine if coordinates were manually selected for updated locations
-        const originalIsManualSelection = data.originalLocation && originalCity &&
+        const originalManual = data.originalLocation && originalCity &&
             data.originalLocation.coordinates &&
-            (Math.abs(data.originalLocation.coordinates.lat - originalCity.center.lat) > 0.0001 ||
-             Math.abs(data.originalLocation.coordinates.lng - originalCity.center.lng) > 0.0001);
+            isManualSelection(data.originalLocation.coordinates, originalCity.center);
 
-        const activeIsManualSelection = data.activeLocation && activeCity &&
+        const activeManual = data.activeLocation && activeCity &&
             data.activeLocation.coordinates &&
-            (Math.abs(data.activeLocation.coordinates.lat - activeCity.center.lat) > 0.0001 ||
-             Math.abs(data.activeLocation.coordinates.lng - activeCity.center.lng) > 0.0001);
+            isManualSelection(data.activeLocation.coordinates, activeCity.center);
 
-        // Check if active was copied from original (same coordinates)
         const isCopiedFromOriginal = data.originalLocation?.coordinates && data.activeLocation?.coordinates &&
-            Math.abs(data.originalLocation.coordinates.lat - data.activeLocation.coordinates.lat) < 0.0001 &&
-            Math.abs(data.originalLocation.coordinates.lng - data.activeLocation.coordinates.lng) < 0.0001;
+            coordsMatch(data.originalLocation.coordinates, data.activeLocation.coordinates);
 
-        // Handle display coordinates based on selection method
         if (data.originalLocation) {
-            if (originalIsManualSelection) {
-                // Manual selection
+            if (originalManual) {
                 storeData.originalLocationDisplayCoordinates = data.originalLocation.coordinates;
             } else {
-                // Search-based selection
                 data.originalLocation.coordinates = originalCity!.center;
                 const randomPoint = await CityService.generateRandomPoint(finalOriginalCityId);
                 storeData.originalLocationDisplayCoordinates = randomPoint || originalCity!.center;
@@ -226,14 +147,11 @@ export const ArtistService = {
 
         if (data.activeLocation) {
             if (isCopiedFromOriginal && storeData.originalLocationDisplayCoordinates) {
-                // Copied from original - use same display coordinates
                 data.activeLocation.coordinates = data.originalLocation!.coordinates;
                 storeData.activeLocationDisplayCoordinates = storeData.originalLocationDisplayCoordinates;
-            } else if (activeIsManualSelection) {
-                // Manual selection
+            } else if (activeManual) {
                 storeData.activeLocationDisplayCoordinates = data.activeLocation.coordinates;
             } else {
-                // Search-based selection
                 data.activeLocation.coordinates = activeCity!.center;
                 const randomPoint = await CityService.generateRandomPoint(finalActiveCityId);
                 storeData.activeLocationDisplayCoordinates = randomPoint || activeCity!.center;
