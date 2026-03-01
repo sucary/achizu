@@ -17,7 +17,7 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
             return false;
         }
         if (!/^[a-zA-Z0-9_]+$/.test(value)) {
-            setError('Only letters, numbers, and underscores allowed');
+            setError('Use only letters, numbers, and underscores');
             return false;
         }
         setError(null);
@@ -56,7 +56,7 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
 
             if (!res.ok) {
                 const data = await res.json();
-                setError(data.error || 'Failed to set username');
+                setError(data.error || 'Unable to save username. Please try again.');
                 return;
             }
 

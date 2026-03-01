@@ -15,6 +15,8 @@ import { BackendStatus } from './components/BackendStatus';
 import { useAuth } from './context/AuthContext';
 import type { Artist, SelectionMode } from './types/artist';
 import { UsernamePrompt } from './components/Auth/UsernamePrompt';
+import { ResetPasswordModal } from './components/Auth/ResetPasswordModal';
+import { supabase } from './lib/supabase';
 
 
 function App() {
@@ -35,11 +37,31 @@ function App() {
         }
     }, [username, profile, loading, isViewingOther, isOwnUsername, navigate]);
 
+    // Listen for password recovery event
+    useEffect(() => {
+        // Check URL hash on mount (in case event fired before listener attached)
+        const hash = window.location.hash;
+        if (hash.includes('type=recovery')) {
+            setShowResetPassword(true);
+            // Clean up URL
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                setShowResetPassword(true);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
     
     const [showForm, setShowForm] = useState(false);
     const [showArtistList, setShowArtistList] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showAdminDashboard, setShowAdminDashboard] = useState(false);
+    const [showResetPassword, setShowResetPassword] = useState(false);
     const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
     const [selectionMode, setSelectionMode] = useState<SelectionMode | null>(null);
     const [pendingCoordinates, setPendingCoordinates] = useState<{ lat: number; lng: number } | null>(null);
@@ -157,6 +179,9 @@ function App() {
             )}
             {showAdminDashboard && (
                 <AdminDashboard onClose={() => setShowAdminDashboard(false)} />
+            )}
+            {showResetPassword && (
+                <ResetPasswordModal onClose={() => setShowResetPassword(false)} />
             )}
             <MapView
                 username={username}
