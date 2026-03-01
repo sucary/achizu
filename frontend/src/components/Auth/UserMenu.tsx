@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 interface UserMenuProps {
@@ -6,6 +7,7 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
+    const navigate = useNavigate();
     const { user, profile, signOut } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -59,6 +61,15 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
             {/* Dropdown */}
             {isOpen && (
                 <div className="absolute right-0 w-56 bg-surface rounded-b-lg shadow-lg border-t border-border py-1 z-[1001]">
+                    <button
+                        onClick={() => {
+                            navigate('/settings');
+                            setIsOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-muted transition-colors"
+                    >
+                        Account Settings
+                    </button>
                     {profile.isAdmin && onOpenAdminDashboard && (
                         <button
                             onClick={() => {
