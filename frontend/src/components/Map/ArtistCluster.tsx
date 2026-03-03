@@ -22,6 +22,8 @@ interface ArtistClusterProps {
   onArtistDeselect?: () => void;
   onEditArtist?: (artist: Artist) => void;
   onDeleteArtist?: (artist: Artist) => void;
+  focusedArtist?: Artist | null;
+  onFocusedArtistHandled?: () => void;
 }
 
 const ArtistCluster = ({
@@ -31,6 +33,8 @@ const ArtistCluster = ({
   onArtistDeselect,
   onEditArtist,
   onDeleteArtist,
+  focusedArtist,
+  onFocusedArtistHandled,
 }: ArtistClusterProps) => {
   const map = useMap();
   const markerClusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
@@ -122,6 +126,46 @@ const ArtistCluster = ({
     expandCluster,
     collapseCluster,
   ]);
+
+  // Handle focused artist
+  useEffect(() => {
+    if (!focusedArtist || !markerClusterGroupRef.current) return;
+
+    const markerClusterGroup = markerClusterGroupRef.current;
+    let targetMarker: L.Marker | null = null;
+
+    // Find the marker for the focused artist
+    markerClusterGroup.eachLayer((layer) => {
+      const marker = layer as L.Marker & { _artistData?: Artist };
+      if (marker._artistData?.id === focusedArtist.id) {
+        targetMarker = marker;
+      }
+    });
+
+    if (targetMarker) {
+      const location = view === 'active'
+        ? focusedArtist.activeLocation
+        : focusedArtist.originalLocation;
+
+      // Fly to the artist's location
+      map.flyTo([location.coordinates.lat, location.coordinates.lng], 12, {
+        duration: 0.8,
+      });
+
+      // Open popup after fly animation completes
+      setTimeout(() => {
+        if (targetMarker) {
+          // Make sure the marker is visible
+          markerClusterGroup.zoomToShowLayer(targetMarker, () => {
+            targetMarker!.openPopup();
+            onArtistSelect?.(focusedArtist);
+          });
+        }
+      }, 850);
+    }
+
+    onFocusedArtistHandled?.();
+  }, [focusedArtist, map, view, onArtistSelect, onFocusedArtistHandled]);
 
   return null;
 };

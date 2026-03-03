@@ -40,6 +40,7 @@ function App() {
     const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
     const [selectionMode, setSelectionMode] = useState<SelectionMode | null>(null);
     const [pendingCoordinates, setPendingCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+    const [focusedArtist, setFocusedArtist] = useState<Artist | null>(null);
 
     // Viewing another user's map (admin only)
     const isViewingOther = !!username;
@@ -130,6 +131,11 @@ function App() {
         handleEditArtist(artist);
     };
 
+    const handleNavigateToArtist = (artist: Artist) => {
+        setShowArtistList(false);
+        setFocusedArtist(artist);
+    };
+
     return (
         <div className="h-screen w-screen flex flex-col">
             <BackendStatus />
@@ -171,6 +177,7 @@ function App() {
             {showArtistList && (
                 <ArtistList
                     onClose={() => setShowArtistList(false)}
+                    onNavigateToArtist={handleNavigateToArtist}
                     onEditArtist={handleEditFromList}
                     onDeleteArtist={handleDeleteArtist}
                 />
@@ -188,6 +195,8 @@ function App() {
                 onEditArtist={isViewingOther ? undefined : handleEditArtist}
                 onDeleteArtist={isViewingOther ? undefined : handleDeleteArtist}
                 onEmptyClick={showForm ? handleCloseForm : showArtistList ? () => setShowArtistList(false) : undefined}
+                focusedArtist={focusedArtist}
+                onFocusedArtistHandled={() => setFocusedArtist(null)}
             />
         </div>
     );

@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getArtists } from '../services/api';
-import { CloseIcon, SearchIcon, LoaderIcon } from './Icons/FormIcons';
+import { CloseIcon, SearchIcon, LoaderIcon, MapPinIcon } from './Icons/FormIcons';
 import { getAvatarUrl } from '../utils/cloudinaryUrl';
+import ArtistProfile from './ArtistProfile';
 import type { Artist } from '../types/artist';
 
 interface ArtistListProps {
     onClose: () => void;
+    onNavigateToArtist?: (artist: Artist) => void;
     onEditArtist?: (artist: Artist) => void;
     onDeleteArtist?: (artist: Artist) => void;
 }
@@ -14,8 +16,11 @@ interface ArtistListProps {
 const getPlaceholderUrl = (name: string) =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=150&background=e5e7eb&color=9ca3af`;
 
-const ArtistList = ({ onClose, onEditArtist, onDeleteArtist }: ArtistListProps) => {
+const ArtistList = ({ onClose, onNavigateToArtist, onEditArtist, onDeleteArtist }: ArtistListProps) => {
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
+    const [cardPosition, setCardPosition] = useState<number>(0);
+    const listRef = useRef<HTMLDivElement>(null);
 
     const { data: artists = [], isLoading } = useQuery({
         queryKey: ['artists'],
@@ -28,8 +33,32 @@ const ArtistList = ({ onClose, onEditArtist, onDeleteArtist }: ArtistListProps) 
         artist.originalLocation.city.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const handleRowClick = (artist: Artist, e: React.MouseEvent<HTMLDivElement>) => {
+        // Get the row's position relative to the wrapper
+        const rowRect = e.currentTarget.getBoundingClientRect();
+        const wrapperRect = listRef.current?.getBoundingClientRect();
+        if (wrapperRect) {
+            // Calculate position relative to wrapper, centered on the row
+            const rowCenterY = rowRect.top - wrapperRect.top + rowRect.height / 2;
+            setCardPosition(rowCenterY);
+        }
+        setSelectedArtist(selectedArtist?.id === artist.id ? null : artist);
+    };
+
     return (
-        <div className="absolute top-28 right-2 z-[1050] w-80 bg-surface rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-8rem)] font-sans">
+        <div ref={listRef} className="absolute top-28 right-2 z-[1050] font-sans">
+            {/* Artist card - positioned to the left of the list */}
+            {selectedArtist && (
+                <div
+                    className="absolute right-full mr-2"
+                    style={{ top: cardPosition, transform: 'translateY(-50%)' }}
+                >
+                    <ArtistProfile artist={selectedArtist} />
+                </div>
+            )}
+
+            {/* Main list panel */}
+            <div className="w-80 bg-surface rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-8rem)]">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <h2 className="text-lg font-semibold text-text">Artists ({artists.length})</h2>
@@ -42,7 +71,7 @@ const ArtistList = ({ onClose, onEditArtist, onDeleteArtist }: ArtistListProps) 
             </div>
 
             {/* Search */}
-            <div className="px-4 py-2 border-b border-border">
+            <div className="px-4 py-2">
                 <div className="relative">
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
                     <input
@@ -69,7 +98,10 @@ const ArtistList = ({ onClose, onEditArtist, onDeleteArtist }: ArtistListProps) 
                     <ul className="divide-y divide-border">
                         {filteredArtists.map((artist) => (
                             <li key={artist.id} className="group">
-                                <div className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors">
+                                <div
+                                    onClick={(e) => handleRowClick(artist, e)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer ${selectedArtist?.id === artist.id ? 'bg-surface-muted' : ''}`}
+                                >
                                     {/* Avatar */}
                                     <img
                                         src={getAvatarUrl(artist.sourceImage, artist.avatarCrop) || getPlaceholderUrl(artist.name)}
@@ -78,16 +110,33 @@ const ArtistList = ({ onClose, onEditArtist, onDeleteArtist }: ArtistListProps) 
                                     />
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-text truncate">{artist.name}</p>
-                                        <p className="text-xs text-text-secondary truncate">
+                                        <p
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-sm font-medium text-text truncate select-text cursor-text w-fit"
+                                        >
+                                            {artist.name}
+                                        </p>
+                                        <p
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-xs text-text-secondary truncate select-text cursor-text w-fit"
+                                        >
                                             {artist.activeLocation.city}, {artist.activeLocation.province}
                                         </p>
                                     </div>
                                     {/* Actions */}
                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {onNavigateToArtist && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onNavigateToArtist(artist); }}
+                                                className="p-1.5 rounded hover:bg-primary hover:text-white transition-colors text-text-secondary"
+                                                title="Go to location"
+                                            >
+                                                <MapPinIcon className="w-4 h-4" />
+                                            </button>
+                                        )}
                                         {onEditArtist && (
                                             <button
-                                                onClick={() => onEditArtist(artist)}
+                                                onClick={(e) => { e.stopPropagation(); onEditArtist(artist); }}
                                                 className="p-1.5 rounded hover:bg-primary hover:text-white transition-colors text-text-secondary"
                                                 title="Edit"
                                             >
@@ -99,7 +148,7 @@ const ArtistList = ({ onClose, onEditArtist, onDeleteArtist }: ArtistListProps) 
                                         )}
                                         {onDeleteArtist && (
                                             <button
-                                                onClick={() => onDeleteArtist(artist)}
+                                                onClick={(e) => { e.stopPropagation(); onDeleteArtist(artist); }}
                                                 className="p-1.5 rounded hover:bg-error hover:text-white transition-colors text-text-secondary"
                                                 title="Delete"
                                             >
@@ -114,6 +163,7 @@ const ArtistList = ({ onClose, onEditArtist, onDeleteArtist }: ArtistListProps) 
                         ))}
                     </ul>
                 )}
+            </div>
             </div>
         </div>
     );

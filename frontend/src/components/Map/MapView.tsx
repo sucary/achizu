@@ -51,9 +51,11 @@ interface MapViewProps {
     onEditArtist?: (artist: Artist) => void;
     onDeleteArtist?: (artist: Artist) => void;
     onEmptyClick?: () => void;
+    focusedArtist?: Artist | null;
+    onFocusedArtistHandled?: () => void;
 }
 
-const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick }: MapViewProps) => {
+const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick, focusedArtist, onFocusedArtistHandled }: MapViewProps) => {
     const defaultCenter: LatLngExpression = [35.6762, 139.6503]; // Tokyo
     const defaultZoom = 4;
     const [view, setViewState] = useState<LocationView>('active');
@@ -131,6 +133,8 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
                     onArtistDeselect={handleArtistDeselect}
                     onEditArtist={onEditArtist}
                     onDeleteArtist={onDeleteArtist}
+                    focusedArtist={focusedArtist}
+                    onFocusedArtistHandled={onFocusedArtistHandled}
                 />
             ) : (
                 <ArtistProgressiveView
