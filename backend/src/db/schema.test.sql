@@ -64,16 +64,23 @@ CREATE TABLE IF NOT EXISTS city_boundaries (
 );
 
 -- ============================================
--- Priority Locations (search boosting)
+-- Priority Locations (search boosting, self-contained with all needed data)
 -- ============================================
 CREATE TABLE IF NOT EXISTS priority_locations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     search_query VARCHAR(100) NOT NULL,
     osm_id BIGINT NOT NULL,
     osm_type VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    province VARCHAR(100),
+    country VARCHAR(100),
     display_name TEXT NOT NULL,
+    lat DECIMAL(10, 7) NOT NULL,
+    lng DECIMAL(10, 7) NOT NULL,
     rank INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT uq_priority_query_osm UNIQUE (search_query, osm_id, osm_type)
 );
 
 -- ============================================
@@ -185,11 +192,9 @@ CREATE TRIGGER update_artists_updated_at
 -- Seed Data
 -- ============================================
 
--- Priority locations
-INSERT INTO priority_locations (search_query, osm_id, osm_type, display_name, rank) VALUES
-    ('tokyo', 1543125, 'relation', 'Tokyo, Japan', 0),
-    ('tokyo', 19631009, 'relation', 'Tokyo 23 Special Wards, Japan', 1),
-    ('new york', 175905, 'relation', 'New York, New York, USA', 0)
+-- Priority locations for testing (minimal set with valid Nominatim data)
+INSERT INTO priority_locations (search_query, osm_id, osm_type, name, province, country, display_name, lat, lng, rank) VALUES
+    ('test', 1543125, 'relation', 'Tokyo', 'Tokyo', 'Japan', 'Tokyo, Japan', 35.6764, 139.6500, 0)
 ON CONFLICT DO NOTHING;
 
 -- Test user for testing
