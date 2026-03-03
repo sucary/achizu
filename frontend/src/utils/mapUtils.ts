@@ -72,7 +72,7 @@ export const createDotMarker = () => {
   });
 };
 
-  export const getDisplayArtists = (_filters: {}, _view: string, artists: Artist[]) => {
+  export const getDisplayArtists = (_filters: Record<string, unknown>, _view: string, artists: Artist[]) => {
       return artists.map(artist => ({
           ...artist,
           activeLocation: {

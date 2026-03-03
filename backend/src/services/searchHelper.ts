@@ -1,6 +1,5 @@
 import { CityService } from './cityService';
 import { SearchCacheService } from './searchCacheService';
-import { City } from '../types/city';
 
 export interface SearchResult {
     osmId: number;

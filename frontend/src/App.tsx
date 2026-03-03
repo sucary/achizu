@@ -25,6 +25,22 @@ function App() {
     const queryClient = useQueryClient();
     const { user, profile, loading } = useAuth();
 
+    const [showForm, setShowForm] = useState(false);
+    const [showArtistList, setShowArtistList] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showAdminDashboard, setShowAdminDashboard] = useState(false);
+    const [showResetPassword, setShowResetPassword] = useState(() => {
+        const hash = window.location.hash;
+        if (hash.includes('type=recovery')) {
+            window.history.replaceState(null, '', window.location.pathname);
+            return true;
+        }
+        return false;
+    });
+    const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
+    const [selectionMode, setSelectionMode] = useState<SelectionMode | null>(null);
+    const [pendingCoordinates, setPendingCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+
     // Viewing another user's map (admin only)
     const isViewingOther = !!username;
     const isOwnUsername = username && profile?.username === username;
@@ -37,16 +53,8 @@ function App() {
         }
     }, [username, profile, loading, isViewingOther, isOwnUsername, navigate]);
 
-    // Listen for password recovery event
+    // Listen for password recovery event from auth state changes
     useEffect(() => {
-        // Check URL hash on mount (in case event fired before listener attached)
-        const hash = window.location.hash;
-        if (hash.includes('type=recovery')) {
-            setShowResetPassword(true);
-            // Clean up URL
-            window.history.replaceState(null, '', window.location.pathname);
-        }
-
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
             if (event === 'PASSWORD_RECOVERY') {
                 setShowResetPassword(true);
@@ -55,16 +63,6 @@ function App() {
 
         return () => subscription.unsubscribe();
     }, []);
-
-    
-    const [showForm, setShowForm] = useState(false);
-    const [showArtistList, setShowArtistList] = useState(false);
-    const [showAuthModal, setShowAuthModal] = useState(false);
-    const [showAdminDashboard, setShowAdminDashboard] = useState(false);
-    const [showResetPassword, setShowResetPassword] = useState(false);
-    const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
-    const [selectionMode, setSelectionMode] = useState<SelectionMode | null>(null);
-    const [pendingCoordinates, setPendingCoordinates] = useState<{ lat: number; lng: number } | null>(null);
 
     const handleStartSelection = (targetField: 'originalLocation' | 'activeLocation') => {
         setSelectionMode({ active: true, targetField });

@@ -50,7 +50,7 @@ export const useClusterExpansion = ({
     });
 
     // Show the original cluster marker again (only if still in DOM)
-    const clusterIcon = (state.originalCluster as any)._icon as HTMLElement | undefined;
+    const clusterIcon = (state.originalCluster as unknown as { _icon?: HTMLElement })._icon;
     if (clusterIcon && clusterIcon.isConnected) {
       clusterIcon.style.opacity = '1';
       clusterIcon.style.pointerEvents = '';
@@ -156,7 +156,7 @@ export const useClusterExpansion = ({
       });
 
       // Hide the original cluster marker
-      const clusterIcon = (cluster as any)._icon as HTMLElement | undefined;
+      const clusterIcon = (cluster as unknown as { _icon?: HTMLElement })._icon;
       if (clusterIcon) {
         clusterIcon.style.opacity = '0';
         clusterIcon.style.pointerEvents = 'none';

@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { CityService } from '../services/cityService';
 import { TextSearch, ReverseSearch } from '../services/searchHelper';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
+import { CoordinatesSchema } from '../schemas/artistValidation';
 
 const router = Router();
 
@@ -30,15 +31,11 @@ router.get('/search', searchLimiter, asyncHandler(async (req, res) => {
 
 // POST /api/cities/reverse/search - Coordinate-based search (multiple results)
 router.post('/reverse/search', searchLimiter, asyncHandler(async (req, res) => {
-    const { lat, lng } = req.body;
+    const { lat, lng } = CoordinatesSchema.parse(req.body);
     const limit = parseInt(req.query.limit as string) || 50;
     const source = (req.query.source as string || 'auto') as 'auto' | 'nominatim';
 
-    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-        throw new AppError('Valid lat and lng required', 400);
-    }
-
-    const result = await ReverseSearch.search(parseFloat(lat), parseFloat(lng), limit, source);
+    const result = await ReverseSearch.search(lat, lng, limit, source);
 
     if (result.results.length === 0) {
         throw new AppError('No location found at these coordinates', 404);
@@ -49,14 +46,10 @@ router.post('/reverse/search', searchLimiter, asyncHandler(async (req, res) => {
 
 // POST /api/cities/reverse - Simple reverse geocode (single result)
 router.post('/reverse', searchLimiter, asyncHandler(async (req, res) => {
-    const { lat, lng } = req.body;
+    const { lat, lng } = CoordinatesSchema.parse(req.body);
     const withBoundary = req.query.withBoundary === 'true';
 
-    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-        throw new AppError('Valid lat and lng required', 400);
-    }
-
-    let city = await CityService.reverseGeocode(parseFloat(lat), parseFloat(lng));
+    let city = await CityService.reverseGeocode(lat, lng);
 
     if (!city) {
         throw new AppError('No city found at these coordinates', 404);

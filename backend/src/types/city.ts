@@ -3,6 +3,12 @@ export interface Coordinates {
     lng: number;
 }
 
+// GeoJSON geometry types from Nominatim
+export type GeoJSONGeometry =
+    | { type: "Point"; coordinates: [number, number] }
+    | { type: "Polygon"; coordinates: number[][][] }
+    | { type: "MultiPolygon"; coordinates: number[][][][] };
+
 export interface City {
     id: string;
     name: string;
@@ -43,10 +49,7 @@ export interface NominatimResponse {
     type: string;
     addresstype?: string;
     importance: number;
-    geojson?: {
-        type: "MultiPolygon" | "Polygon";
-        coordinates: number[][][][] | number[][][];
-    };
+    geojson?: GeoJSONGeometry;
     address?: {
         city?: string;
         administrative?: string;

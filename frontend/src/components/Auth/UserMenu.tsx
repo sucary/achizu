@@ -30,8 +30,6 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
         setIsOpen(false);
     };
 
-    const displayName = profile.username || user.email?.split('@')[0] || 'User';
-
     return (
         <div ref={menuRef} className="relative">
             <button

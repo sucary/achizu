@@ -12,7 +12,13 @@ export default [
     {
         rules: {
             "semi": ["error", "always"],
-            "indent": ["error", 4]
+            "indent": ["error", 4],
+            "@typescript-eslint/no-unused-vars": ["error", {
+                "argsIgnorePattern": "^_",
+                "varsIgnorePattern": "^_"
+            }],
+            "eqeqeq": ["error", "always"],
+            "prefer-const": "error"
         }
     }
 ];

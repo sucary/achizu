@@ -259,8 +259,8 @@ export const CityService = {
 
             // Find a result that has a proper polygon boundary (not a Point)
             for (const result of data) {
-                if (result.geojson && (result.geojson as any).type !== 'Point') {
-                    console.log('Found parent city with boundary:', result.display_name, (result.geojson as any).type);
+                if (result.geojson && result.geojson.type !== 'Point') {
+                    console.log('Found parent city with boundary:', result.display_name, result.geojson.type);
                     return result;
                 }
             }
@@ -277,7 +277,7 @@ export const CityService = {
      * Save city from Nominatim data
      */
     saveFromNominatim: async (data: NominatimResponse): Promise<City> => {
-        const geoType = data.geojson ? (data.geojson as any).type : null;
+        const geoType = data.geojson?.type ?? null;
 
         // For Point geometries, try to fetch the parent city's actual boundary
         if (geoType === 'Point') {
@@ -334,20 +334,18 @@ export const CityService = {
             }
 
             // Convert all geometries to MultiPolygon format for database consistency
-            let geojson: any;
-            const geometryType = (data.geojson as any).type;
+            let geojson: { type: 'MultiPolygon'; coordinates: number[][][][] };
+            const geometry = data.geojson;
 
-            if (geometryType === 'Polygon') {
+            if (geometry.type === 'Polygon') {
                 // Wrap Polygon in MultiPolygon structure
                 geojson = {
                     type: 'MultiPolygon',
-                    coordinates: [(data.geojson as any).coordinates]
+                    coordinates: [geometry.coordinates]
                 };
-            } else if (geometryType === 'Point') {
+            } else if (geometry.type === 'Point') {
                 // Fallback: create a small square polygon if no parent city found
-                const coords = (data.geojson as any).coordinates as number[];
-                const lng = coords[0];
-                const lat = coords[1];
+                const [lng, lat] = geometry.coordinates;
                 const offset = 0.001;
                 geojson = {
                     type: 'MultiPolygon',
@@ -359,15 +357,12 @@ export const CityService = {
                         [lng - offset, lat - offset]
                     ]]]
                 };
-            } else if (geometryType === 'MultiPolygon') {
-                geojson = data.geojson;
             } else {
-                // For other geometry types, wrap in MultiPolygon
-                console.warn(`Unexpected geometry type: ${geometryType}, attempting to use as-is`);
-                geojson = data.geojson;
+                // MultiPolygon - use as-is
+                geojson = geometry;
             }
 
-            console.log('Original geojson type:', geometryType);
+            console.log('Original geojson type:', geometry.type);
             console.log('Converted to:', geojson.type);
             console.log('Processed geojson:', JSON.stringify(geojson).substring(0, 200));
 

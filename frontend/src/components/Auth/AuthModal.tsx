@@ -124,7 +124,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     onClose();
                 }
             }
-        } catch (err) {
+        } catch {
             setError('An unexpected error happened. Please try again.');
         } finally {
             setLoading(false);
@@ -136,7 +136,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setOauthLoading(provider);
         try {
             await signInWithOAuth(provider);
-        } catch (err) {
+        } catch {
             setError('Unable to sign in with ' + provider + '. Please try again.');
         } finally {
             setOauthLoading(null);

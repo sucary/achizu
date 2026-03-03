@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
 
 export class AppError extends Error {
     statusCode: number;
@@ -13,7 +14,18 @@ export class AppError extends Error {
     }
 }
 
-export const errorHandler = (err: Error | AppError, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (err: Error | AppError, _req: Request, res: Response, _next: NextFunction) => {
+    if (err instanceof ZodError) {
+        return res.status(400).json({
+            status: 'error',
+            message: 'Validation failed',
+            errors: err.issues.map(issue => ({
+                field: issue.path.join('.'),
+                message: issue.message
+            }))
+        });
+    }
+
     if (err instanceof AppError) {
         return res.status(err.statusCode).json({
             status: 'error',
@@ -29,7 +41,7 @@ export const errorHandler = (err: Error | AppError, req: Request, res: Response,
     });
 };
 
-export const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => {
+export const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) => {
     return (req: Request, res: Response, next: NextFunction) => {
         fn(req, res, next).catch(next);
     };

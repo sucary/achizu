@@ -24,7 +24,7 @@ const ZoomLogger = () => {
 const MapEmptyClickHandler = ({ onClick }: { onClick: () => void }) => {
     useMapEvents({
         click: (e) => {
-            const target = (e.originalEvent as any)?.target;
+            const target = e.originalEvent?.target as HTMLElement | null;
             if (target) {
                 // Ignore clicks on following elements
                 const isInteractive = target.closest('.leaflet-control') ||
@@ -69,7 +69,7 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
     };
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
 
-    const {data: artists, isLoading} = useQuery({
+    const {data: artists} = useQuery({
         queryKey: ['artists', username],
         queryFn: () => username ? getArtistsByUsername(username) : getArtists(),
     });

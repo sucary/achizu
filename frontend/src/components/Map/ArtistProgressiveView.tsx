@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -90,41 +90,8 @@ const ArtistProgressiveView = ({
     });
   }, [markers, view, map, onArtistSelect, onArtistDeselect, onEditArtist, onDeleteArtist]);
 
-  // Render dots
-  useEffect(() => {
-    const layer = dotLayerRef.current;
-    layer.clearLayers();
-
-    dots.forEach((artist) => {
-
-      if (expandedRef.current.has(artist.id)) return;
-
-      const location = view === 'active' ? artist.activeLocation : artist.originalLocation;
-      const dot = L.marker(
-        [location.coordinates.lat, location.coordinates.lng],
-        { icon: createDotMarker(), zIndexOffset: 0 },
-      );
-
-      dot.on('click', () => {
-        expandDot(artist, dot);
-      });
-
-      layer.addLayer(dot);
-    });
-  }, [dots, view, map, onArtistSelect, onArtistDeselect, onEditArtist, onDeleteArtist]);
-
-  // Clean up expanded markers that are no longer in the artist list
-  useEffect(() => {
-    const currentIds = new Set(artists.map((a) => a.id));
-    for (const [id, { marker }] of expandedRef.current) {
-      if (!currentIds.has(id)) {
-        map.removeLayer(marker);
-        expandedRef.current.delete(id);
-      }
-    }
-  }, [artists, map]);
-
-  const expandDot = (artist: Artist, dot: L.Marker) => {
+  // Function to expand a dot into a full marker with popup
+  const expandDot = useCallback((artist: Artist, dot: L.Marker) => {
     // Remove the dot from its layer
     dotLayerRef.current.removeLayer(dot);
 
@@ -188,7 +155,41 @@ const ArtistProgressiveView = ({
 
     marker.addTo(map);
     marker.openPopup();
-  };
+  }, [view, map, onArtistSelect, onArtistDeselect, onEditArtist, onDeleteArtist]);
+
+  // Render dots
+  useEffect(() => {
+    const layer = dotLayerRef.current;
+    layer.clearLayers();
+
+    dots.forEach((artist) => {
+
+      if (expandedRef.current.has(artist.id)) return;
+
+      const location = view === 'active' ? artist.activeLocation : artist.originalLocation;
+      const dot = L.marker(
+        [location.coordinates.lat, location.coordinates.lng],
+        { icon: createDotMarker(), zIndexOffset: 0 },
+      );
+
+      dot.on('click', () => {
+        expandDot(artist, dot);
+      });
+
+      layer.addLayer(dot);
+    });
+  }, [dots, view, expandDot]);
+
+  // Clean up expanded markers that are no longer in the artist list
+  useEffect(() => {
+    const currentIds = new Set(artists.map((a) => a.id));
+    for (const [id, { marker }] of expandedRef.current) {
+      if (!currentIds.has(id)) {
+        map.removeLayer(marker);
+        expandedRef.current.delete(id);
+      }
+    }
+  }, [artists, map]);
 
   return null;
 };

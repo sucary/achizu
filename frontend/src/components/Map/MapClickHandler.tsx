@@ -26,7 +26,7 @@ const MapClickHandler = ({ onLocationPick }: MapClickHandlerProps) => {
     useMapEvents({
         click: (e) => {
             // Check if the click originated from a Leaflet control or button
-            const target = (e.originalEvent as any)?.target;
+            const target = e.originalEvent?.target as HTMLElement | null;
             if (target) {
                 // Check if click was on a control or its children
                 const isControl = target.closest('.leaflet-control') ||
