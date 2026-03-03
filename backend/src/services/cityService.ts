@@ -22,10 +22,14 @@ export const CityService = {
                 ST_X(center::geometry) as lng
             FROM city_boundaries
             WHERE
-                name ILIKE $1
-                OR province ILIKE $1
-                OR display_name ILIKE $1
-            ORDER BY 
+                name IS NOT NULL AND name != ''
+                AND center IS NOT NULL
+                AND (
+                    name ILIKE $1
+                    OR province ILIKE $1
+                    OR display_name ILIKE $1
+                )
+            ORDER BY
                 ST_Area(boundary::geometry) DESC,
                 importance DESC NULLS LAST
             LIMIT $2
@@ -53,16 +57,18 @@ export const CityService = {
         const result = await pool.query(`
             SELECT
                 cb.id,
-                COALESCE(cb.name, SPLIT_PART(pl.display_name, ',', 1)) as name,
-                COALESCE(cb.province, '') as province,
-                cb.country,
-                COALESCE(cb.display_name, pl.display_name) as display_name,
-                COALESCE(cb.osm_id::text, pl.osm_id::text) as osm_id,
-                COALESCE(cb.osm_type, pl.osm_type) as osm_type,
-                cb.type, cb.class, cb.importance,
-                ST_Y(cb.center::geometry) as lat,
-                ST_X(cb.center::geometry) as lng,
-                pl.rank
+                pl.name,
+                pl.province,
+                pl.country,
+                pl.display_name,
+                pl.osm_id,
+                pl.osm_type,
+                pl.lat,
+                pl.lng,
+                pl.rank,
+                cb.type,
+                cb.class,
+                cb.importance
             FROM priority_locations pl
             LEFT JOIN city_boundaries cb ON cb.osm_id = pl.osm_id AND cb.osm_type = pl.osm_type
             WHERE pl.search_query = LOWER($1)
@@ -75,7 +81,7 @@ export const CityService = {
             province: row.province,
             country: row.country,
             displayName: row.display_name,
-            center: { lat: row.lat || 0, lng: row.lng || 0 },
+            center: { lat: parseFloat(row.lat), lng: parseFloat(row.lng) },
             osmId: parseInt(row.osm_id),
             osmType: row.osm_type,
             type: row.type,
