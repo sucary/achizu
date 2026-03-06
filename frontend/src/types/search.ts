@@ -1,0 +1,32 @@
+import type { CropArea } from './artist';
+
+export interface ArtistSearchResult {
+    type: 'artist';
+    id: string;
+    name: string;
+    sourceImage?: string;
+    avatarCrop?: CropArea;
+    activeLocation: { city: string; province: string };
+    coordinates: { lat: number; lng: number };
+}
+
+export interface LocationSearchResult {
+    type: 'location';
+    id?: string;
+    displayName: string;
+    locationType?: string;
+    center: { lat: number; lng: number };
+    isLocal?: boolean;
+    osmId: number;
+    osmType: string;
+}
+
+export type SearchResult = ArtistSearchResult | LocationSearchResult;
+
+export interface UnifiedSearchResponse {
+    artists: ArtistSearchResult[];
+    locations: LocationSearchResult[];
+    totalCount: number;
+    locationSource: 'local' | 'nominatim' | 'cache';
+    hasMoreLocations: boolean;
+}

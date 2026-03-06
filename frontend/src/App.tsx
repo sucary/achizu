@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import './App.css';
@@ -12,8 +12,10 @@ import { AccountButton } from './components/Auth/AccountButton';
 import { NotificationButton } from './components/Notifications/NotificationButton';
 import { AdminDashboard } from './components/Admin/AdminDashboard';
 import { BackendStatus } from './components/BackendStatus';
+import { MainSearch } from './components/MainSearch';
 import { useAuth } from './context/AuthContext';
 import type { Artist, SelectionMode } from './types/artist';
+import type { ArtistSearchResult, LocationSearchResult } from './types/search';
 import { UsernamePrompt } from './components/Auth/UsernamePrompt';
 import { ResetPasswordModal } from './components/Auth/ResetPasswordModal';
 import { supabase } from './lib/supabase';
@@ -41,6 +43,8 @@ function App() {
     const [selectionMode, setSelectionMode] = useState<SelectionMode | null>(null);
     const [pendingCoordinates, setPendingCoordinates] = useState<{ lat: number; lng: number } | null>(null);
     const [focusedArtist, setFocusedArtist] = useState<Artist | null>(null);
+    const [focusedLocation, setFocusedLocation] = useState<{ lat: number; lng: number; locationType?: string } | null>(null);
+    const [focusedCityId, setFocusedCityId] = useState<string | null>(null);
 
     // Viewing another user's map (admin only)
     const isViewingOther = !!username;
@@ -136,9 +140,49 @@ function App() {
         setFocusedArtist(artist);
     };
 
+    // Search handlers
+    const handleSearchFocusArtist = useCallback((result: ArtistSearchResult) => {
+        const artist: Artist = {
+            id: result.id,
+            name: result.name,
+            sourceImage: result.sourceImage,
+            avatarCrop: result.avatarCrop,
+            activeLocation: {
+                city: result.activeLocation.city,
+                province: result.activeLocation.province,
+                coordinates: result.coordinates,
+            },
+            originalLocation: {
+                city: result.activeLocation.city,
+                province: result.activeLocation.province,
+                coordinates: result.coordinates,
+            },
+            originalLocationDisplayCoordinates: result.coordinates,
+            activeLocationDisplayCoordinates: result.coordinates,
+            originalCityId: '',
+            activeCityId: '',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        setFocusedArtist(artist);
+    }, []);
+
+    const handleSearchFocusLocation = useCallback((result: LocationSearchResult) => {
+        setFocusedLocation({ ...result.center, locationType: result.locationType });
+        setFocusedCityId(result.id || null);
+    }, []);
+
     return (
         <div className="h-screen w-screen flex flex-col">
             <BackendStatus />
+
+            {/* Main Search */}
+            <div className="absolute top-2 left-2 z-[1100]">
+                <MainSearch
+                    onFocusArtist={handleSearchFocusArtist}
+                    onFocusLocation={handleSearchFocusLocation}
+                />
+            </div>
 
             {/* Top right controls */}
             <div className="absolute top-2 right-2 z-[1100] flex items-center gap-2">
@@ -197,6 +241,9 @@ function App() {
                 onEmptyClick={showForm ? handleCloseForm : showArtistList ? () => setShowArtistList(false) : undefined}
                 focusedArtist={focusedArtist}
                 onFocusedArtistHandled={() => setFocusedArtist(null)}
+                focusedLocation={focusedLocation}
+                onFocusedLocationHandled={() => setFocusedLocation(null)}
+                focusedCityId={focusedCityId}
             />
         </div>
     );
