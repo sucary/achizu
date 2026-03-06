@@ -331,6 +331,29 @@ export const CityService = {
         province = province || 'Unknown';
         const country = data.address?.country || 'Unknown';
 
+        // Check if city already exists by name+province (to avoid unique constraint violation)
+        const existingByName = await pool.query(`
+            SELECT id, name, province, country, osm_id, osm_type,
+                   ST_Y(center::geometry) as lat,
+                   ST_X(center::geometry) as lng
+            FROM city_boundaries
+            WHERE name = $1 AND province = $2
+            LIMIT 1
+        `, [city, province]);
+
+        if (existingByName.rows.length > 0) {
+            const row = existingByName.rows[0];
+            return {
+                id: row.id,
+                name: row.name,
+                province: row.province,
+                country: row.country,
+                osmId: row.osm_id,
+                osmType: row.osm_type,
+                center: { lat: row.lat, lng: row.lng }
+            };
+        }
+
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -339,9 +362,16 @@ export const CityService = {
                 throw new Error('No geojson data from Nominatim');
             }
 
+            const geometry = data.geojson;
+            const geometryType = geometry.type as string;
+
+            // Skip unsupported geometry types (lines, etc.)
+            if (geometryType === 'LineString' || geometryType === 'MultiLineString') {
+                throw new Error(`Unsupported geometry type: ${geometryType}`);
+            }
+
             // Convert all geometries to MultiPolygon format for database consistency
             let geojson: { type: 'MultiPolygon'; coordinates: number[][][][] };
-            const geometry = data.geojson;
 
             if (geometry.type === 'Polygon') {
                 // Wrap Polygon in MultiPolygon structure

@@ -74,10 +74,12 @@ export const TextSearch = {
 
         const withFlags = results.map(r => {
             const key = `${String(r.osmId)}:${r.osmType}`;
+            const isLocal = existingMap.has(key);
+
             return {
                 ...r,
                 id: existingMap.get(key),
-                isLocal: existingMap.has(key)
+                isLocal
             };
         });
 
