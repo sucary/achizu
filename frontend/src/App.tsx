@@ -46,17 +46,8 @@ function App() {
     const [focusedLocation, setFocusedLocation] = useState<{ lat: number; lng: number; locationType?: string } | null>(null);
     const [focusedCityId, setFocusedCityId] = useState<string | null>(null);
 
-    // Viewing another user's map (admin only)
+    // Viewing another user's map
     const isViewingOther = !!username;
-    const isOwnUsername = username && profile?.username === username;
-
-    // Redirect non-admin users away from other users' maps
-    useEffect(() => {
-        if (loading) return;
-        if (isViewingOther && !isOwnUsername && !profile?.isAdmin) {
-            navigate('/', { replace: true });
-        }
-    }, [username, profile, loading, isViewingOther, isOwnUsername, navigate]);
 
     // Listen for password recovery event from auth state changes
     useEffect(() => {

@@ -19,12 +19,17 @@ async function getAdminUserId(): Promise<string | null> {
     return cachedAdminUserId;
 }
 
-async function getUserIdByUsername(username: string): Promise<string | null> {
+interface UserByUsername {
+    id: string;
+    isPrivate: boolean;
+}
+
+async function getUserByUsername(username: string): Promise<UserByUsername | null> {
     const result = await pool.query(
-        `SELECT id FROM profiles WHERE username = $1`,
+        `SELECT id, is_private as "isPrivate" FROM profiles WHERE username = $1`,
         [username]
     );
-    return result.rows[0]?.id || null;
+    return result.rows[0] || null;
 }
 
 async function getTargetUserId(req: AuthenticatedRequest): Promise<string | undefined> {
@@ -60,17 +65,17 @@ export const getAllArtists = asyncHandler(async (req: AuthenticatedRequest, res:
 
 export const getArtistsByUsername = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const username = req.params.username;
-    const targetUserId = await getUserIdByUsername(username);
-    if (!targetUserId) {
+    const targetUser = await getUserByUsername(username);
+    if (!targetUser) {
         throw new AppError('User not found', 404);
     }
 
     const isAdmin = req.profile?.isAdmin ?? false;
-    const isOwnProfile = targetUserId === req.user!.id;
+    const isOwnProfile = targetUser.id === req.user?.id;
 
-    // Only allow own profile or admin
-    if (!isOwnProfile && !isAdmin) {
-        throw new AppError('Admin access required', 403);
+    // Access level control
+    if (!isOwnProfile && !isAdmin && targetUser.isPrivate) {
+        throw new AppError('Profile not accessible', 403);
     }
 
     const filters: ArtistQueryParams = {
@@ -78,7 +83,7 @@ export const getArtistsByUsername = asyncHandler(async (req: AuthenticatedReques
         city: req.query.city as string,
         province: req.query.province as string,
         view: req.query.view as LocationView,
-        userId: targetUserId
+        userId: targetUser.id
     };
 
     const artists = await ArtistService.getAll(filters);
@@ -172,17 +177,17 @@ export const getArtistCountByCity = asyncHandler(async (req: AuthenticatedReques
 
 export const getArtistCountByUsername = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const username = req.params.username;
-    const targetUserId = await getUserIdByUsername(username);
-    if (!targetUserId) {
+    const targetUser = await getUserByUsername(username);
+    if (!targetUser) {
         throw new AppError('User not found', 404);
     }
 
     const isAdmin = req.profile?.isAdmin ?? false;
-    const isOwnProfile = targetUserId === req.user!.id;
+    const isOwnProfile = targetUser.id === req.user?.id;
 
-    // Only allow own profile or admin
-    if (!isOwnProfile && !isAdmin) {
-        throw new AppError('Admin access required', 403);
+    // Access control
+    if (!isOwnProfile && !isAdmin && targetUser.isPrivate) {
+        throw new AppError('Profile not accessible', 403);
     }
 
     const view = (req.query.view as LocationView) || 'active';
@@ -190,6 +195,6 @@ export const getArtistCountByUsername = asyncHandler(async (req: AuthenticatedRe
         throw new AppError('Invalid view parameter. Use "original" or "active"', 400);
     }
 
-    const counts = await ArtistService.countByCity(view, targetUserId);
+    const counts = await ArtistService.countByCity(view, targetUser.id);
     res.json(counts);
 });
