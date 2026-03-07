@@ -1,7 +1,8 @@
 import { useRef, useEffect } from 'react';
 import { useMainSearch } from './useMainSearch';
 import { SearchResultRow } from './SearchResultRow';
-import { SearchIcon, LoaderIcon, CloseIcon } from '../icons/FormIcons';
+import { SearchIcon, CloseIcon } from '../icons/FormIcons';
+import { IconButton, Spinner, Button } from '../ui';
 import type { ArtistSearchResult, LocationSearchResult } from '../../types/search';
 
 interface MainSearchProps {
@@ -78,12 +79,13 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                     className="w-80 pl-9 pr-9 py-2 text-sm bg-surface border border-border rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 {query && (
-                    <button
+                    <IconButton
                         onClick={handleClear}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-surface-muted transition-colors text-text-secondary"
+                        size="sm"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded hover:bg-surface-muted"
                     >
                         <CloseIcon className="w-4 h-4" />
-                    </button>
+                    </IconButton>
                 )}
             </div>
 
@@ -92,7 +94,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                 <div className="absolute top-full left-0 mt-1 w-80 bg-surface border border-border rounded-md shadow-md overflow-hidden max-h-96 overflow-y-auto">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-8">
-                            <LoaderIcon className="w-6 h-6 animate-spin text-primary" />
+                            <Spinner className="text-primary" />
                         </div>
                     ) : !hasResults ? (
                         <div className="text-center py-8 text-text-secondary text-sm">
@@ -134,13 +136,14 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
 
                             {/* Load more button */}
                             {hasMoreLocations && (
-                                <button
+                                <Button
                                     onClick={handleSearchMore}
                                     disabled={isLoadingMore}
-                                    className="w-full px-4 py-2 text-center text-sm text-primary hover:bg-primary/5 border-t border-border font-medium disabled:opacity-50"
+                                    variant="ghost"
+                                    className="w-full border-t border-border rounded-none"
                                 >
                                     {isLoadingMore ? 'Searching...' : 'Search for more locations'}
-                                </button>
+                                </Button>
                             )}
                         </>
                     )}

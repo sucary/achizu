@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { Spinner, Alert, Button, IconButton } from '../ui';
+import { CloseIcon, CheckCircleIcon } from '../icons/FormIcons';
 import type { PendingUser } from '../../types/profile';
 
 interface AdminDashboardProps {
@@ -119,14 +121,9 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-border">
                     <h1 className="text-2xl font-bold text-text">Admin Dashboard</h1>
-                    <button
-                        onClick={onClose}
-                        className="text-text-muted hover:text-text-secondary transition-colors"
-                    >
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+                    <IconButton onClick={onClose}>
+                        <CloseIcon className="w-6 h-6" />
+                    </IconButton>
                 </div>
 
                 {/* Content */}
@@ -139,22 +136,18 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
 
                         {loading && (
                             <div className="text-center py-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                                <Spinner size="lg" className="mx-auto text-primary" />
                                 <p className="text-text-secondary mt-2">Loading...</p>
                             </div>
                         )}
 
                         {error && (
-                            <div className="bg-error/10 border border-error/30 rounded-lg p-4 mb-4">
-                                <p className="text-error">{error}</p>
-                            </div>
+                            <Alert variant="error" className="mb-4">{error}</Alert>
                         )}
 
                         {!loading && !error && pendingUsers.length === 0 && (
                             <div className="text-center py-8 text-text-secondary">
-                                <svg className="w-12 h-12 mx-auto mb-2 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                                <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-text-muted" />
                                 <p>No pending approvals</p>
                             </div>
                         )}
@@ -171,18 +164,18 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
                                             </p>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button
+                                            <Button
                                                 onClick={() => handleApprove(user.id)}
-                                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                                                className="bg-green-600 hover:bg-green-700"
                                             >
                                                 Approve
-                                            </button>
-                                            <button
+                                            </Button>
+                                            <Button
                                                 onClick={() => handleReject(user.id)}
-                                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                                                className="bg-red-600 hover:bg-red-700"
                                             >
                                                 Reject
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ChevronDownIcon, ArrowDownIcon } from '../icons/FormIcons';
+import { ChevronDownIcon, ArrowDownIcon, MusicNoteIcon, SleepIcon } from '../icons/FormIcons';
 import { HomeIcon, MusicIcon, YoutubeIcon, InstagramIcon, XIcon } from '../icons/SocialIcons';
 import { LocationSearch } from '../LocationSearch';
 import SocialLinkInput, { type SocialLinkField } from './SocialLinkInput';
@@ -8,6 +8,7 @@ import ArtistFormHeader from './ArtistFormHeader';
 import YearSelect from './YearSelect';
 import { useArtistForm } from '../../hooks/useArtistForm';
 import { getAvatarUrl, getProfileUrl } from '../../utils/cloudinaryUrl';
+import { Alert, IconButton, Button } from '../ui';
 import type { Artist } from '../../types/artist';
 
 
@@ -98,23 +99,14 @@ const ArtistForm = ({
     };
 
     
-    const openCropper = (initialMode: 'avatar' | 'profile') => {
-        setCropperInitialMode(initialMode);
-
+    const openCropper = (mode: 'avatar' | 'profile') => {
+        setCropperInitialMode(mode);
         if (formData.sourceImage) {
             setCropperImageSrc(formData.sourceImage);
             setIsCropperOpen(true);
         } else {
             fileInputRef.current?.click();
         }
-    };
-
-    const handleAvatarClick = () => {
-        openCropper('avatar');
-    };
-
-    const handleProfileClick = () => {
-        openCropper('profile');
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,15 +128,11 @@ const ArtistForm = ({
         }
     };
 
+    const closeCropper = () => { setIsCropperOpen(false); setCropperImageSrc(null); };
+
     const handleCropSave = (result: CropResult) => {
         updateCrops(result.avatarCrop, result.profileCrop);
-        setIsCropperOpen(false);
-        setCropperImageSrc(null);
-    };
-
-    const handleCropperCancel = () => {
-        setIsCropperOpen(false);
-        setCropperImageSrc(null);
+        closeCropper();
     };
 
     // Get display URLs using Cloudinary transformations
@@ -169,12 +157,8 @@ const ArtistForm = ({
                 initialProfileCrop={formData.profileCrop}
                 initialMode={cropperInitialMode}
                 onSave={handleCropSave}
-                onCancel={handleCropperCancel}
-                onReupload={() => {
-                    setIsCropperOpen(false);
-                    setCropperImageSrc(null);
-                    fileInputRef.current?.click();
-                }}
+                onCancel={closeCropper}
+                onReupload={() => { closeCropper(); fileInputRef.current?.click(); }}
             />
         )}
 
@@ -186,8 +170,8 @@ const ArtistForm = ({
                     avatarUrl={avatarUrl}
                     profileUrl={profileUrl}
                     isUploading={isUploadingImage}
-                    onAvatarClick={handleAvatarClick}
-                    onProfileClick={handleProfileClick}
+                    onAvatarClick={() => openCropper('avatar')}
+                    onProfileClick={() => openCropper('profile')}
                     onNameChange={updateName}
                 />
 
@@ -195,9 +179,7 @@ const ArtistForm = ({
                 <div className="mt-10 px-4 flex flex-col gap-4">
                     {/* Upload error */}
                     {uploadError && (
-                        <div className="p-2 bg-error/10 border border-error/30 rounded text-sm text-error">
-                            {uploadError}
-                        </div>
+                        <Alert variant="error">{uploadError}</Alert>
                     )}
 
                     {/* Location inputs */}
@@ -213,14 +195,15 @@ const ArtistForm = ({
                         />
 
                         <div className="flex justify-center -my-2 relative z-10">
-                            <button
+                            <IconButton
                                 onClick={copyOriginalToActive}
-                                className="bg-surface-muted hover:bg-border text-text-secondary p-1.5 rounded-full transition-colors border border-border cursor-pointer"
+                                size="sm"
+                                className="bg-surface-muted hover:bg-border text-text-secondary rounded-full border border-border"
                                 title="Copy Original to Active"
                                 type="button"
                             >
                                 <ArrowDownIcon className="w-4 h-4" />
-                            </button>
+                            </IconButton>
                         </div>
 
                         <LocationSearch
@@ -234,59 +217,27 @@ const ArtistForm = ({
                         />
                     </div>
 
-                    {/* Career years */}
                     <div>
-                        <label className="block text-sm font-bold text-text mb-1">
-                            Career Years
-                        </label>
+                        <label className="block text-sm font-bold text-text mb-1">Career Years</label>
                         <div className="flex items-center gap-2">
-                            <div className="relative flex-1 flex gap-2">
-                                <div className="flex-1">
-                                    <YearSelect
-                                        value={formData.debutYear}
-                                        onChange={updateDebutYear}
-                                        placeholder="Debut"
-                                    />
-                                </div>
-                                <div className="flex-1">
-                                    {showInactive ? (
-                                        <YearSelect
-                                            value={formData.inactiveYear}
-                                            onChange={updateInactiveYear}
-                                            placeholder="Inactive"
-                                        />
-                                    ) : (
-                                        <div className="h-full flex items-center justify-center">
-                                            <span className="px-3 py-1 text-sm font-medium text-text-secondary bg-surface-muted rounded-full">Present</span>
-                                        </div>
-                                    )}
-                                </div>
+                            <div className="flex-1">
+                                <YearSelect value={formData.debutYear} onChange={updateDebutYear} placeholder="Debut" />
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const newValue = !showInactive;
-                                    setShowInactive(newValue);
-                                    if (!newValue) updateInactiveYear(undefined);
-                                }}
-                                className="p-2 text-text-muted hover:text-primary transition-colors"
+                            <div className="flex-1">
+                                {showInactive ? (
+                                    <YearSelect value={formData.inactiveYear} onChange={updateInactiveYear} placeholder="Inactive" />
+                                ) : (
+                                    <div className="h-full flex items-center justify-center">
+                                        <span className="px-3 py-1 text-sm font-medium text-text-secondary bg-surface-muted rounded-full">Present</span>
+                                    </div>
+                                )}
+                            </div>
+                            <IconButton
+                                onClick={() => { setShowInactive(!showInactive); if (showInactive) updateInactiveYear(undefined); }}
                                 title={showInactive ? 'Artist is inactive' : 'Mark as inactive'}
                             >
-                                {showInactive ? (
-                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        {/* Double note icon */}
-                                        <path d="M8 20V4l13-3v16" />
-                                        <circle cx="4.5" cy="20" r="3.5" />
-                                        <circle cx="17.5" cy="17" r="3.5" />
-                                    </svg>
-                                ) : (
-                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        {/* Zzz icon */}
-                                        <path d="M4 4h8l-8 8h8" />
-                                        <path d="M14 12h6l-6 6h6" />
-                                    </svg>
-                                )}
-                            </button>
+                                {showInactive ? <MusicNoteIcon /> : <SleepIcon />}
+                            </IconButton>
                         </div>
                     </div>
 
@@ -320,27 +271,26 @@ const ArtistForm = ({
             {/* Footer with error and buttons */}
             <div className="p-4 border-border bg-surface">
                 {error && (
-                    <div className="mb-3 p-2 bg-error/10 border border-error/30 rounded text-sm text-error">
-                        {error}
-                    </div>
+                    <Alert variant="error" className="mb-3">{error}</Alert>
                 )}
                 <div className="flex gap-3">
-                    <button
+                    <Button
                         onClick={onCancel}
                         disabled={isSaving}
-                        className="flex-1 px-4 py-2 text-sm font-medium text-text bg-surface border border-border-strong rounded-md hover:bg-surface-secondary focus:outline-none focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        variant="secondary"
+                        className="flex-1"
                         type="button"
                     >
                         Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={handleSave}
-                        disabled={isSaving}
-                        className="flex-1 px-4 py-2 text-sm font-medium text-white bg-primary border border-transparent rounded-md hover:bg-primary-hover focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        isLoading={isSaving}
+                        className="flex-1"
                         type="button"
                     >
-                        {isSaving ? 'Saving...' : 'Save'}
-                    </button>
+                        Save
+                    </Button>
                 </div>
             </div>
         </div>

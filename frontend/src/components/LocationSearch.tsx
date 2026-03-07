@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { SearchIcon, MapPinIcon, LoaderIcon, CloseIcon } from './icons/FormIcons';
+import { SearchIcon, MapPinIcon, CloseIcon } from './icons/FormIcons';
 import { useLocationSearch } from '../hooks/useLocationSearch';
+import { Spinner, Button } from './ui';
 import type { SearchResult } from '../services/api';
 
 interface LocationSearchProps {
@@ -130,7 +131,7 @@ export const LocationSearch = ({
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                             {isLoading && (
-                                <LoaderIcon className="w-4 h-4 text-text-muted animate-spin" />
+                                <Spinner size="sm" className="text-text-muted" />
                             )}
                             <button
                                 onClick={isLoading ? handleCancel : handleSearch}
@@ -202,14 +203,15 @@ export const LocationSearch = ({
                             </button>
                         ))}
                         {hasMore && (
-                            <button
+                            <Button
                                 onClick={handleSearchMore}
                                 type="button"
                                 disabled={isLoadingMore}
-                                className="w-full px-3 py-2 text-center text-sm text-primary hover:bg-primary/5 border-t border-border font-medium disabled:opacity-50"
+                                variant="ghost"
+                                className="w-full border-t border-border rounded-none"
                             >
                                 {isLoadingMore ? 'Searching...' : 'Search for more results'}
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>,
