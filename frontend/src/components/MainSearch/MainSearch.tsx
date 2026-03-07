@@ -77,7 +77,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
-                    className="w-80 pl-9 pr-9 py-2 text-sm bg-surface border border-border rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-80 h-12 pl-9 pr-9 text-sm bg-surface border border-border rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 {query && (
                     <IconButton

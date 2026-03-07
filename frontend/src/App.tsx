@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import './App.css';
 import { deleteArtist } from './services/api';
@@ -24,9 +24,8 @@ import { supabase } from './lib/supabase';
 
 function App() {
     const { username } = useParams<{ username?: string }>();
-    const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const { user, profile, loading } = useAuth();
+    const { user, profile } = useAuth();
 
     const [showForm, setShowForm] = useState(false);
     const [showArtistList, setShowArtistList] = useState(false);
@@ -168,32 +167,35 @@ function App() {
         <div className="h-screen w-screen flex flex-col">
             <BackendStatus />
 
-            {/* Main Search */}
-            {user && (
-                <div className="absolute top-2 left-2 z-[1100]">
-                    <MainSearch
-                        onFocusArtist={handleSearchFocusArtist}
-                        onFocusLocation={handleSearchFocusLocation}
+            {/* Top bar */}
+            <div className="absolute top-2 left-2 right-2 z-[1100] flex items-center justify-between gap-4">
+                {/* Left: Search */}
+                <div className="flex items-center">
+                    {user && (
+                        <MainSearch
+                            onFocusArtist={handleSearchFocusArtist}
+                            onFocusLocation={handleSearchFocusLocation}
+                        />
+                    )}
+                </div>
+
+                {/* Center: Viewing banner */}
+                <div className="flex items-center">
+                    {isViewingOther && username && (
+                        <ViewingUserBanner username={username} />
+                    )}
+                </div>
+
+                {/* Right: Controls */}
+                <div className="flex items-center gap-2">
+                    {user && <NotificationButton />}
+                    <AccountButton
+                        showAuthModal={showAuthModal}
+                        onOpenAuthModal={() => setShowAuthModal(true)}
+                        onCloseAuthModal={() => setShowAuthModal(false)}
+                        onOpenAdminDashboard={() => setShowAdminDashboard(true)}
                     />
                 </div>
-            )}
-
-            {/* Viewing other user's map indicator */}
-            {isViewingOther && username && (
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1100]">
-                    <ViewingUserBanner username={username} />
-                </div>
-            )}
-
-            {/* Top right controls */}
-            <div className="absolute top-2 right-2 z-[1100] flex items-center gap-2">
-                {user && <NotificationButton />}
-                <AccountButton
-                    showAuthModal={showAuthModal}
-                    onOpenAuthModal={() => setShowAuthModal(true)}
-                    onCloseAuthModal={() => setShowAuthModal(false)}
-                    onOpenAdminDashboard={() => setShowAdminDashboard(true)}
-                />
             </div>
 
             {/* Show username prompt for OAuth users without username */}

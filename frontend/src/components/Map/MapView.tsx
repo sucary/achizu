@@ -116,21 +116,29 @@ interface MapViewProps {
     focusedCityId?: string | null;
 }
 
+export type TileLayerType = 'osm' | 'voyager';
+
+const TILE_LAYERS: Record<TileLayerType, { url: string; attribution: string; subdomains?: string }> = {
+    osm: {
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    },
+    voyager: {
+        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+    },
+};
+
+export type DisplayMode = 'cluster' | 'progressive';
+
 const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick, focusedArtist, onFocusedArtistHandled, focusedLocation, onFocusedLocationHandled, focusedCityId }: MapViewProps) => {
     const defaultCenter: LatLngExpression = [35.6762, 139.6503]; // Tokyo
     const defaultZoom = 4;
-    const [view, setViewState] = useState<LocationView>('active');
-    const [displayMode, setDisplayModeState] = useState<'cluster' | 'progressive'>('cluster');
-
-    const setView = (v: LocationView) => {
-        console.log(`[MapView] Location view: ${v}`);
-        setViewState(v);
-    };
-    const setDisplayMode = (m: 'cluster' | 'progressive') => {
-        console.log(`[MapView] Display mode: ${m}`);
-        setDisplayModeState(m);
-    };
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
+    const [view, setView] = useState<LocationView>('active');
+    const [displayMode, setDisplayMode] = useState<DisplayMode>('cluster');
+    const [tileLayer, setTileLayer] = useState<TileLayerType>('voyager');
 
     const {data: artists} = useQuery({
         queryKey: ['artists', username],
@@ -186,12 +194,21 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
             attributionControl={false}
         >
             <ZoomLogger />
-            <MapControls view={view} setView={setView} displayMode={displayMode} setDisplayMode={setDisplayMode} />
+            <MapControls
+                view={view}
+                setView={setView}
+                displayMode={displayMode}
+                setDisplayMode={setDisplayMode}
+                tileLayer={tileLayer}
+                setTileLayer={setTileLayer}
+            />
             <ScaleControl position="bottomleft" imperial={false} />
             <AttributionControl position="bottomright" />
             <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                key={tileLayer}
+                attribution={TILE_LAYERS[tileLayer].attribution}
+                url={TILE_LAYERS[tileLayer].url}
+                subdomains={TILE_LAYERS[tileLayer].subdomains || 'abc'}
             />
             {displayMode === 'cluster' ? (
                 <ArtistCluster

@@ -9,7 +9,7 @@ export function ViewingUserBanner({ username }: ViewingUserBannerProps) {
     const navigate = useNavigate();
 
     return (
-        <div className="flex items-center gap-2 pl-4 pr-2 py-1.5 bg-surface border border-border rounded-full shadow-md">
+        <div className="flex items-center gap-2 h-12 pl-4 pr-2 bg-surface border border-border rounded-full shadow-md">
             <span className="text-sm text-text">
                 Viewing <span className="font-semibold text-primary">{username}</span>'s map
             </span>

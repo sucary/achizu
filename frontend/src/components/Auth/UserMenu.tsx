@@ -28,6 +28,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
     const handleSignOut = async () => {
         await signOut();
         setIsOpen(false);
+        navigate('/');
     };
 
     return (
