@@ -15,6 +15,8 @@ interface ArtistProgressiveViewProps {
   onArtistDeselect?: () => void;
   onEditArtist?: (artist: Artist) => void;
   onDeleteArtist?: (artist: Artist) => void;
+  focusedArtist?: Artist | null;
+  onFocusedArtistHandled?: () => void;
 }
 
 const ArtistProgressiveView = ({
@@ -24,6 +26,8 @@ const ArtistProgressiveView = ({
   onArtistDeselect,
   onEditArtist,
   onDeleteArtist,
+  focusedArtist,
+  onFocusedArtistHandled,
 }: ArtistProgressiveViewProps) => {
   const map = useMap();
   const markerLayerRef = useRef<L.LayerGroup>(L.layerGroup());
@@ -198,6 +202,69 @@ const ArtistProgressiveView = ({
       }
     }
   }, [artists, map]);
+
+  // Handle focused artist
+  useEffect(() => {
+    if (!focusedArtist) return;
+
+    const artistId = focusedArtist.id;
+    const location = view === 'active'
+      ? focusedArtist.activeLocation
+      : focusedArtist.originalLocation;
+
+    map.flyTo([location.coordinates.lat, location.coordinates.lng], 11, {
+      duration: 2,
+    });
+
+    // Find and expand the artist after fly animation
+    setTimeout(() => {
+      // Check if already expanded
+      const expanded = expandedRef.current.get(artistId);
+      if (expanded) {
+        expanded.marker.openPopup();
+        onArtistSelect?.(focusedArtist);
+      } else {
+        const artist = artists.find(a => a.id === artistId);
+        if (artist) {
+          // Find if it's a dot or marker and expand/open it
+          const artistLocation = view === 'active' ? artist.activeLocation : artist.originalLocation;
+
+          // Create and show the marker with popup
+          const icon = createArtistMarker(artist);
+          const marker = L.marker(
+            [artistLocation.coordinates.lat, artistLocation.coordinates.lng],
+            { icon },
+          );
+
+          const popupContent = renderToStaticMarkup(<ArtistProfile artist={artist} />);
+          marker.bindPopup(popupContent, {
+            className: 'artist-popup',
+            closeButton: false,
+            minWidth: 320,
+          });
+
+          setupMarkerPopupEvents({
+            map,
+            marker,
+            artist,
+            onArtistSelect,
+            onArtistDeselect,
+            onEditArtist,
+            onDeleteArtist,
+          });
+
+          marker.addTo(map);
+          marker.openPopup();
+          onArtistSelect?.(artist);
+
+          marker.on('popupclose', () => {
+            map.removeLayer(marker);
+          });
+        }
+      }
+      onFocusedArtistHandled?.();
+    }, 2100);
+  }, [focusedArtist, map, view, artists, onArtistSelect, onArtistDeselect, onEditArtist, onDeleteArtist, onFocusedArtistHandled]);
 
   return null;
 };

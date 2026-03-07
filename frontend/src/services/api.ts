@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { Artist, ArtistQueryParams } from '../types/artist';
 import type { City } from '../types/city';
+import type { MainSearchResponse } from '../types/search';
 import { supabase } from '../lib/supabase';
 
 const API_URL = 'http://localhost:3000/api';
@@ -176,6 +177,26 @@ export const deleteArtist = async (id: string): Promise<void> => {
         await api.delete(`/artists/${id}`);
     } catch (error) {
         console.error('Failed to delete artist:', error);
+        throw error;
+    }
+};
+
+// Main search across artists and locations
+export const mainSearch = async (
+    query: string,
+    limit: number = 10,
+    source: 'auto' | 'nominatim' = 'auto',
+    signal?: AbortSignal
+): Promise<MainSearchResponse> => {
+    try {
+        const response = await api.get<MainSearchResponse>('/search', {
+            params: { q: query, limit, source },
+            signal
+        });
+        return response.data;
+    } catch (error) {
+        if (axios.isCancel(error)) throw error;
+        console.error('Failed to search:', error);
         throw error;
     }
 };

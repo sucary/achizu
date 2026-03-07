@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useCallback, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, ScaleControl, AttributionControl, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, ScaleControl, AttributionControl, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression } from 'leaflet';
 import { getArtists, getArtistsByUsername, getCityById } from '../../services/api';
@@ -44,9 +44,62 @@ const MapEmptyClickHandler = ({ onClick }: { onClick: () => void }) => {
     return null;
 };
 
+// Get zoom level based on location type
+const getZoomForLocationType = (locationType?: string): number => {
+    switch (locationType) {
+        case 'country':
+            return 5;
+        case 'state':
+        case 'province':
+        case 'region':
+            return 8;
+        case 'county':
+        case 'district':
+            return 9;
+        case 'city':
+        case 'town':
+        case 'municipality':
+            return 11;
+        case 'village':
+        case 'suburb':
+        case 'borough':
+            return 13;
+        case 'neighbourhood':
+        case 'quarter':
+            return 15;
+        default:
+            return 12;
+    }
+};
+
+// Component to handle flying to a focused location
+const FocusedLocationHandler = ({
+    location,
+    onHandled
+}: {
+    location: { lat: number; lng: number; locationType?: string } | null;
+    onHandled?: () => void;
+}) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (!location) return;
+
+        const zoom = getZoomForLocationType(location.locationType);
+        map.flyTo([location.lat, location.lng], zoom, {
+            duration: 1.5
+        });
+
+        onHandled?.();
+    }, [location, map, onHandled]);
+
+    return null;
+};
+
 interface Coordinates {
     lat: number;
     lng: number;
+    locationType?: string;
 }
 
 interface MapViewProps {
@@ -58,9 +111,12 @@ interface MapViewProps {
     onEmptyClick?: () => void;
     focusedArtist?: Artist | null;
     onFocusedArtistHandled?: () => void;
+    focusedLocation?: Coordinates | null;
+    onFocusedLocationHandled?: () => void;
+    focusedCityId?: string | null;
 }
 
-const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick, focusedArtist, onFocusedArtistHandled }: MapViewProps) => {
+const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick, focusedArtist, onFocusedArtistHandled, focusedLocation, onFocusedLocationHandled, focusedCityId }: MapViewProps) => {
     const defaultCenter: LatLngExpression = [35.6762, 139.6503]; // Tokyo
     const defaultZoom = 4;
     const [view, setViewState] = useState<LocationView>('active');
@@ -93,6 +149,13 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
     useEffect(() => {
         console.log('Selected City Data:', selectedCity);
     }, [selectedCity]);
+
+    // Set selectedCityId when focusedCityId changes (from main search)
+    useEffect(() => {
+        if (focusedCityId) {
+            setSelectedCityId(focusedCityId);
+        }
+    }, [focusedCityId]);
 
     const displayArtists = useMemo(() =>
         getDisplayArtists({}, view, artists || []),
@@ -156,6 +219,12 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
             )}
             {!selectionMode?.active && onEmptyClick && (
                 <MapEmptyClickHandler onClick={onEmptyClick} />
+            )}
+            {focusedLocation && (
+                <FocusedLocationHandler
+                    location={focusedLocation}
+                    onHandled={onFocusedLocationHandled}
+                />
             )}
             {selectedCity && selectedCity.boundary && (
                 <GeoJSON

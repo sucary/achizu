@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { searchUnified } from '../../services/api';
-import type { UnifiedSearchResponse, ArtistSearchResult, LocationSearchResult } from '../../types/search';
+import { mainSearch } from '../../services/api';
+import type { MainSearchResponse, ArtistSearchResult, LocationSearchResult } from '../../types/search';
 
 interface UseMainSearchOptions {
     onAutoFocusArtist?: (result: ArtistSearchResult) => void;
@@ -35,9 +35,9 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
         }
     }, [query]);
 
-    const { data: results, isLoading, isFetching } = useQuery<UnifiedSearchResponse>({
-        queryKey: ['unifiedSearch', debouncedQuery],
-        queryFn: () => searchUnified(debouncedQuery),
+    const { data: results, isLoading, isFetching } = useQuery<MainSearchResponse>({
+        queryKey: ['mainSearch', debouncedQuery],
+        queryFn: () => mainSearch(debouncedQuery),
         enabled: debouncedQuery.length >= 2,
         staleTime: 1000 * 60 * 5, // 5 minutes
         gcTime: 1000 * 60 * 30, // 30 minutes
@@ -79,9 +79,9 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
 
         setIsLoadingMore(true);
         try {
-            const moreResults = await searchUnified(debouncedQuery, 10, 'nominatim');
+            const moreResults = await mainSearch(debouncedQuery, 10, 'nominatim');
             // Update the cache with the new results
-            queryClient.setQueryData(['unifiedSearch', debouncedQuery], moreResults);
+            queryClient.setQueryData(['mainSearch', debouncedQuery], moreResults);
         } catch (error) {
             console.error('Failed to load more results:', error);
         } finally {

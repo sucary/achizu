@@ -2,7 +2,6 @@ import { useReducer, useRef, useEffect, useCallback, useMemo } from 'react';
 import { reverseSearchCities, type SearchResult } from '../services/api';
 import { LocationSearchService } from '../services/LocationSearchService';
 import { locationSearchReducer, initialState } from './locationSearchReducer';
-import { useDebounce } from './useDebounce';
 
 interface UseLocationSearchProps {
     displayValue?: string;
@@ -18,7 +17,6 @@ export function useLocationSearch({
     onCoordinatesConsumed,
 }: UseLocationSearchProps) {
     const [state, dispatch] = useReducer(locationSearchReducer, initialState);
-    const debouncedQuery = useDebounce(state.query ?? '', 1000);
 
     // Create service with callbacks that dispatch to reducer
     const service = useMemo(() => new LocationSearchService({
@@ -51,16 +49,23 @@ export function useLocationSearch({
         dispatch({ type: 'RESET_QUERY' });
     }, [state.clickedCoords, onChange]);
 
+    const handleSearch = useCallback(() => {
+        const searchQuery = state.query ?? '';
+        if (searchQuery.trim().length >= 2) {
+            service.search(searchQuery.trim());
+        }
+    }, [service, state.query]);
+
     const handleSearchMore = useCallback(() => {
         if (state.clickedCoords) {
             service.reverseSearch(state.clickedCoords.lat, state.clickedCoords.lng, 'nominatim');
         } else {
-            const searchQuery = state.query ?? debouncedQuery;
+            const searchQuery = state.query ?? '';
             if (searchQuery.trim().length >= 2) {
                 service.search(searchQuery.trim(), 'nominatim');
             }
         }
-    }, [service, state.clickedCoords, state.query, debouncedQuery]);
+    }, [service, state.clickedCoords, state.query]);
 
     const handleRetry = useCallback(() => {
         const queryToRetry = state.query ?? '';
@@ -135,22 +140,6 @@ export function useLocationSearch({
         }
     }, [displayValue]);
 
-    // Refs to avoid triggering effect on every render
-    const queryRef = useRef(state.query);
-    queryRef.current = state.query;
-
-    // Effect: search when debounced query changes
-    useEffect(() => {
-        if (queryRef.current === null) return;
-
-        const trimmedQuery = debouncedQuery.trim();
-        if (trimmedQuery.length >= 2) {
-            service.search(trimmedQuery);
-        } else if (trimmedQuery.length === 0) {
-            dispatch({ type: 'CLEAR_RESULTS' });
-        }
-    }, [debouncedQuery, service]);
-
     return {
         query: state.query,
         results: state.results,
@@ -159,9 +148,9 @@ export function useLocationSearch({
         isLoadingMore: state.isLoadingMore,
         error: state.error,
         hasMore: state.hasMore,
-        debouncedQuery,
 
         setQuery,
+        handleSearch,
         handleSelect,
         handleSearchMore,
         handleCancel,

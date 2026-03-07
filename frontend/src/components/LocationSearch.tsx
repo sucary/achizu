@@ -31,8 +31,8 @@ export const LocationSearch = ({
         isLoadingMore,
         error,
         hasMore,
-        debouncedQuery,
         setQuery,
+        handleSearch,
         handleSelect,
         handleSearchMore,
         handleCancel,
@@ -99,7 +99,15 @@ export const LocationSearch = ({
         }
     };
 
-    const showNoResults = isOpen && results.length === 0 && !isLoading && !error && query !== null && debouncedQuery.trim().length >= 2;
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSearch();
+        }
+    };
+
+    const canSearch = query !== null && query.trim().length >= 2;
+    const showNoResults = isOpen && results.length === 0 && !isLoading && !error && canSearch;
 
     return (
         <div>
@@ -114,26 +122,26 @@ export const LocationSearch = ({
                         <input
                             type="text"
                             placeholder={placeholder || "Search location..."}
-                            className={`w-full pl-9 py-2 border border-border-strong rounded-md text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary ${isLoading ? 'pr-8' : 'pr-3'}`}
+                            className={`w-full pl-3 py-2 border border-border-strong rounded-md text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary ${isLoading ? 'pr-14' : 'pr-9'}`}
                             value={query !== null ? query : displayValue}
                             onChange={handleInputChange}
                             onFocus={handleInputFocus}
+                            onKeyDown={handleKeyDown}
                         />
-                        {isLoading ? (
-                            <LoaderIcon className="absolute left-3 top-2.5 w-4 h-4 text-text-muted animate-spin" />
-                        ) : (
-                            <SearchIcon className="absolute left-3 top-2.5 w-4 h-4 text-text-muted" />
-                        )}
-                        {isLoading && (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                            {isLoading && (
+                                <LoaderIcon className="w-4 h-4 text-text-muted animate-spin" />
+                            )}
                             <button
-                                onClick={handleCancel}
+                                onClick={isLoading ? handleCancel : handleSearch}
                                 type="button"
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-error transition-colors"
-                                title="Cancel search"
+                                disabled={!isLoading && !canSearch}
+                                className={`p-0.5 transition-colors ${isLoading ? 'text-text-muted hover:text-error' : 'text-text-muted hover:text-primary disabled:opacity-40 disabled:hover:text-text-muted'}`}
+                                title={isLoading ? "Cancel search" : "Search"}
                             >
-                                <CloseIcon className="w-4 h-4" />
+                                {isLoading ? <CloseIcon className="w-4 h-4" /> : <SearchIcon className="w-4 h-4" />}
                             </button>
-                        )}
+                        </div>
                     </div>
                     <button
                         onClick={onManualPin}

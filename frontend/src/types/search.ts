@@ -23,7 +23,7 @@ export interface LocationSearchResult {
 
 export type SearchResult = ArtistSearchResult | LocationSearchResult;
 
-export interface UnifiedSearchResponse {
+export interface MainSearchResponse {
     artists: ArtistSearchResult[];
     locations: LocationSearchResult[];
     totalCount: number;

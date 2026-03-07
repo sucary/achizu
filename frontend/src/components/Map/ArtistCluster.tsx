@@ -131,40 +131,38 @@ const ArtistCluster = ({
   useEffect(() => {
     if (!focusedArtist || !markerClusterGroupRef.current) return;
 
-    const markerClusterGroup = markerClusterGroupRef.current;
-    let targetMarker: L.Marker | null = null;
+    const artistId = focusedArtist.id;
+    const location = view === 'active'
+      ? focusedArtist.activeLocation
+      : focusedArtist.originalLocation;
 
     // Find the marker for the focused artist
-    markerClusterGroup.eachLayer((layer) => {
-      const marker = layer as L.Marker & { _artistData?: Artist };
-      if (marker._artistData?.id === focusedArtist.id) {
-        targetMarker = marker;
-      }
+    const findMarker = (): L.Marker | null => {
+      let found: L.Marker | null = null;
+      markerClusterGroupRef.current?.eachLayer((layer) => {
+        const marker = layer as L.Marker & { _artistData?: Artist };
+        if (marker._artistData?.id === artistId) {
+          found = marker;
+        }
+      });
+      return found;
+    };
+
+    map.flyTo([location.coordinates.lat, location.coordinates.lng], 11, {
+      duration: 2,
     });
 
-    if (targetMarker) {
-      const location = view === 'active'
-        ? focusedArtist.activeLocation
-        : focusedArtist.originalLocation;
-
-      // Fly to the artist's location
-      map.flyTo([location.coordinates.lat, location.coordinates.lng], 12, {
-        duration: 0.8,
-      });
-
-      // Open popup after fly animation completes
-      setTimeout(() => {
-        if (targetMarker) {
-          // Make sure the marker is visible
-          markerClusterGroup.zoomToShowLayer(targetMarker, () => {
-            targetMarker!.openPopup();
-            onArtistSelect?.(focusedArtist);
-          });
-        }
-      }, 850);
-    }
-
-    onFocusedArtistHandled?.();
+    // Open popup after fly animation completes
+    setTimeout(() => {
+      const marker = findMarker();
+      if (marker && markerClusterGroupRef.current) {
+        markerClusterGroupRef.current.zoomToShowLayer(marker, () => {
+          marker.openPopup();
+          onArtistSelect?.(focusedArtist);
+        });
+      }
+      onFocusedArtistHandled?.();
+    }, 1600);
   }, [focusedArtist, map, view, onArtistSelect, onFocusedArtistHandled]);
 
   return null;
