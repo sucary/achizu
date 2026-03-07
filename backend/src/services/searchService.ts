@@ -1,6 +1,7 @@
 import { ArtistStore } from '../models/artistStore';
 import { TextSearch } from './searchHelper';
 import type { Artist, CropArea } from '../types/artist';
+import pool from '../config/database';
 
 export interface ArtistSearchResult {
     type: 'artist';
@@ -23,9 +24,16 @@ export interface LocationSearchResult {
     osmType: string;
 }
 
+export interface UserSearchResult {
+    type: 'user';
+    id: string;
+    username: string;
+}
+
 export interface UnifiedSearchResponse {
     artists: ArtistSearchResult[];
     locations: LocationSearchResult[];
+    users: UserSearchResult[];
     totalCount: number;
     locationSource: 'local' | 'nominatim' | 'cache';
     hasMoreLocations: boolean;
@@ -49,16 +57,44 @@ function mapArtistToSearchResult(artist: Artist): ArtistSearchResult {
     };
 }
 
+async function searchUsers(query: string, limit: number, excludeUsername?: string): Promise<UserSearchResult[]> {
+    const params: (string | number)[] = [`%${query}%`, limit];
+    let excludeClause = '';
+
+    if (excludeUsername) {
+        excludeClause = 'AND username != $3';
+        params.push(excludeUsername);
+    }
+
+    const result = await pool.query(
+        `SELECT id, username FROM profiles
+         WHERE username IS NOT NULL
+           AND is_private = false
+           AND username ILIKE $1
+           ${excludeClause}
+         ORDER BY username
+         LIMIT $2`,
+        params
+    );
+    return result.rows.map((row) => ({
+        type: 'user' as const,
+        id: row.id,
+        username: row.username,
+    }));
+}
+
 export const SearchService = {
     search: async (
         query: string,
         limit: number = 10,
-        source: 'auto' | 'nominatim' = 'auto'
+        source: 'auto' | 'nominatim' = 'auto',
+        excludeUsername?: string
     ): Promise<UnifiedSearchResponse> => {
         // Execute all searches in parallel
-        const [artists, locationResponse] = await Promise.all([
+        const [artists, locationResponse, users] = await Promise.all([
             ArtistStore.getAll({ name: query }),
             TextSearch.search(query, limit, source),
+            searchUsers(query, limit, excludeUsername),
         ]);
 
         const artistResults: ArtistSearchResult[] = artists
@@ -89,7 +125,8 @@ export const SearchService = {
         return {
             artists: artistResults,
             locations: locationResults,
-            totalCount: artistResults.length + locationResults.length,
+            users,
+            totalCount: artistResults.length + locationResults.length + users.length,
             locationSource: locationResponse.source,
             hasMoreLocations: locationResponse.hasMore,
         };

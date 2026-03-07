@@ -1,5 +1,6 @@
-import type { ArtistSearchResult, LocationSearchResult, SearchResult } from '../../types/search';
+import type { ArtistSearchResult, LocationSearchResult, UserSearchResult, SearchResult } from '../../types/search';
 import { getAvatarUrl } from '../../utils/cloudinaryUrl';
+import { UserIcon } from '../icons/FormIcons';
 
 interface SearchResultRowProps {
     result: SearchResult;
@@ -60,11 +61,30 @@ function LocationRow({ result, onSelect }: { result: LocationSearchResult; onSel
     );
 }
 
+function UserRow({ result, onSelect }: { result: UserSearchResult; onSelect: () => void }) {
+    return (
+        <div
+            onClick={onSelect}
+            className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer"
+        >
+            <div className="w-10 h-10 rounded-full bg-surface-muted border border-border flex items-center justify-center">
+                <UserIcon className="w-5 h-5 text-text-secondary" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-text truncate">{result.username}</p>
+                <span className="text-xs text-text-secondary">View map</span>
+            </div>
+        </div>
+    );
+}
+
 export function SearchResultRow({ result, onSelect }: SearchResultRowProps) {
     switch (result.type) {
         case 'artist':
             return <ArtistRow result={result} onSelect={onSelect} />;
         case 'location':
             return <LocationRow result={result} onSelect={onSelect} />;
+        case 'user':
+            return <UserRow result={result} onSelect={onSelect} />;
     }
 }

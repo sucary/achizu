@@ -18,12 +18,13 @@ router.get('/', searchLimiter, asyncHandler(async (req, res) => {
     const query = req.query.q as string;
     const limit = parseInt(req.query.limit as string) || 10;
     const source = (req.query.source as 'auto' | 'nominatim') || 'auto';
+    const excludeUsername = req.query.excludeUser as string | undefined;
 
     if (!query || query.trim().length < 2) {
         throw new AppError('Query must be at least 2 characters', 400);
     }
 
-    const results = await SearchService.search(query.trim(), limit, source);
+    const results = await SearchService.search(query.trim(), limit, source, excludeUsername);
     res.json(results);
 }));
 

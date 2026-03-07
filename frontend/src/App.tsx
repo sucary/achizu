@@ -18,6 +18,7 @@ import type { Artist, SelectionMode } from './types/artist';
 import type { ArtistSearchResult, LocationSearchResult } from './types/search';
 import { UsernamePrompt } from './components/Auth/UsernamePrompt';
 import { ResetPasswordModal } from './components/Auth/ResetPasswordModal';
+import { ViewingUserBanner } from './components/ViewingUserBanner';
 import { supabase } from './lib/supabase';
 
 
@@ -168,12 +169,21 @@ function App() {
             <BackendStatus />
 
             {/* Main Search */}
-            <div className="absolute top-2 left-2 z-[1100]">
-                <MainSearch
-                    onFocusArtist={handleSearchFocusArtist}
-                    onFocusLocation={handleSearchFocusLocation}
-                />
-            </div>
+            {user && (
+                <div className="absolute top-2 left-2 z-[1100]">
+                    <MainSearch
+                        onFocusArtist={handleSearchFocusArtist}
+                        onFocusLocation={handleSearchFocusLocation}
+                    />
+                </div>
+            )}
+
+            {/* Viewing other user's map indicator */}
+            {isViewingOther && username && (
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1100]">
+                    <ViewingUserBanner username={username} />
+                </div>
+            )}
 
             {/* Top right controls */}
             <div className="absolute top-2 right-2 z-[1100] flex items-center gap-2">

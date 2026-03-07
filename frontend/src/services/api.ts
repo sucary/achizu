@@ -186,11 +186,12 @@ export const mainSearch = async (
     query: string,
     limit: number = 10,
     source: 'auto' | 'nominatim' = 'auto',
+    excludeUser?: string,
     signal?: AbortSignal
 ): Promise<MainSearchResponse> => {
     try {
         const response = await api.get<MainSearchResponse>('/search', {
-            params: { q: query, limit, source },
+            params: { q: query, limit, source, excludeUser },
             signal
         });
         return response.data;

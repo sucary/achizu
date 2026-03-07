@@ -17,9 +17,9 @@ const router = Router();
 router.get('/', optionalAuth, getAllArtists);
 router.get('/stats/by-city', optionalAuth, getArtistCountByCity);
 
-// Admin routes
-router.get('/u/:username', requireAuth, getArtistsByUsername);
-router.get('/u/:username/stats/by-city', requireAuth, getArtistCountByUsername);
+// View other user's map (public profiles visible to all, private to self/admin)
+router.get('/u/:username', optionalAuth, getArtistsByUsername);
+router.get('/u/:username/stats/by-city', optionalAuth, getArtistCountByUsername);
 
 // Protected route - requires auth to view individual artist
 router.get('/:id', requireAuth, getArtistById);

@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { mainSearch } from '../../services/api';
-import type { MainSearchResponse, ArtistSearchResult, LocationSearchResult } from '../../types/search';
+import { useAuth } from '../../context/AuthContext';
+import type { MainSearchResponse, ArtistSearchResult, LocationSearchResult, UserSearchResult } from '../../types/search';
 
 interface UseMainSearchOptions {
     onAutoFocusArtist?: (result: ArtistSearchResult) => void;
@@ -11,6 +13,8 @@ interface UseMainSearchOptions {
 export function useMainSearch(options: UseMainSearchOptions = {}) {
     const { onAutoFocusArtist, onAutoFocusLocation } = options;
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
+    const { profile } = useAuth();
 
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -36,18 +40,18 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
     }, [query]);
 
     const { data: results, isLoading, isFetching } = useQuery<MainSearchResponse>({
-        queryKey: ['mainSearch', debouncedQuery],
-        queryFn: () => mainSearch(debouncedQuery),
+        queryKey: ['mainSearch', debouncedQuery, profile?.username],
+        queryFn: () => mainSearch(debouncedQuery, 10, 'auto', profile?.username ?? undefined),
         enabled: debouncedQuery.length >= 2,
         staleTime: 1000 * 60 * 5, // 5 minutes
         gcTime: 1000 * 60 * 30, // 30 minutes
     });
 
-    // Auto-focus when single artist result
+    // Auto-focus when single artist result (and no other results)
     useEffect(() => {
         if (!results || autoFocusTriggered.current) return;
 
-        if (results.artists.length === 1 && results.locations.length === 0) {
+        if (results.artists.length === 1 && results.locations.length === 0 && results.users.length === 0) {
             autoFocusTriggered.current = true;
             onAutoFocusArtist?.(results.artists[0]);
             setIsOpen(false);
@@ -74,20 +78,26 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
         setIsOpen(false);
     }, [onAutoFocusLocation]);
 
+    const handleSelectUser = useCallback((result: UserSearchResult) => {
+        navigate(`/u/${result.username}`);
+        setIsOpen(false);
+        setQuery('');
+    }, [navigate]);
+
     const handleSearchMore = useCallback(async () => {
         if (!debouncedQuery || isLoadingMore) return;
 
         setIsLoadingMore(true);
         try {
-            const moreResults = await mainSearch(debouncedQuery, 10, 'nominatim');
+            const moreResults = await mainSearch(debouncedQuery, 10, 'nominatim', profile?.username ?? undefined);
             // Update the cache with the new results
-            queryClient.setQueryData(['mainSearch', debouncedQuery], moreResults);
+            queryClient.setQueryData(['mainSearch', debouncedQuery, profile?.username], moreResults);
         } catch (error) {
             console.error('Failed to load more results:', error);
         } finally {
             setIsLoadingMore(false);
         }
-    }, [debouncedQuery, isLoadingMore, queryClient]);
+    }, [debouncedQuery, isLoadingMore, queryClient, profile?.username]);
 
     return {
         query,
@@ -102,6 +112,7 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
         handleClear,
         handleSelectArtist,
         handleSelectLocation,
+        handleSelectUser,
         handleSearchMore,
     };
 }

@@ -21,11 +21,18 @@ export interface LocationSearchResult {
     osmType: string;
 }
 
-export type SearchResult = ArtistSearchResult | LocationSearchResult;
+export interface UserSearchResult {
+    type: 'user';
+    id: string;
+    username: string;
+}
+
+export type SearchResult = ArtistSearchResult | LocationSearchResult | UserSearchResult;
 
 export interface MainSearchResponse {
     artists: ArtistSearchResult[];
     locations: LocationSearchResult[];
+    users: UserSearchResult[];
     totalCount: number;
     locationSource: 'local' | 'nominatim' | 'cache';
     hasMoreLocations: boolean;

@@ -26,6 +26,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
         handleClear,
         handleSelectArtist,
         handleSelectLocation,
+        handleSelectUser,
         handleSearchMore,
     } = useMainSearch({
         onAutoFocusArtist: onFocusArtist,
@@ -72,7 +73,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                 <input
                     ref={inputRef}
                     type="text"
-                    placeholder="Search artists, locations..."
+                    placeholder="Search artists, users, locations..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
@@ -113,6 +114,22 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                                             key={artist.id}
                                             result={artist}
                                             onSelect={() => handleSelectArtist(artist)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Users */}
+                            {results.users.length > 0 && (
+                                <div>
+                                    <div className="px-4 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider bg-surface-muted">
+                                        Users
+                                    </div>
+                                    {results.users.map((user) => (
+                                        <SearchResultRow
+                                            key={user.id}
+                                            result={user}
+                                            onSelect={() => handleSelectUser(user)}
                                         />
                                     ))}
                                 </div>
