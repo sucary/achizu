@@ -1,6 +1,7 @@
 import type { ArtistSearchResult, LocationSearchResult, UserSearchResult, SearchResult } from '../../types/search';
 import { getAvatarUrl } from '../../utils/cloudinaryUrl';
 import { UserIcon } from '../icons/FormIcons';
+import { useAuth } from '../../context/AuthContext';
 
 interface SearchResultRowProps {
     result: SearchResult;
@@ -39,6 +40,7 @@ function ArtistRow({ result, onSelect }: { result: ArtistSearchResult; onSelect:
 }
 
 function LocationRow({ result, onSelect }: { result: LocationSearchResult; onSelect: () => void }) {
+    const { profile } = useAuth();
     return (
         <div
             onClick={onSelect}
@@ -50,7 +52,7 @@ function LocationRow({ result, onSelect }: { result: LocationSearchResult; onSel
                     {result.locationType && (
                         <span className="text-xs text-text-secondary capitalize">{result.locationType}</span>
                     )}
-                    {result.isLocal && (
+                    {profile?.isAdmin && result.isLocal && (
                         <span className="text-xs px-1.5 py-0.5 rounded bg-secondary/10 text-secondary ml-auto">
                             DB
                         </span>

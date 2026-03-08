@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { API_URL } from '../../services/api';
 
 export function SettingsPage() {
     const navigate = useNavigate();
@@ -45,7 +46,7 @@ export function SettingsPage() {
 
         try {
             const token = (await supabase.auth.getSession()).data.session?.access_token;
-            const res = await fetch('http://localhost:3000/api/auth/profile', {
+            const res = await fetch(`${API_URL}/auth/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -126,7 +127,7 @@ export function SettingsPage() {
 
         try {
             const token = (await supabase.auth.getSession()).data.session?.access_token;
-            const res = await fetch('http://localhost:3000/api/auth/profile', {
+            const res = await fetch(`${API_URL}/auth/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

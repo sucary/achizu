@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { SearchIcon, MapPinIcon, CloseIcon } from './icons/FormIcons';
 import { useLocationSearch } from '../hooks/useLocationSearch';
 import { Spinner, Button } from './ui';
+import { useAuth } from '../context/AuthContext';
 import type { SearchResult } from '../services/api';
 
 interface LocationSearchProps {
@@ -47,6 +48,7 @@ export const LocationSearch = ({
         onCoordinatesConsumed,
     });
 
+    const { profile } = useAuth();
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, maxHeight: 320 });
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLDivElement>(null);
@@ -187,7 +189,7 @@ export const LocationSearch = ({
                                 className="w-full px-3 py-2 text-left text-sm hover:bg-surface-secondary border-b border-border last:border-b-0"
                             >
                                 <div className="font-medium text-text flex items-start">
-                                    {result.isPriority && (
+                                    {profile?.isAdmin && result.isPriority && (
                                         <span className="inline-block w-2 h-2 bg-primary rounded-full mr-2 mt-1.5" />
                                     )}
                                     {result.displayName}
@@ -196,7 +198,7 @@ export const LocationSearch = ({
                                     {result.type && (
                                         <span className="text-xs text-text-secondary capitalize">{result.type}</span>
                                     )}
-                                    {result.isLocal && (
+                                    {profile?.isAdmin && result.isLocal && (
                                         <span className="text-xs text-secondary bg-secondary/10 px-1.5 py-0.5 rounded ml-auto">DB</span>
                                     )}
                                 </div>

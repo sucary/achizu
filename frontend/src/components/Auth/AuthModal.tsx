@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Input, Button, Spinner, Alert, IconButton, CloseButton } from '../ui';
 import { EyeIcon, EyeOffIcon, GoogleIcon, GitHubIcon, CheckIcon } from '../icons/FormIcons';
+import { API_URL } from '../../services/api';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -83,7 +84,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         if (!validateUsername(username)) return;
         try {
             const response = await fetch(
-                `http://localhost:3000/api/auth/check-username?username=${encodeURIComponent(username)}`
+                `${API_URL}/auth/check-username?username=${encodeURIComponent(username)}`
             );
             const data = await response.json();
             if (!data.available) setUsernameError('Username already taken');
@@ -115,7 +116,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 // Check email availability first
                 try {
                     const emailCheckRes = await fetch(
-                        `http://localhost:3000/api/auth/check-email?email=${encodeURIComponent(email)}`
+                        `${API_URL}/auth/check-email?email=${encodeURIComponent(email)}`
                     );
                     const emailCheckData = await emailCheckRes.json();
                     if (!emailCheckData.available) {

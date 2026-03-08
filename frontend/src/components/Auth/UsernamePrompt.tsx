@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Input, Button } from '../ui';
+import { API_URL } from '../../services/api';
 
 interface UsernamePromptProps {
     onComplete: () => void;
@@ -34,7 +35,7 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
 
         setChecking(true);
         try {
-            const res = await fetch(`http://localhost:3000/api/auth/check-username?username=${value}`);
+            const res = await fetch(`${API_URL}/auth/check-username?username=${value}`);
             const data = await res.json();
             if (!data.available) {
                 setError('Username already taken');
@@ -50,7 +51,7 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
 
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:3000/api/auth/set-username', {
+            const res = await fetch(`${API_URL}/auth/set-username`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Spinner, Alert, Button, CloseButton } from '../ui';
 import { CheckCircleIcon } from '../icons/FormIcons';
+import { API_URL } from '../../services/api';
 import type { PendingUser } from '../../types/profile';
 
 interface AdminDashboardProps {
@@ -29,7 +30,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
                 throw new Error('No authentication token found');
             }
 
-            const response = await fetch('http://localhost:3000/api/auth/admin/pending-users', {
+            const response = await fetch(`${API_URL}/auth/admin/pending-users`, {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,
                 },
@@ -57,7 +58,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
                 throw new Error('No authentication token found');
             }
 
-            const response = await fetch(`http://localhost:3000/api/auth/admin/approve/${userId}`, {
+            const response = await fetch(`${API_URL}/auth/admin/approve/${userId}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,
@@ -88,7 +89,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
                 throw new Error('No authentication token found');
             }
 
-            const response = await fetch(`http://localhost:3000/api/auth/admin/reject/${userId}`, {
+            const response = await fetch(`${API_URL}/auth/admin/reject/${userId}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,

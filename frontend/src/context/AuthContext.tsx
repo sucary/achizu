@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { API_URL } from '../services/api';
 import type { Profile } from '../types/profile';
 
 interface AuthContextType {
@@ -30,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         queryKey: ['profile', user?.id],
         queryFn: async () => {
             if (!session) return null;
-            const response = await fetch('http://localhost:3000/api/auth/profile', {
+            const response = await fetch(`${API_URL}/auth/profile`, {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,
                 },
