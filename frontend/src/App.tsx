@@ -168,35 +168,32 @@ function App() {
             <BackendStatus />
 
             {/* Top bar */}
-            <div className="absolute top-2 left-2 right-2 z-[1100] flex items-center justify-between gap-4">
-                {/* Left: Search */}
-                <div className="flex items-center">
-                    {user && (
-                        <MainSearch
-                            onFocusArtist={handleSearchFocusArtist}
-                            onFocusLocation={handleSearchFocusLocation}
-                        />
-                    )}
-                </div>
-
-                {/* Center: Viewing banner */}
-                <div className="flex items-center">
-                    {isViewingOther && username && (
-                        <ViewingUserBanner username={username} />
-                    )}
-                </div>
-
-                {/* Right: Controls */}
-                <div className="flex items-center gap-2">
-                    {user && <NotificationButton />}
-                    <AccountButton
-                        showAuthModal={showAuthModal}
-                        onOpenAuthModal={() => setShowAuthModal(true)}
-                        onCloseAuthModal={() => setShowAuthModal(false)}
-                        onOpenAdminDashboard={() => setShowAdminDashboard(true)}
+            <div className="absolute top-2 left-2 z-[1100]">
+                {user && (
+                    <MainSearch
+                        onFocusArtist={handleSearchFocusArtist}
+                        onFocusLocation={handleSearchFocusLocation}
                     />
-                </div>
+                )}
             </div>
+
+            {/* Top right controls */}
+            <div className="absolute top-2 right-2 z-[1100] flex items-center gap-2">
+                {user && <NotificationButton />}
+                <AccountButton
+                    showAuthModal={showAuthModal}
+                    onOpenAuthModal={() => setShowAuthModal(true)}
+                    onCloseAuthModal={() => setShowAuthModal(false)}
+                    onOpenAdminDashboard={() => setShowAdminDashboard(true)}
+                />
+            </div>
+
+            {/* Bottom center: Viewing banner */}
+            {isViewingOther && username && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1100]">
+                    <ViewingUserBanner username={username} />
+                </div>
+            )}
 
             {/* Show username prompt for OAuth users without username */}
             {user && profile && !profile.username && (

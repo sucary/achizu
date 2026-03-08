@@ -18,8 +18,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const [rememberMe, setRememberMe] = useState(true);
     const [usernameError, setUsernameError] = useState<string | null>(null);
     const [emailError, setEmailError] = useState<string | null>(null);
-    const [checkingUsername, setCheckingUsername] = useState(false);
-    const [checkingEmail, setCheckingEmail] = useState(false);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [forgotPasswordEmailError, setForgotPasswordEmailError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
@@ -29,9 +29,43 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     const { signIn, signUp, signInWithOAuth } = useAuth();
 
-    const clearMessages = () => { setError(null); setMessage(null); };
+    const clearMessages = () => {
+        setError(null);
+        setMessage(null);
+        setPasswordError(null);
+        setForgotPasswordEmailError(null);
+    };
+
+    const handleClose = () => {
+        clearMessages();
+        onClose();
+    };
 
     if (!isOpen) return null;
+
+    const validateEmail = (value: string): boolean => {
+        if (!value) {
+            setEmailError('Email is required');
+            return false;
+        }
+        if (!value.includes('@') || !value.includes('.')) {
+            setEmailError('Please enter a valid email');
+            return false;
+        }
+        return true;
+    };
+
+    const validatePassword = (value: string): boolean => {
+        if (!value) {
+            setPasswordError('Password is required');
+            return false;
+        }
+        if (value.length < 6) {
+            setPasswordError('Password must be at least 6 characters');
+            return false;
+        }
+        return true;
+    };
 
     const validateUsername = (value: string): boolean => {
         if (value.length < 3) {
@@ -42,13 +76,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             setUsernameError('Username can only contain letters, numbers, and underscores');
             return false;
         }
-        setUsernameError(null);
         return true;
     };
 
     const checkUsernameAvailability = async (username: string) => {
         if (!validateUsername(username)) return;
-        setCheckingUsername(true);
         try {
             const response = await fetch(
                 `http://localhost:3000/api/auth/check-username?username=${encodeURIComponent(username)}`
@@ -57,62 +89,64 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             if (!data.available) setUsernameError('Username already taken');
         } catch (error) {
             console.error('Failed to check username:', error);
-        } finally {
-            setCheckingUsername(false);
-        }
-    };
-
-    const checkEmailAvailability = async (email: string) => {
-        if (!email || !email.includes('@')) {
-            setEmailError('Please enter a valid email');
-            return;
-        }
-        setCheckingEmail(true);
-        setEmailError(null);
-        try {
-            const response = await fetch(
-                `http://localhost:3000/api/auth/check-email?email=${encodeURIComponent(email)}`
-            );
-            const data = await response.json();
-            if (!data.available) setEmailError('Email already registered');
-        } catch (error) {
-            console.error('Failed to check email:', error);
-        } finally {
-            setCheckingEmail(false);
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         clearMessages();
+        setEmailError(null);
+        setPasswordError(null);
+        setUsernameError(null);
+
+        // Validate all fields simultaneously
+        const isEmailValid = validateEmail(email);
+        const isPasswordValid = validatePassword(password);
+        const isUsernameValid = isSignUp ? validateUsername(username) : true;
+
+        if (!isEmailValid || !isPasswordValid || !isUsernameValid) {
+            return;
+        }
+
         setLoading(true);
 
         try {
             if (isSignUp) {
-                if (emailError || usernameError) {
-                    setError('Please resolve the errors above');
-                    setLoading(false);
-                    return;
+                // Check email availability first
+                try {
+                    const emailCheckRes = await fetch(
+                        `http://localhost:3000/api/auth/check-email?email=${encodeURIComponent(email)}`
+                    );
+                    const emailCheckData = await emailCheckRes.json();
+                    if (!emailCheckData.available) {
+                        setEmailError('Email already registered');
+                        setLoading(false);
+                        return;
+                    }
+                } catch {
+                    // If check fails, proceed with signup (Supabase will handle it)
                 }
-                if (!username || !validateUsername(username)) {
-                    setError('Please enter a valid username');
-                    setLoading(false);
-                    return;
-                }
+
                 const { error } = await signUp(email, password, username);
                 if (error) {
-                    setError(error.message);
+                    if (error.message.toLowerCase().includes('email')) {
+                        setEmailError(error.message);
+                    } else if (error.message.toLowerCase().includes('password')) {
+                        setPasswordError(error.message);
+                    } else {
+                        setError(error.message);
+                    }
                 } else {
-                    setMessage('Registration successful! Check your email for confirmation.');
+                    setMessage('Check your email for confirmation.');
                 }
             } else {
                 const { error } = await signIn(email, password, rememberMe);
                 if (error) {
                     setError(error.message === 'Invalid login credentials'
-                        ? 'Incorrect email or password. Please try again.'
+                        ? 'Incorrect email or password'
                         : error.message);
                 } else {
-                    onClose();
+                    handleClose();
                 }
             }
         } catch {
@@ -136,44 +170,55 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     const handleForgotPassword = async () => {
         if (!forgotPasswordEmail) {
-            setError('Please enter your email');
+            setForgotPasswordEmailError('Please enter your email');
+            return;
+        }
+        if (!forgotPasswordEmail.includes('@')) {
+            setForgotPasswordEmailError('Please enter a valid email');
             return;
         }
         setLoading(true);
-        setError(null);
+        setForgotPasswordEmailError(null);
         const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
             redirectTo: `${window.location.origin}/`,
         });
         setLoading(false);
         if (error) {
-            setError(error.message);
+            setForgotPasswordEmailError(error.message);
         } else {
             setMessage('Check your email for the password reset link');
         }
     };
 
-    const getEmailHelperText = () => {
-        if (!isSignUp) return undefined;
-        if (checkingEmail) return 'Checking availability...';
-        if (!emailError && email && !checkingEmail && email.includes('@')) return '✓ Email available!';
-        return undefined;
-    };
-
-    const getUsernameHelperText = () => {
-        if (checkingUsername) return 'Checking availability...';
-        if (!usernameError && username && !checkingUsername && username.length >= 3) return '✓ Username available!';
-        return undefined;
-    };
-
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
 
             <div className="relative bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
-                <IconButton onClick={onClose} className="absolute top-4 right-4">
-                    <CloseIcon className="w-6 h-6" />
-                </IconButton>
+                {!message && (
+                    <IconButton onClick={handleClose} className="absolute top-4 right-4">
+                        <CloseIcon className="w-6 h-6" />
+                    </IconButton>
+                )}
 
+                {message ? (
+                    <div className="text-center">
+                        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-text-muted/10 flex items-center justify-center">
+                            <div className="flex gap-1">
+                                <div className="w-2 h-2 rounded-full bg-text-muted" />
+                                <div className="w-2 h-2 rounded-full bg-text-muted" />
+                                <div className="w-2 h-2 rounded-full bg-text-muted" />
+                            </div>
+                        </div>
+                        <h2 className="text-xl font-bold text-text mb-2">Check your email</h2>
+                        <p className="text-sm text-text-secondary mb-6">We've sent a confirmation link to <span className="font-medium text-text">{email || forgotPasswordEmail}</span></p>
+                        <div className="flex gap-3">
+                            <Button onClick={handleClose} variant="secondary" className="flex-1">Resend</Button>
+                            <Button onClick={handleClose} className="flex-1">Done</Button>
+                        </div>
+                    </div>
+                ) : (
+                <>
                 <h2 className="text-2xl font-bold text-text mb-6">
                     {isForgotPassword ? 'Reset Password' : isSignUp ? 'Create Account' : 'Sign In'}
                 </h2>
@@ -188,12 +233,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                 type="email"
                                 label="Email"
                                 value={forgotPasswordEmail}
-                                onChange={(e) => { setForgotPasswordEmail(e.target.value); setError(null); }}
+                                onChange={(e) => { setForgotPasswordEmail(e.target.value); setForgotPasswordEmailError(null); }}
+                                error={forgotPasswordEmailError || undefined}
                                 required
                                 autoFocus
                             />
-                            {error && <Alert variant="error">{error}</Alert>}
-                            {message && <Alert variant="success">{message}</Alert>}
                             <Button type="submit" isLoading={loading} className="w-full">Send reset link</Button>
                             <p className="text-center text-sm text-text-secondary">
                                 <button
@@ -211,12 +255,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     {/* OAuth buttons */}
                     <div className="flex gap-3 mb-6">
                         <Button onClick={() => handleOAuthClick('google')} disabled={oauthLoading !== null} variant="secondary" className="flex-1">
-                            {oauthLoading === 'google' ? <Spinner size="sm" /> : <GoogleIcon />}
-                            <span className="ml-2">Google</span>
+                            <span className="flex items-center justify-center w-full gap-2">
+                                {oauthLoading === 'google' ? <Spinner size="sm" /> : <GoogleIcon />}
+                                Google
+                            </span>
                         </Button>
                         <Button onClick={() => handleOAuthClick('github')} disabled={oauthLoading !== null} variant="secondary" className="flex-1">
-                            {oauthLoading === 'github' ? <Spinner size="sm" /> : <GitHubIcon />}
-                            <span className="ml-2">GitHub</span>
+                            <span className="flex items-center justify-center w-full gap-2">
+                                {oauthLoading === 'github' ? <Spinner size="sm" /> : <GitHubIcon />}
+                                GitHub
+                            </span>
                         </Button>
                     </div>
 
@@ -226,19 +274,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         <div className="flex-1 border-t border-border-strong" />
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                         <Input
                             type="email"
                             label="Email"
                             value={email}
                             onChange={(e) => {
-                                const value = e.target.value;
-                                setEmail(value);
+                                setEmail(e.target.value);
                                 setEmailError(null);
-                                if (isSignUp && value.includes('@')) setTimeout(() => checkEmailAvailability(value), 500);
                             }}
-                            error={isSignUp ? emailError || undefined : undefined}
-                            helperText={getEmailHelperText()}
+                            error={emailError || undefined}
                             required
                         />
 
@@ -254,7 +299,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                 }}
                                 placeholder="username"
                                 error={usernameError || undefined}
-                                helperText={getUsernameHelperText()}
                                 required
                             />
                         )}
@@ -263,7 +307,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             type={showPassword ? 'text' : 'password'}
                             label="Password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => { setPassword(e.target.value); setPasswordError(null); }}
+                            error={passwordError || undefined}
                             required
                             minLength={6}
                             rightIcon={
@@ -285,20 +330,19 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                     <div className="w-4 h-4 border border-border-strong rounded peer-checked:bg-primary peer-checked:border-primary group-hover:border-primary flex items-center justify-center">
                                         {rememberMe && <CheckIcon className="w-3 h-3 text-white" />}
                                     </div>
-                                    <span className="ml-2 text-sm text-text">Remember me</span>
+                                    <span className="ml-2 text-sm text-text-secondary">Remember me</span>
                                 </label>
                                 <button
                                     type="button"
                                     onClick={() => { setIsForgotPassword(true); setForgotPasswordEmail(email); clearMessages(); }}
-                                    className="text-sm text-text hover:underline"
+                                    className="text-sm text-text-secondary hover:underline"
                                 >
                                     Forgot password?
                                 </button>
                             </div>
                         )}
 
-                        {error && <Alert variant="error">{error}</Alert>}
-                        {message && <Alert variant="success">{message}</Alert>}
+                        {error && <Alert variant="error" onClose={() => setError(null)}>{error}</Alert>}
 
                         <Button type="submit" isLoading={loading} className="w-full">
                             {isSignUp ? 'Sign Up' : 'Sign In'}
@@ -314,6 +358,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             {isSignUp ? 'Sign In' : 'Sign Up'}
                         </button>
                     </p>
+                </>
+                )}
                 </>
                 )}
             </div>

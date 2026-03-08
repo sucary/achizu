@@ -4,18 +4,18 @@ import { cva } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
 const inputVariants = cva(
-    'w-full px-3 py-2 bg-surface border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-inset transition-colors',
+    'w-full px-3 py-2 bg-surface border rounded-md text-sm focus:outline-none transition-colors',
     {
         variants: {
             state: {
-                default: 'border-border-strong focus:border-primary focus:ring-primary',
-                error: 'border-error focus:border-error focus:ring-error',
+                default: 'border-border-strong focus:border-text-muted',
+                error: 'border-error focus:border-error/80',
             },
             hasLeftIcon: {
                 true: 'pl-9',
             },
             hasRightIcon: {
-                true: 'pr-9',
+                true: 'pr-7',
             },
         },
         defaultVariants: {
@@ -60,7 +60,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         {...props}
                     />
                     {rightIcon && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted">
+                        <div className="absolute right-1 inset-y-0 flex items-center text-text-muted">
                             {rightIcon}
                         </div>
                     )}

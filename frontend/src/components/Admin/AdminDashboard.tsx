@@ -119,10 +119,10 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
             {/* Dashboard Window */}
             <div className="relative bg-surface rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[80vh] overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-border">
-                    <h1 className="text-2xl font-bold text-text">Admin Dashboard</h1>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                    <h1 className="text-lg font-bold text-text">Admin Dashboard</h1>
                     <IconButton onClick={onClose}>
-                        <CloseIcon className="w-6 h-6" />
+                        <CloseIcon className="w-5 h-5" />
                     </IconButton>
                 </div>
 
@@ -130,7 +130,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
                 <div className="flex-1 overflow-y-auto p-6">
 
                     <div className="mb-6">
-                        <h2 className="text-lg font-semibold text-text mb-4">
+                        <h2 className="text-lg text-text mb-3">
                             Pending User Approvals ({pendingUsers.length})
                         </h2>
 
@@ -157,7 +157,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
                                 {pendingUsers.map(user => (
                                     <div key={user.id} className="border border-border rounded-lg p-4 flex items-center justify-between">
                                         <div>
-                                            <p className="font-medium text-text">{user.username || 'No username'}</p>
+                                            <p className="text-sm font-medium text-text">{user.username || 'No username'}</p>
                                             <p className="text-sm text-text-secondary">{user.email}</p>
                                             <p className="text-xs text-text-muted mt-1">
                                                 Registered: {new Date(user.createdAt).toLocaleString()}
