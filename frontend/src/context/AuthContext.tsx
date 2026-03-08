@@ -35,6 +35,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     'Authorization': `Bearer ${session.access_token}`,
                 },
             });
+            if (response.status === 401) {
+                await supabase.auth.signOut();
+                return null;
+            }
             if (!response.ok) return null;
             return response.json() as Promise<Profile>;
         },

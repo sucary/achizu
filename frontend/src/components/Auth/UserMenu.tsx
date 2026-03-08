@@ -35,7 +35,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
         <div ref={menuRef} className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center justify-between gap-2 px-4 py-2 bg-surface shadow-md hover:shadow-lg transition-shadow w-48 ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
+                className={`flex items-center justify-between gap-2 px-4 py-2 bg-surface shadow-md hover:bg-surface-muted transition-colors w-48 ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
             >
                 <div className="flex flex-col items-start min-w-0 flex-1">
                     {profile.username && (
@@ -59,7 +59,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 w-48 bg-surface rounded-b-lg shadow-lg border-t border-border py-1 z-[1001]">
+                <div className="absolute top-full right-0 w-48 bg-surface rounded-b-lg shadow-lg border-t border-border z-[1001]">
                     <button
                         onClick={() => {
                             navigate('/settings');
@@ -82,7 +82,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
                     )}
                     <button
                         onClick={handleSignOut}
-                        className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-muted transition-colors"
+                        className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-muted transition-colors rounded-b-lg"
                     >
                         Sign Out
                     </button>

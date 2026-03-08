@@ -160,7 +160,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
                                             <p className="text-sm font-medium text-text">{user.username || 'No username'}</p>
                                             <p className="text-sm text-text-secondary">{user.email}</p>
                                             <p className="text-xs text-text-muted mt-1">
-                                                Registered: {new Date(user.createdAt).toLocaleString()}
+                                                Registered: {new Date(user.createdAt).toLocaleDateString('fi-FI')} {new Date(user.createdAt).toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':')}
                                             </p>
                                         </div>
                                         <div className="flex gap-2">

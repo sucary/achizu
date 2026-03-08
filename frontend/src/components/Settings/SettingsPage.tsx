@@ -176,7 +176,7 @@ export function SettingsPage() {
                         <div className="flex items-center justify-between gap-5">
                             <div>
                                 <p className="text-sm text-text-secondary">
-                                    Hide your artists from other users
+                                    Hide your account from other users.
                                 </p>
                                 {privacyError && <p className="text-xs text-error mt-1">{privacyError}</p>}
                             </div>

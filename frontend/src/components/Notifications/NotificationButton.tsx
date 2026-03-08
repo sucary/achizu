@@ -76,8 +76,16 @@ export function NotificationButton() {
                         onClick={() => setIsOpen(false)}
                     />
                     <div className="absolute right-0 mt-2 w-72 bg-surface rounded-lg shadow-lg border border-border z-[1100]">
-                        <div className="p-3 border-b border-border">
+                        <div className="p-3 border-b border-border flex items-center justify-between">
                             <h3 className="text-sm font-semibold text-text">Notifications</h3>
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="text-text-muted hover:text-text transition-colors"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
                         <div className="max-h-64 overflow-y-auto">
                             {notifications.map((notification, index) => (
