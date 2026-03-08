@@ -149,7 +149,7 @@ export const ReverseSearch = {
     },
 
     async getNominatimResult(lat: number, lng: number): Promise<SearchResult | null> {
-        const result = await CityService.reverseGeocode(lat, lng);
+        const result = await CityService.reverseGeocodeNominatim(lat, lng);
 
         if (result) {
             // Fetch and save full boundary data (fire-and-forget)
@@ -172,40 +172,23 @@ export const ReverseSearch = {
     },
 
     async search(lat: number, lng: number, limit: number, source: 'auto' | 'nominatim'): Promise<SearchResponse> {
-        if (source === 'nominatim') {
-            const [localResults, nominatimResult] = await Promise.all([
-                this.getLocalResults(lat, lng, limit),
-                this.getNominatimResult(lat, lng)
-            ]);
+        // Always get both local and Nominatim results for reverse search
+        // This ensures we get specific city/town even if only prefecture is in local DB
+        const [localResults, nominatimResult] = await Promise.all([
+            this.getLocalResults(lat, lng, limit),
+            this.getNominatimResult(lat, lng)
+        ]);
 
-            const allResults = nominatimResult
-                ? [...localResults, nominatimResult]
-                : localResults;
+        const allResults = nominatimResult
+            ? [...localResults, nominatimResult]
+            : localResults;
 
+        const deduplicated = deduplicateResults(allResults).slice(0, limit);
+
+        if (deduplicated.length > 0) {
             return {
-                results: deduplicateResults(allResults).slice(0, limit),
-                source: 'nominatim',
-                hasMore: false
-            };
-        }
-
-        // AUTO: Local first, Nominatim if empty
-        const localResults = await this.getLocalResults(lat, lng, limit);
-
-        if (localResults.length > 0) {
-            return {
-                results: localResults,
-                source: 'local',
-                hasMore: false
-            };
-        }
-
-        const nominatimResult = await this.getNominatimResult(lat, lng);
-
-        if (nominatimResult) {
-            return {
-                results: [nominatimResult],
-                source: 'nominatim',
+                results: deduplicated,
+                source: nominatimResult ? 'nominatim' : 'local',
                 hasMore: false
             };
         }

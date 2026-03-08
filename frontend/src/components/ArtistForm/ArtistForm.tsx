@@ -189,7 +189,7 @@ const ArtistForm = ({
                             onChange={(result) => handleLocationSelect(result, 'originalLocation')}
                             onManualPin={() => handleManualPin('originalLocation')}
                             placeholder="Search original location"
-                            label="Original location"
+                            label="Original Location"
                             pendingCoordinates={getPendingCoordinatesFor('originalLocation')}
                             onCoordinatesConsumed={handleCoordinatesConsumed}
                         />
@@ -211,7 +211,7 @@ const ArtistForm = ({
                             onChange={(result) => handleLocationSelect(result, 'activeLocation')}
                             onManualPin={() => handleManualPin('activeLocation')}
                             placeholder="Search active location"
-                            label="Active location"
+                            label="Active Location"
                             pendingCoordinates={getPendingCoordinatesFor('activeLocation')}
                             onCoordinatesConsumed={handleCoordinatesConsumed}
                         />

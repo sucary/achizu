@@ -536,7 +536,7 @@ export const CityService = {
     },
 
     reverseGeocode: async (lat: number, lng: number): Promise<City | null> => {
-        // 1. Check local DB first
+        // Check local DB first, return smallest boundary
         const result = await pool.query(`
             SELECT
                 id, name, province, country, display_name,
@@ -566,13 +566,20 @@ export const CityService = {
             };
         }
 
-        // 2. Call Nominatim reverse API when not in DB
+        // Fall back to Nominatim if not in DB
+        return CityService.reverseGeocodeNominatim(lat, lng);
+    },
+
+    /**
+     * Reverse geocode using Nominatim API only (no local DB check)
+     */
+    reverseGeocodeNominatim: async (lat: number, lng: number): Promise<City | null> => {
         const params = new URLSearchParams({
             lat: String(lat),
             lon: String(lng),
             format: 'json',
             addressdetails: '1',
-            zoom: '10' // City level
+            zoom: '18' // Most detailed level to get city/town/village
         });
 
         const url = `https://nominatim.openstreetmap.org/reverse?${params.toString()}`;

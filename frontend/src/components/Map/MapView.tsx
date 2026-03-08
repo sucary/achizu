@@ -188,6 +188,9 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
             className="h-full w-full"
             zoomControl={false}
             attributionControl={false}
+            worldCopyJump={true}
+            maxBounds={[[-90, -Infinity], [90, Infinity]]}
+            maxBoundsViscosity={1.0}
         >
             <ZoomLogger />
             <MapControls

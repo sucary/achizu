@@ -188,7 +188,7 @@ function App() {
 
     return (
         <div className="h-screen w-screen flex flex-col">
-            <BackendStatus />
+            {profile?.isAdmin && <BackendStatus />}
 
             {/* Top bar */}
             <div className="absolute top-2 left-2 z-[1100]">

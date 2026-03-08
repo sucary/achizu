@@ -106,53 +106,64 @@ export const ArtistService = {
         // If locations are being updated, resolve new IDs
         let originalCity: City | undefined, activeCity: City | undefined;
 
-        if (data.originalLocation) {
-            if (!data.originalLocation.osmId || !data.originalLocation.osmType) {
-                throw new Error('Original location must include osmId and osmType');
-            }
-            originalCity = await resolveCity(data.originalLocation.osmId, data.originalLocation.osmType);
+        // Check if original location actually changed
+        const originalLocationChanged = data.originalLocation && (
+            data.originalLocation.osmId && data.originalLocation.osmType
+        );
+
+        // Check if active location actually changed
+        const activeLocationChanged = data.activeLocation && (
+            data.activeLocation.osmId && data.activeLocation.osmType
+        );
+
+        if (originalLocationChanged) {
+            originalCity = await resolveCity(data.originalLocation!.osmId!, data.originalLocation!.osmType!);
             storeData.originalCityId = originalCity.id;
             finalOriginalCityId = originalCity.id;
+        } else {
+            // Location not changed, remove from update data
+            delete storeData.originalLocation;
         }
 
-        if (data.activeLocation) {
-            if (!data.activeLocation.osmId || !data.activeLocation.osmType) {
-                throw new Error('Active location must include osmId and osmType');
-            }
-            activeCity = await resolveCity(data.activeLocation.osmId, data.activeLocation.osmType);
+        if (activeLocationChanged) {
+            activeCity = await resolveCity(data.activeLocation!.osmId!, data.activeLocation!.osmType!);
             storeData.activeCityId = activeCity.id;
             finalActiveCityId = activeCity.id;
+        } else {
+            // Location not changed, remove from update data
+            delete storeData.activeLocation;
         }
 
-        const originalManual = data.originalLocation && originalCity &&
-            data.originalLocation.coordinates &&
-            isManualSelection(data.originalLocation.coordinates, originalCity.center);
+        const originalManual = originalLocationChanged && originalCity &&
+            data.originalLocation!.coordinates &&
+            isManualSelection(data.originalLocation!.coordinates, originalCity.center);
 
-        const activeManual = data.activeLocation && activeCity &&
-            data.activeLocation.coordinates &&
-            isManualSelection(data.activeLocation.coordinates, activeCity.center);
+        const activeManual = activeLocationChanged && activeCity &&
+            data.activeLocation!.coordinates &&
+            isManualSelection(data.activeLocation!.coordinates, activeCity.center);
 
-        const isCopiedFromOriginal = data.originalLocation?.coordinates && data.activeLocation?.coordinates &&
+        const isCopiedFromOriginal = originalLocationChanged && activeLocationChanged &&
+            data.originalLocation?.coordinates && data.activeLocation?.coordinates &&
             coordsMatch(data.originalLocation.coordinates, data.activeLocation.coordinates);
 
-        if (data.originalLocation) {
+        if (originalLocationChanged) {
             if (originalManual) {
-                storeData.originalLocationDisplayCoordinates = data.originalLocation.coordinates;
+                storeData.originalLocationDisplayCoordinates = data.originalLocation!.coordinates;
             } else {
-                data.originalLocation.coordinates = originalCity!.center;
+                data.originalLocation!.coordinates = originalCity!.center;
                 const randomPoint = await CityService.generateRandomPoint(finalOriginalCityId);
                 storeData.originalLocationDisplayCoordinates = randomPoint || originalCity!.center;
             }
         }
 
-        if (data.activeLocation) {
+        if (activeLocationChanged) {
             if (isCopiedFromOriginal && storeData.originalLocationDisplayCoordinates) {
-                data.activeLocation.coordinates = data.originalLocation!.coordinates;
+                data.activeLocation!.coordinates = data.originalLocation!.coordinates;
                 storeData.activeLocationDisplayCoordinates = storeData.originalLocationDisplayCoordinates;
             } else if (activeManual) {
-                storeData.activeLocationDisplayCoordinates = data.activeLocation.coordinates;
+                storeData.activeLocationDisplayCoordinates = data.activeLocation!.coordinates;
             } else {
-                data.activeLocation.coordinates = activeCity!.center;
+                data.activeLocation!.coordinates = activeCity!.center;
                 const randomPoint = await CityService.generateRandomPoint(finalActiveCityId);
                 storeData.activeLocationDisplayCoordinates = randomPoint || activeCity!.center;
             }
