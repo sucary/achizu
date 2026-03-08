@@ -3,18 +3,14 @@ import { LocationIcon } from '../../icons/FormIcons';
 import type { LocationView } from '../../../types/artist';
 import type { TileLayerType } from '../MapView';
 
-type DisplayMode = 'cluster' | 'progressive';
-
 interface MapControlsProps {
     view: LocationView;
     setView: (view: LocationView) => void;
-    displayMode: DisplayMode;
-    setDisplayMode: (mode: DisplayMode) => void;
     tileLayer: TileLayerType;
     setTileLayer: (layer: TileLayerType) => void;
 }
 
-const MapControls = ({ view, setView, displayMode, setDisplayMode, tileLayer, setTileLayer }: MapControlsProps) => {
+const MapControls = ({ view, setView, tileLayer, setTileLayer }: MapControlsProps) => {
     const map = useMap();
 
     const handleZoomIn = () => map.zoomIn();
@@ -24,7 +20,7 @@ const MapControls = ({ view, setView, displayMode, setDisplayMode, tileLayer, se
     const mapButtonClass = "bg-surface w-10 h-10 flex items-center justify-center hover:bg-surface-muted transition-colors text-text";
 
     return (
-        <div className="absolute bottom-6 right-2 z-[1000] flex gap-2 items-end">
+        <div className="absolute bottom-6 right-2 z-[1000] flex gap-2 items-end font-sans">
             {/* Toggles (left) */}
             <div className="flex flex-col gap-2">
                 {/* View Toggle */}
@@ -44,26 +40,6 @@ const MapControls = ({ view, setView, displayMode, setDisplayMode, tileLayer, se
                         }`}
                     >
                         Active
-                    </button>
-                </div>
-
-                {/* Display Mode Toggle */}
-                <div className="flex bg-surface rounded-md overflow-hidden shadow-md">
-                    <button
-                        onClick={() => setDisplayMode('cluster')}
-                        className={`w-16 py-2 text-sm font-medium transition-colors ${
-                            displayMode === 'cluster' ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'
-                        }`}
-                    >
-                        Cluster
-                    </button>
-                    <button
-                        onClick={() => setDisplayMode('progressive')}
-                        className={`w-16 py-2 text-sm font-medium transition-colors ${
-                            displayMode === 'progressive' ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'
-                        }`}
-                    >
-                        Dot
                     </button>
                 </div>
 

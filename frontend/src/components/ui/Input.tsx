@@ -8,8 +8,8 @@ const inputVariants = cva(
     {
         variants: {
             state: {
-                default: 'border-border-strong focus:border-text-muted',
-                error: 'border-error focus:border-error/80',
+                default: 'border-border-strong focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary',
+                error: 'border-error focus:border-error focus:ring-1 focus:ring-inset focus:ring-error',
             },
             hasLeftIcon: {
                 true: 'pl-9',
@@ -60,7 +60,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         {...props}
                     />
                     {rightIcon && (
-                        <div className="absolute right-1 inset-y-0 flex items-center text-text-muted">
+                        <div className="absolute right-3 inset-y-0 flex items-center text-text-muted">
                             {rightIcon}
                         </div>
                     )}

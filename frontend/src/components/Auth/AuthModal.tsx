@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Input, Button, Spinner, Alert, IconButton } from '../ui';
-import { CloseIcon, EyeIcon, EyeOffIcon, GoogleIcon, GitHubIcon, CheckIcon } from '../icons/FormIcons';
+import { Input, Button, Spinner, Alert, IconButton, CloseButton } from '../ui';
+import { EyeIcon, EyeOffIcon, GoogleIcon, GitHubIcon, CheckIcon } from '../icons/FormIcons';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -196,9 +196,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
             <div className="relative bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
                 {!message && (
-                    <IconButton onClick={handleClose} className="absolute top-4 right-4">
-                        <CloseIcon className="w-6 h-6" />
-                    </IconButton>
+                    <CloseButton onClick={handleClose} size="lg" className="absolute top-4 right-4" />
                 )}
 
                 {message ? (

@@ -226,10 +226,10 @@ function App() {
             )}
 
             {!showForm && !showArtistList && user && profile?.isApproved && !isViewingOther && (
-                <>
-                    <AddArtistButton onClick={handleAddArtistClick} />
-                    <ViewArtistListButton onClick={handleViewArtistListClick} />
-                </>
+                <AddArtistButton onClick={handleAddArtistClick} />
+            )}
+            {!showForm && !showArtistList && user && (
+                <ViewArtistListButton onClick={handleViewArtistListClick} />
             )}
             {showForm && (
                 <ArtistForm
@@ -243,10 +243,11 @@ function App() {
             )}
             {showArtistList && (
                 <ArtistList
+                    username={username}
                     onClose={() => setShowArtistList(false)}
                     onNavigateToArtist={handleNavigateToArtist}
-                    onEditArtist={handleEditFromList}
-                    onDeleteArtist={handleDeleteArtist}
+                    onEditArtist={isViewingOther ? undefined : handleEditFromList}
+                    onDeleteArtist={isViewingOther ? undefined : handleDeleteArtist}
                 />
             )}
             {showAdminDashboard && (

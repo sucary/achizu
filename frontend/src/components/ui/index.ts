@@ -15,3 +15,6 @@ export type { IconButtonProps } from './IconButton';
 
 export { FormGroup } from './FormGroup';
 export type { FormGroupProps } from './FormGroup';
+
+export { CloseButton } from './CloseButton';
+export type { CloseButtonProps } from './CloseButton';

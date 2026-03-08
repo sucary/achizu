@@ -7,7 +7,6 @@ import type { Artist, LocationView, SelectionMode } from '../../types/artist';
 import { getDisplayArtists } from '../../utils/mapUtils';
 import MapControls from './buttons/MapControls';
 import ArtistCluster from './ArtistCluster';
-import ArtistProgressiveView from './ArtistProgressiveView';
 import MapClickHandler from './MapClickHandler';
 import { useQuery } from '@tanstack/react-query';
 
@@ -130,14 +129,11 @@ const TILE_LAYERS: Record<TileLayerType, { url: string; attribution: string; sub
     },
 };
 
-export type DisplayMode = 'cluster' | 'progressive';
-
 const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick, focusedArtist, onFocusedArtistHandled, focusedLocation, onFocusedLocationHandled, focusedCityId }: MapViewProps) => {
     const defaultCenter: LatLngExpression = [35.6762, 139.6503]; // Tokyo
     const defaultZoom = 4;
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
     const [view, setView] = useState<LocationView>('active');
-    const [displayMode, setDisplayMode] = useState<DisplayMode>('cluster');
     const [tileLayer, setTileLayer] = useState<TileLayerType>('voyager');
 
     const {data: artists} = useQuery({
@@ -197,8 +193,6 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
             <MapControls
                 view={view}
                 setView={setView}
-                displayMode={displayMode}
-                setDisplayMode={setDisplayMode}
                 tileLayer={tileLayer}
                 setTileLayer={setTileLayer}
             />
@@ -210,27 +204,16 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
                 url={TILE_LAYERS[tileLayer].url}
                 subdomains={TILE_LAYERS[tileLayer].subdomains || 'abc'}
             />
-            {displayMode === 'cluster' ? (
-                <ArtistCluster
-                    artists={displayArtists}
-                    view={view}
-                    onArtistSelect={handleArtistSelect}
-                    onArtistDeselect={handleArtistDeselect}
-                    onEditArtist={onEditArtist}
-                    onDeleteArtist={onDeleteArtist}
-                    focusedArtist={focusedArtist}
-                    onFocusedArtistHandled={onFocusedArtistHandled}
-                />
-            ) : (
-                <ArtistProgressiveView
-                    artists={displayArtists}
-                    view={view}
-                    onArtistSelect={handleArtistSelect}
-                    onArtistDeselect={handleArtistDeselect}
-                    onEditArtist={onEditArtist}
-                    onDeleteArtist={onDeleteArtist}
-                />
-            )}
+            <ArtistCluster
+                artists={displayArtists}
+                view={view}
+                onArtistSelect={handleArtistSelect}
+                onArtistDeselect={handleArtistDeselect}
+                onEditArtist={onEditArtist}
+                onDeleteArtist={onDeleteArtist}
+                focusedArtist={focusedArtist}
+                onFocusedArtistHandled={onFocusedArtistHandled}
+            />
             {selectionMode?.active && (
                 <MapClickHandler onLocationPick={onLocationPick ?? null} />
             )}

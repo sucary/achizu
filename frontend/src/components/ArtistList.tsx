@@ -1,13 +1,14 @@
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getArtists } from '../services/api';
-import { CloseIcon, SearchIcon, MapPinIcon, EditIcon, TrashIcon } from './icons/FormIcons';
+import { getArtists, getArtistsByUsername } from '../services/api';
+import { SearchIcon, MapPinIcon, EditIcon, TrashIcon } from './icons/FormIcons';
 import { getAvatarUrl } from '../utils/cloudinaryUrl';
-import { Input, IconButton, Spinner } from './ui';
+import { Input, IconButton, Spinner, CloseButton } from './ui';
 import ArtistProfile from './ArtistProfile';
 import type { Artist } from '../types/artist';
 
 interface ArtistListProps {
+    username?: string;
     onClose: () => void;
     onNavigateToArtist?: (artist: Artist) => void;
     onEditArtist?: (artist: Artist) => void;
@@ -17,15 +18,15 @@ interface ArtistListProps {
 const getPlaceholderUrl = (name: string) =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=150&background=e5e7eb&color=9ca3af`;
 
-const ArtistList = ({ onClose, onNavigateToArtist, onEditArtist, onDeleteArtist }: ArtistListProps) => {
+const ArtistList = ({ username, onClose, onNavigateToArtist, onEditArtist, onDeleteArtist }: ArtistListProps) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
     const [cardPosition, setCardPosition] = useState<number>(0);
     const listRef = useRef<HTMLDivElement>(null);
 
     const { data: artists = [], isLoading } = useQuery({
-        queryKey: ['artists'],
-        queryFn: () => getArtists(),
+        queryKey: ['artists', username],
+        queryFn: () => username ? getArtistsByUsername(username) : getArtists(),
     });
 
     const filteredArtists = artists.filter((artist) =>
@@ -63,13 +64,7 @@ const ArtistList = ({ onClose, onNavigateToArtist, onEditArtist, onDeleteArtist 
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <h2 className="text-lg font-semibold text-text">Artists ({artists.length})</h2>
-                <IconButton
-                    onClick={onClose}
-                    size="sm"
-                    className="rounded hover:bg-surface-muted"
-                >
-                    <CloseIcon className="w-5 h-5" />
-                </IconButton>
+                <CloseButton onClick={onClose} size="md" />
             </div>
 
             {/* Search */}
@@ -79,8 +74,7 @@ const ArtistList = ({ onClose, onNavigateToArtist, onEditArtist, onDeleteArtist 
                     placeholder="Search artists or cities..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    leftIcon={<SearchIcon className="w-4 h-4" />}
-                    className="bg-surface-muted"
+                    rightIcon={<SearchIcon className="w-4 h-4" />}
                 />
             </div>
 

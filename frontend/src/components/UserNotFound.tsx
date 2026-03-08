@@ -5,7 +5,7 @@ interface UserNotFoundProps {
     username: string;
 }
 
-export function UserNotFound({ username }: UserNotFoundProps) {
+export function UserNotFound({ username: _username }: UserNotFoundProps) {
     const navigate = useNavigate();
 
     const handleGoBack = () => {

@@ -90,7 +90,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                 <button
                     type="button"
                     onClick={() => inputRef.current?.focus()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-primary transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary hover:bg-primary hover:text-white transition-colors"
                 >
                     <SearchIcon className="w-4 h-4" />
                 </button>

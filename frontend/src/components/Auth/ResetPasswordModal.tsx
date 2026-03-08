@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { CloseButton } from '../ui';
 
 interface ResetPasswordModalProps {
     onClose: () => void;
@@ -50,15 +51,7 @@ export function ResetPasswordModal({ onClose }: ResetPasswordModalProps) {
             <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
             <div className="relative bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
-                {/* Close button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-text-muted hover:text-text-secondary"
-                >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+                <CloseButton onClick={onClose} size="lg" className="absolute top-4 right-4" />
                 {success ? (
                     <div className="text-center">
                         <svg className="w-12 h-12 text-green-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

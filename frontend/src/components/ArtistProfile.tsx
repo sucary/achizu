@@ -37,7 +37,7 @@ const ArtistProfile = ({ artist }: ArtistProfileProps) => {
     const backgroundImageUrl = getProfileUrl(artist.sourceImage, artist.profileCrop) || getPlaceholderUrl(artist.name);
     
     return (
-        <div className="w-80 flex flex-col rounded-lg bg-surface shadow-lg overflow-hidden">
+        <div className="w-80 flex flex-col rounded-lg bg-surface shadow-lg overflow-hidden font-sans">
             <style>{`
                 .artist-cover:hover .artist-action-bar {
                     opacity: 1 !important;

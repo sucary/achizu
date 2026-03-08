@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Spinner, Alert, Button, IconButton } from '../ui';
-import { CloseIcon, CheckCircleIcon } from '../icons/FormIcons';
+import { Spinner, Alert, Button, CloseButton } from '../ui';
+import { CheckCircleIcon } from '../icons/FormIcons';
 import type { PendingUser } from '../../types/profile';
 
 interface AdminDashboardProps {
@@ -121,9 +121,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                     <h1 className="text-lg font-bold text-text">Admin Dashboard</h1>
-                    <IconButton onClick={onClose}>
-                        <CloseIcon className="w-5 h-5" />
-                    </IconButton>
+                    <CloseButton onClick={onClose} size="md" />
                 </div>
 
                 {/* Content */}

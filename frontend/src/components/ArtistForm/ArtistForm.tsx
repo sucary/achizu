@@ -198,7 +198,7 @@ const ArtistForm = ({
                             <IconButton
                                 onClick={copyOriginalToActive}
                                 size="sm"
-                                className="bg-surface-muted hover:bg-border text-text-secondary rounded-full border border-border"
+                                className="bg-surface-muted border border-border text-text-secondary rounded-full hover:bg-primary hover:text-white hover:border-primary"
                                 title="Copy Original to Active"
                                 type="button"
                             >

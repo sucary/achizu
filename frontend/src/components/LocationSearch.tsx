@@ -137,7 +137,7 @@ export const LocationSearch = ({
                                 onClick={isLoading ? handleCancel : handleSearch}
                                 type="button"
                                 disabled={!isLoading && !canSearch}
-                                className={`p-0.5 transition-colors ${isLoading ? 'text-text-muted hover:text-error' : 'text-text-muted hover:text-primary disabled:opacity-40 disabled:hover:text-text-muted'}`}
+                                className={`p-1 rounded transition-colors ${isLoading ? 'text-text-secondary hover:bg-error hover:text-white' : 'text-text-secondary hover:bg-primary hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary'}`}
                                 title={isLoading ? "Cancel search" : "Search"}
                             >
                                 {isLoading ? <CloseIcon className="w-4 h-4" /> : <SearchIcon className="w-4 h-4" />}
@@ -147,7 +147,7 @@ export const LocationSearch = ({
                     <button
                         onClick={onManualPin}
                         type="button"
-                        className="p-2 text-text-muted hover:text-primary transition-colors"
+                        className="p-2 rounded text-text-secondary hover:bg-primary hover:text-white transition-colors"
                         title="Manually select on map"
                     >
                         <MapPinIcon className="w-5 h-5" />
