@@ -175,7 +175,7 @@ export function SettingsPage() {
                         <h2 className="text-lg text-text mb-3">Privacy</h2>
                         <div className="flex items-center justify-between gap-5">
                             <div>
-                                <p className="text-sm text-text">
+                                <p className="text-sm text-text-secondary">
                                     Hide your artists from other users
                                 </p>
                                 {privacyError && <p className="text-xs text-error mt-1">{privacyError}</p>}
@@ -198,7 +198,7 @@ export function SettingsPage() {
                         <h2 className="text-lg text-text mb-3">Username</h2>
                         <form onSubmit={handleUsernameSubmit} className="space-y-3">
                             <div>
-                                <label className="block text-sm font-medium text-text mb-1">Change username</label>
+                                <label className="block text-sm font-medium text-text-secondary mb-1">Change username</label>
                                 <input
                                     type="text"
                                     value={username}
@@ -227,7 +227,7 @@ export function SettingsPage() {
                         <h2 className="text-lg text-text mb-3">Change Password</h2>
                         <form onSubmit={handlePasswordSubmit} className="space-y-3">
                             <div>
-                                <label className="block text-sm font-medium text-text mb-1">Current password</label>
+                                <label className="block text-sm font-medium text-text-secondary mb-1">Current password</label>
                                 <div className="relative">
                                     <input
                                         type={showCurrentPassword ? 'text' : 'password'}
@@ -241,7 +241,7 @@ export function SettingsPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-text mb-1">New password</label>
+                                <label className="block text-sm font-medium text-text-secondary mb-1">New password</label>
                                 <div className="relative">
                                     <input
                                         type={showNewPassword ? 'text' : 'password'}
@@ -256,7 +256,7 @@ export function SettingsPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-text mb-1">Confirm new password</label>
+                                <label className="block text-sm font-medium text-text-secondary mb-1">Confirm new password</label>
                                 <input
                                     type="password"
                                     value={confirmPassword}

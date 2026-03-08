@@ -69,7 +69,6 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
         <div ref={containerRef} className="relative font-sans">
             {/* Search Input */}
             <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
                 <input
                     ref={inputRef}
                     type="text"
@@ -77,17 +76,24 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
-                    className="w-80 h-12 pl-9 pr-9 text-sm bg-surface border border-border rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-80 h-12 pl-4 pr-16 text-base bg-surface border border-border rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 {query && (
                     <IconButton
                         onClick={handleClear}
                         size="sm"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded hover:bg-surface-muted"
+                        className="absolute right-9 top-1/2 -translate-y-1/2 rounded hover:bg-surface-muted"
                     >
                         <CloseIcon className="w-4 h-4" />
                     </IconButton>
                 )}
+                <button
+                    type="button"
+                    onClick={() => inputRef.current?.focus()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-primary transition-colors"
+                >
+                    <SearchIcon className="w-4 h-4" />
+                </button>
             </div>
 
             {/* Dropdown Results */}
