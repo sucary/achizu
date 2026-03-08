@@ -75,7 +75,7 @@ export const getArtistsByUsername = asyncHandler(async (req: AuthenticatedReques
 
     // Access level control
     if (!isOwnProfile && !isAdmin && targetUser.isPrivate) {
-        throw new AppError('Profile not accessible', 403);
+        throw new AppError('User not found', 404);
     }
 
     const filters: ArtistQueryParams = {
@@ -187,7 +187,7 @@ export const getArtistCountByUsername = asyncHandler(async (req: AuthenticatedRe
 
     // Access control
     if (!isOwnProfile && !isAdmin && targetUser.isPrivate) {
-        throw new AppError('Profile not accessible', 403);
+        throw new AppError('User not found', 404);
     }
 
     const view = (req.query.view as LocationView) || 'active';

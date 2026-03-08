@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import './App.css';
-import { deleteArtist } from './services/api';
+import { deleteArtist, getArtistsByUsername } from './services/api';
 import MapView from './components/Map/MapView';
 import ArtistForm from './components/ArtistForm/ArtistForm';
 import ArtistList from './components/ArtistList';
@@ -19,6 +19,7 @@ import type { ArtistSearchResult, LocationSearchResult } from './types/search';
 import { UsernamePrompt } from './components/Auth/UsernamePrompt';
 import { ResetPasswordModal } from './components/Auth/ResetPasswordModal';
 import { ViewingUserBanner } from './components/ViewingUserBanner';
+import { UserNotFound } from './components/UserNotFound';
 import { supabase } from './lib/supabase';
 
 
@@ -48,6 +49,14 @@ function App() {
 
     // Viewing another user's map
     const isViewingOther = !!username;
+
+    // Check if the user we're trying to view exists and is accessible
+    const { error: userAccessError, isLoading: isCheckingUser } = useQuery({
+        queryKey: ['userAccess', username],
+        queryFn: () => getArtistsByUsername(username!),
+        enabled: !!username,
+        retry: false,
+    });
 
     // Listen for password recovery event from auth state changes
     useEffect(() => {
@@ -162,6 +171,20 @@ function App() {
         setFocusedLocation({ ...result.center, locationType: result.locationType });
         setFocusedCityId(result.id || null);
     }, []);
+
+    // Show loading state while checking user access
+    if (isViewingOther && isCheckingUser) {
+        return (
+            <div className="h-screen w-screen flex items-center justify-center bg-surface-secondary">
+                <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    // Show error page if user not found or inaccessible
+    if (isViewingOther && userAccessError && username) {
+        return <UserNotFound username={username} />;
+    }
 
     return (
         <div className="h-screen w-screen flex flex-col">
