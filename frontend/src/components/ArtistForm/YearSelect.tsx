@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDownIcon } from '../icons/FormIcons';
 
@@ -31,11 +31,23 @@ const YearSelect = ({
         setInputValue(value?.toString() || '');
     }, [value]);
 
-    // Generate year options (newest first), filtered by input
+    // Generate all year options (newest first)
     const years = Array.from(
         { length: maxYear - minYear + 1 },
         (_, i) => maxYear - i
-    ).filter(year => inputValue ? year.toString().includes(inputValue) : true);
+    );
+
+    // Find the best matching year to focus on
+    const getFocusYear = useCallback((): number | null => {
+        if (!inputValue) return null;
+        const numVal = parseInt(inputValue, 10);
+        if (inputValue.length === 4 && numVal >= minYear && numVal <= maxYear) {
+            return numVal;
+        }
+        // Find first year that starts with input
+        const match = years.find(y => y.toString().startsWith(inputValue));
+        return match || null;
+    }, [inputValue, years, minYear, maxYear]);
 
     // Update dropdown position
     useEffect(() => {
@@ -48,6 +60,17 @@ const YearSelect = ({
             });
         }
     }, [isOpen]);
+
+    // Scroll to matching year when input changes
+    useEffect(() => {
+        if (isOpen && dropdownRef.current && inputValue) {
+            const focusYear = getFocusYear();
+            if (focusYear) {
+                const yearElement = dropdownRef.current.querySelector(`[data-year="${focusYear}"]`);
+                yearElement?.scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }, [isOpen, inputValue, getFocusYear]);
 
     // Close on outside click
     useEffect(() => {
@@ -83,6 +106,25 @@ const YearSelect = ({
         }
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const numVal = parseInt(inputValue, 10);
+            if (inputValue.length === 4 && numVal >= minYear && numVal <= maxYear) {
+                onChange(numVal);
+                setIsOpen(false);
+            } else {
+                // Select the focused year if input is partial
+                const focusYear = getFocusYear();
+                if (focusYear) {
+                    handleSelect(focusYear);
+                }
+            }
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+        }
+    };
+
     const handleBlur = () => {
         // Validate on blur
         const numVal = parseInt(inputValue, 10);
@@ -105,7 +147,11 @@ const YearSelect = ({
                     inputMode="numeric"
                     value={inputValue}
                     onChange={handleInputChange}
-                    onFocus={() => setIsOpen(true)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={(e) => {
+                        setIsOpen(true);
+                        e.target.select();
+                    }}
                     onBlur={handleBlur}
                     placeholder={placeholder}
                     className="w-full px-3 py-2 pr-8 text-sm border border-border-strong rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
@@ -132,19 +178,26 @@ const YearSelect = ({
                         width: `${dropdownPosition.width}px`
                     }}
                 >
-                    {years.map((year) => (
-                        <button
-                            key={year}
-                            type="button"
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => handleSelect(year)}
-                            className={`w-full px-3 py-2 text-left text-sm hover:bg-surface-secondary ${
-                                year === value ? 'bg-primary/5 text-primary font-medium' : 'text-text'
-                            }`}
-                        >
-                            {year}
-                        </button>
-                    ))}
+                    {years.map((year) => {
+                        const focusYear = getFocusYear();
+                        const isSelected = year === value;
+                        const isFocused = year === focusYear && focusYear !== value;
+                        return (
+                            <button
+                                key={year}
+                                data-year={year}
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => handleSelect(year)}
+                                className={`w-full px-3 py-2 text-left text-sm hover:bg-surface-secondary ${
+                                    isSelected ? 'bg-primary/5 text-primary font-medium' :
+                                    isFocused ? 'bg-surface-muted' : 'text-text'
+                                }`}
+                            >
+                                {year}
+                            </button>
+                        );
+                    })}
                 </div>,
                 document.body
             )}

@@ -59,24 +59,14 @@ export const ArtistService = {
         const isCopiedFromOriginal = data.originalLocation.coordinates && data.activeLocation.coordinates &&
             coordsMatch(data.originalLocation.coordinates, data.activeLocation.coordinates);
 
-        console.log('DEBUG create:', {
-            inputCoords: data.originalLocation.coordinates,
-            cityCenter: originalCity.center,
-            isOriginalPointLocation,
-            originalManual,
-            osmType: data.originalLocation.osmType
-        });
-
         // 5. Set coordinates and display coordinates based on selection method
         let originalDisplayCoordinates, activeDisplayCoordinates;
 
         if (originalManual) {
             originalDisplayCoordinates = data.originalLocation.coordinates;
-            console.log('DEBUG: Using manual coords');
         } else {
             data.originalLocation.coordinates = originalCity.center;
             const randomPoint = await CityService.generateRandomPoint(originalCity.id);
-            console.log('DEBUG: Random point result:', randomPoint);
             originalDisplayCoordinates = randomPoint || originalCity.center;
         }
 

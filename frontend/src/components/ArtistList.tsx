@@ -79,8 +79,8 @@ const ArtistList = ({ username, onClose, onNavigateToArtist, onEditArtist, onDel
                 />
             </div>
 
-            {/* Artist list */}
-            <div className="overflow-y-auto flex-1">
+            {/* Artist list - max 8 rows visible */}
+            <div className="overflow-y-auto flex-1 max-h-[32rem]">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-8">
                         <Spinner className="text-primary" />
