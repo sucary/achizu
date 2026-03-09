@@ -81,9 +81,7 @@ export const useArtistForm = ({
         result: SearchResult,
         locationType: 'originalLocation' | 'activeLocation'
     ) => {
-        console.log('[useArtistForm] handleLocationSelect - raw result:', result);
         const locationData = extractLocationData(result);
-        console.log('[useArtistForm] handleLocationSelect - extracted location:', locationData);
         setFormData(prev => ({
             ...prev,
             [locationType]: locationData
@@ -188,21 +186,11 @@ export const useArtistForm = ({
         try {
             let savedArtist: Artist;
 
-            console.log('[useArtistForm] handleSave - formData being sent:', {
-                originalLocation: formData.originalLocation,
-                activeLocation: formData.activeLocation
-            });
-
             if (initialData?.id) {
                 savedArtist = await updateArtist(initialData.id, formData);
             } else {
                 savedArtist = await createArtist(formData);
             }
-
-            console.log('[useArtistForm] handleSave - savedArtist returned:', {
-                originalLocation: savedArtist.originalLocation,
-                activeLocation: savedArtist.activeLocation
-            });
 
             await queryClient.invalidateQueries({ queryKey: ['artists'] });
 

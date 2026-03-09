@@ -377,8 +377,20 @@ export const CityService = {
             const geometry = data.geojson;
             const geometryType = geometry.type as string;
 
-            // Skip unsupported geometry types (lines, etc.)
+            // For LineString geometries (roads/rivers), try to find parent city
             if (geometryType === 'LineString' || geometryType === 'MultiLineString') {
+                const parentCityName = data.address?.city || data.address?.town || data.address?.village;
+                if (parentCityName) {
+                    const parentProvince = data.address?.state || data.address?.province || data.address?.region || '';
+                    const parentCountry = data.address?.country || '';
+                    console.log(`LineString geometry detected. Looking for parent city: ${parentCityName}`);
+                    const parentCityData = await CityService.fetchCityWithBoundary(parentCityName, parentProvince, parentCountry);
+                    if (parentCityData) {
+                        await client.query('ROLLBACK');
+                        client.release();
+                        return await CityService.saveFromNominatim(parentCityData);
+                    }
+                }
                 throw new Error(`Unsupported geometry type: ${geometryType}`);
             }
 
@@ -505,6 +517,34 @@ export const CityService = {
             return savedCity;
         } catch (error) {
             await client.query('ROLLBACK');
+
+            // Handle duplicate key error (race condition) - return existing city
+            const pgError = error as { code?: string; constraint?: string };
+            if (pgError.code === '23505' && pgError.constraint === 'uq_city_province') {
+                console.log('Race condition: city already exists, fetching existing');
+                const existing = await pool.query(`
+                    SELECT id, name, province, country, osm_id, osm_type,
+                           ST_Y(center::geometry) as lat,
+                           ST_X(center::geometry) as lng
+                    FROM city_boundaries
+                    WHERE name = $1 AND province = $2
+                    LIMIT 1
+                `, [city, province]);
+
+                if (existing.rows.length > 0) {
+                    const row = existing.rows[0];
+                    return {
+                        id: row.id,
+                        name: row.name,
+                        province: row.province,
+                        country: row.country,
+                        osmId: row.osm_id,
+                        osmType: row.osm_type,
+                        center: { lat: row.lat, lng: row.lng }
+                    };
+                }
+            }
+
             console.error('Error saving city from Nominatim:', error);
             throw error;
         } finally {

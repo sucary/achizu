@@ -22,12 +22,6 @@ const ARTIST_SELECT_COLUMNS = `
  * Helper function to convert database row to Artist object
  */
 function rowToArtist(row: Record<string, unknown>): Artist {
-    console.log('[rowToArtist] Raw row displayName fields:', {
-        original_display_name: row.original_display_name,
-        active_display_name: row.active_display_name,
-        original_country: row.original_country,
-        active_country: row.active_country
-    });
     return {
         id: row.id as string,
         userId: row.user_id as string | undefined,
@@ -160,10 +154,6 @@ export const ArtistStore = {
 
     create: async (data: StoreArtistDTO): Promise<Artist> => {
         try {
-            console.log('[ArtistStore.create] Input data locations:', {
-                originalLocation: data.originalLocation,
-                activeLocation: data.activeLocation
-            });
             const result = await pool.query(`
                 INSERT INTO artists (
                     user_id, name, source_image, avatar_crop, profile_crop,
@@ -225,10 +215,6 @@ export const ArtistStore = {
 
     update: async (id: string, data: UpdateStoreArtistDTO): Promise<Artist | undefined> => {
         try {
-            console.log('[ArtistStore.update] Input data locations:', {
-                originalLocation: data.originalLocation,
-                activeLocation: data.activeLocation
-            });
             // Build dynamic update query based on provided fields
             const updates: string[] = [];
             const values: unknown[] = [];

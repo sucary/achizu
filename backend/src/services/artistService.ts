@@ -36,11 +36,6 @@ export const ArtistService = {
     },
 
     create: async (data: CreateArtistDTO, userId: string): Promise<Artist> => {
-        console.log('[ArtistService.create] Input locations:', {
-            originalLocation: data.originalLocation,
-            activeLocation: data.activeLocation
-        });
-
         // 1. Resolve cities
         if (!data.originalLocation.osmId || !data.originalLocation.osmType) {
             throw new Error('Original location must include osmId and osmType');
@@ -50,11 +45,6 @@ export const ArtistService = {
         }
 
         const originalCity = await resolveCity(data.originalLocation.osmId, data.originalLocation.osmType);
-        console.log('[ArtistService.create] Resolved originalCity:', {
-            id: originalCity.id,
-            name: originalCity.name,
-            displayName: originalCity.displayName
-        });
         const activeCity = await resolveCity(data.activeLocation.osmId, data.activeLocation.osmType);
 
         // 2. Determine coordinate selection method
@@ -100,21 +90,11 @@ export const ArtistService = {
             activeLocationDisplayCoordinates: activeDisplayCoordinates
         };
 
-        console.log('[ArtistService.create] storeData locations:', {
-            originalLocation: storeData.originalLocation,
-            activeLocation: storeData.activeLocation
-        });
-
         // 6. Create artist
         return await ArtistStore.create(storeData);
     },
 
     update: async (id: string, data: UpdateArtistDTO): Promise<Artist | undefined> => {
-        console.log('[ArtistService.update] Input locations:', {
-            originalLocation: data.originalLocation,
-            activeLocation: data.activeLocation
-        });
-
         const storeData: UpdateStoreArtistDTO = { ...data };
 
         // Fetch current artist to check city IDs
@@ -194,11 +174,6 @@ export const ArtistService = {
                 storeData.activeLocationDisplayCoordinates = randomPoint || activeCity!.center;
             }
         }
-
-        console.log('[ArtistService.update] storeData locations:', {
-            originalLocation: storeData.originalLocation,
-            activeLocation: storeData.activeLocation
-        });
 
         return await ArtistStore.update(id, storeData);
     },
