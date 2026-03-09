@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { useMainSearch } from './useMainSearch';
 import { SearchResultRow } from './SearchResultRow';
-import { SearchIcon, CloseIcon } from '../icons/FormIcons';
+import { SearchIcon, CloseIcon } from '../icons/GeneralIcons';
 import { IconButton, Spinner, Button } from '../ui';
 import type { ArtistSearchResult, LocationSearchResult } from '../../types/search';
 

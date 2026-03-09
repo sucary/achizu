@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Spinner, Alert, Button, CloseButton } from '../ui';
-import { CheckCircleIcon } from '../icons/FormIcons';
+import { CheckCircleIcon } from '../icons/GeneralIcons';
 import { API_URL } from '../../services/api';
 import type { PendingUser } from '../../types/profile';
 

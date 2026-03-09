@@ -1,7 +1,7 @@
 import type { ArtistSearchResult, LocationSearchResult, UserSearchResult, SearchResult } from '../../types/search';
 import { getAvatarUrl } from '../../utils/cloudinaryUrl';
 import { formatLocation } from '../../utils/locationUtils';
-import { UserIcon } from '../icons/FormIcons';
+import { UserIcon } from '../icons/GeneralIcons';
 import { useAuth } from '../../context/AuthContext';
 
 interface SearchResultRowProps {

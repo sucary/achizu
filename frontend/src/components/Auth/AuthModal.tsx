@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Input, Button, Spinner, Alert, IconButton, CloseButton } from '../ui';
-import { EyeIcon, EyeOffIcon, GoogleIcon, GitHubIcon, CheckIcon } from '../icons/FormIcons';
+import { EyeIcon, EyeOffIcon, GoogleIcon, GitHubIcon } from '../icons/FormIcons';
+import { CheckIcon } from '../icons/GeneralIcons';
 import { API_URL } from '../../services/api';
 
 interface AuthModalProps {

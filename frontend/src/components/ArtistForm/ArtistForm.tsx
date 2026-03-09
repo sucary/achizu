@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { ChevronDownIcon, ArrowDownIcon, MusicNoteIcon, SleepIcon } from '../icons/FormIcons';
+import { ArrowDownIcon, MusicNoteIcon, SleepIcon } from '../icons/FormIcons';
+import { ChevronDownIcon } from '../icons/GeneralIcons';
 import { HomeIcon, MusicIcon, YoutubeIcon, InstagramIcon, XIcon } from '../icons/SocialIcons';
 import { LocationSearch } from '../LocationSearch';
 import SocialLinkInput, { type SocialLinkField } from './SocialLinkInput';

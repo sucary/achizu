@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { EditIcon } from '../icons/FormIcons';
+import { EditIcon } from '../icons/GeneralIcons';
 import { MAX_NAME_LENGTH } from '../../constants/artist';
 
 type HoverTarget = 'name' | 'avatar' | null;

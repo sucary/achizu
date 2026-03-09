@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import L from 'leaflet';
 import type { Artist } from '../types/artist';
 import { CLUSTER_CONFIG } from '../constants/mapCluster';
@@ -39,6 +39,7 @@ export const useClusterExpansion = ({
 }: UseClusterExpansionOptions) => {
   const expandedStatesRef = useRef<Map<string, ExpandedClusterState>>(new Map());
   const popupJustClosedRef = useRef(false);
+  const [hasExpandedClusters, setHasExpandedClusters] = useState(false);
 
   const collapseOne = useCallback((key: string) => {
     const state = expandedStatesRef.current.get(key);
@@ -60,6 +61,7 @@ export const useClusterExpansion = ({
     }
 
     expandedStatesRef.current.delete(key);
+    setHasExpandedClusters(expandedStatesRef.current.size > 0);
   }, [map]);
 
   // Collapse all expanded clusters
@@ -247,6 +249,7 @@ export const useClusterExpansion = ({
         expandedMarkers,
         connectionLines,
       });
+      setHasExpandedClusters(true);
     },
     [
       map,
@@ -306,8 +309,29 @@ export const useClusterExpansion = ({
     };
   }, [map, collapseAll]);
 
+  // Expand all visible clusters
+  const expandAll = useCallback(() => {
+    const clusterGroup = getClusterGroup?.();
+    if (!clusterGroup) return;
+
+    const featureGroup = (clusterGroup as unknown as { _featureGroup?: L.FeatureGroup })._featureGroup;
+    if (!featureGroup) return;
+
+    const clustersToExpand: L.MarkerCluster[] = [];
+    featureGroup.eachLayer((layer) => {
+      const maybeCluster = layer as L.MarkerCluster & { _childCount?: number };
+      if (maybeCluster._childCount) {
+        clustersToExpand.push(maybeCluster);
+      }
+    });
+
+    clustersToExpand.forEach((cluster) => expandCluster(cluster));
+  }, [getClusterGroup, expandCluster]);
+
   return {
     expandCluster,
     collapseCluster: collapseAll,
+    expandAll,
+    hasExpandedClusters,
   };
 };

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.markercluster';
@@ -24,9 +24,15 @@ interface ArtistClusterProps {
   onDeleteArtist?: (artist: Artist) => void;
   focusedArtist?: Artist | null;
   onFocusedArtistHandled?: () => void;
+  onExpansionChange?: (hasExpanded: boolean) => void;
 }
 
-const ArtistCluster = ({
+export interface ArtistClusterHandle {
+  expandAll: () => void;
+  collapseAll: () => void;
+}
+
+const ArtistCluster = forwardRef<ArtistClusterHandle, ArtistClusterProps>(({
   artists,
   view,
   onArtistSelect,
@@ -35,14 +41,15 @@ const ArtistCluster = ({
   onDeleteArtist,
   focusedArtist,
   onFocusedArtistHandled,
-}: ArtistClusterProps) => {
+  onExpansionChange,
+}, ref) => {
   const map = useMap();
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
 
   const getClusterGroup = useCallback(() => clusterRef.current, []);
 
-  const { expandCluster, collapseCluster } = useClusterExpansion({
+  const { expandCluster, collapseCluster, expandAll, hasExpandedClusters } = useClusterExpansion({
     map,
     onArtistSelect,
     onArtistDeselect,
@@ -50,6 +57,15 @@ const ArtistCluster = ({
     onDeleteArtist,
     getClusterGroup,
   });
+
+  useImperativeHandle(ref, () => ({
+    expandAll,
+    collapseAll: collapseCluster,
+  }), [expandAll, collapseCluster]);
+
+  useEffect(() => {
+    onExpansionChange?.(hasExpandedClusters);
+  }, [hasExpandedClusters, onExpansionChange]);
 
   useEffect(() => {
     preloadArtistImages(artists);
@@ -156,6 +172,6 @@ const ArtistCluster = ({
   }, [focusedArtist, map, view, onArtistSelect, onFocusedArtistHandled]);
 
   return null;
-};
+});
 
 export default ArtistCluster;

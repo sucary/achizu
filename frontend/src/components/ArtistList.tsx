@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getArtists, getArtistsByUsername } from '../services/api';
-import { SearchIcon, MapPinIcon, EditIcon, TrashIcon } from './icons/FormIcons';
+import { SearchIcon, EditIcon, TrashIcon } from './icons/GeneralIcons';
+import { MapPinIcon } from './icons/MapIcons';
 import { getAvatarUrl } from '../utils/cloudinaryUrl';
 import { formatLocation } from '../utils/locationUtils';
 import { Input, IconButton, Spinner, CloseButton } from './ui';

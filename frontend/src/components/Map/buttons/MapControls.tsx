@@ -1,5 +1,5 @@
 import { useMap } from 'react-leaflet';
-import { LocationIcon } from '../../icons/FormIcons';
+import { LocationIcon, ExpandIcon, CollapseIcon } from '../../icons/MapIcons';
 import type { LocationView } from '../../../types/artist';
 import type { TileLayerType } from '../MapView';
 
@@ -8,19 +8,22 @@ interface MapControlsProps {
     setView: (view: LocationView) => void;
     tileLayer: TileLayerType;
     setTileLayer: (layer: TileLayerType) => void;
+    hasExpandedClusters?: boolean;
+    onToggleClusters?: () => void;
 }
 
-const MapControls = ({ view, setView, tileLayer, setTileLayer }: MapControlsProps) => {
+const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedClusters, onToggleClusters }: MapControlsProps) => {
     const map = useMap();
 
     const handleZoomIn = () => map.zoomIn();
     const handleZoomOut = () => map.zoomOut();
     const handleLocate = () => map.locate({ setView: true, maxZoom: 15 });
+    const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
 
     const mapButtonClass = "bg-surface w-10 h-10 flex items-center justify-center hover:bg-surface-muted transition-colors text-text";
 
     return (
-        <div className="absolute bottom-6 right-2 z-[1000] flex gap-2 items-end font-sans">
+        <div className="absolute bottom-6 right-2 z-[1000] flex gap-2 items-end font-sans" onDoubleClick={stopPropagation}>
             {/* Toggles (left) */}
             <div className="flex flex-col gap-2">
                 {/* View Toggle */}
@@ -66,6 +69,15 @@ const MapControls = ({ view, setView, tileLayer, setTileLayer }: MapControlsProp
 
             {/* Map Controls (right) */}
             <div className="flex flex-col gap-2 items-end">
+                {/* Cluster Toggle */}
+                <button
+                    onClick={onToggleClusters}
+                    className={`${mapButtonClass} rounded-md shadow-md`}
+                    title={hasExpandedClusters ? "Collapse All Clusters" : "Expand All Clusters"}
+                >
+                    {hasExpandedClusters ? <CollapseIcon className="w-5 h-5" /> : <ExpandIcon className="w-5 h-5" />}
+                </button>
+
                 {/* Locate */}
                 <button
                     onClick={handleLocate}

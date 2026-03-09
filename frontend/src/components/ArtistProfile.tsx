@@ -1,6 +1,6 @@
 import type { Artist } from '../types/artist';
 import { HomeIcon, MusicIcon, YoutubeIcon, InstagramIcon, XIcon } from './icons/SocialIcons';
-import { EditIcon, TrashIcon } from './icons/FormIcons';
+import { EditIcon, TrashIcon } from './icons/GeneralIcons';
 import { getProfileUrl } from '../utils/cloudinaryUrl';
 import { formatLocation } from '../utils/locationUtils';
 

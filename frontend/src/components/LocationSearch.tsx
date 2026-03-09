@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { SearchIcon, MapPinIcon, CloseIcon } from './icons/FormIcons';
+import { SearchIcon, CloseIcon } from './icons/GeneralIcons';
+import { MapPinIcon } from './icons/MapIcons';
 import { useLocationSearch } from '../hooks/useLocationSearch';
 import { Spinner, Button } from './ui';
 import { useAuth } from '../context/AuthContext';

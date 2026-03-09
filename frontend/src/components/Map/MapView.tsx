@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState } from 'react';
+import { useEffect, useMemo, useCallback, useState, useRef } from 'react';
 import { MapContainer, TileLayer, GeoJSON, ScaleControl, AttributionControl, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression } from 'leaflet';
@@ -6,7 +6,7 @@ import { getArtists, getArtistsByUsername, getCityById } from '../../services/ap
 import type { Artist, LocationView, SelectionMode } from '../../types/artist';
 import { getDisplayArtists } from '../../utils/mapUtils';
 import MapControls from './buttons/MapControls';
-import ArtistCluster from './ArtistCluster';
+import ArtistCluster, { type ArtistClusterHandle } from './ArtistCluster';
 import MapClickHandler from './MapClickHandler';
 import { useQuery } from '@tanstack/react-query';
 
@@ -135,6 +135,8 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
     const [view, setView] = useState<LocationView>('active');
     const [tileLayer, setTileLayer] = useState<TileLayerType>('voyager');
+    const [hasExpandedClusters, setHasExpandedClusters] = useState(false);
+    const clusterRef = useRef<ArtistClusterHandle>(null);
 
     const {data: artists} = useQuery({
         queryKey: ['artists', username],
@@ -198,6 +200,10 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
                 setView={setView}
                 tileLayer={tileLayer}
                 setTileLayer={setTileLayer}
+                hasExpandedClusters={hasExpandedClusters}
+                onToggleClusters={() => hasExpandedClusters
+                    ? clusterRef.current?.collapseAll()
+                    : clusterRef.current?.expandAll()}
             />
             <ScaleControl position="bottomleft" imperial={false} />
             <AttributionControl position="bottomright" />
@@ -208,6 +214,7 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
                 subdomains={TILE_LAYERS[tileLayer].subdomains || 'abc'}
             />
             <ArtistCluster
+                ref={clusterRef}
                 artists={displayArtists}
                 view={view}
                 onArtistSelect={handleArtistSelect}
@@ -216,6 +223,7 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
                 onDeleteArtist={onDeleteArtist}
                 focusedArtist={focusedArtist}
                 onFocusedArtistHandled={onFocusedArtistHandled}
+                onExpansionChange={setHasExpandedClusters}
             />
             {selectionMode?.active && (
                 <MapClickHandler onLocationPick={onLocationPick ?? null} />

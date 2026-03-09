@@ -1,4 +1,4 @@
-import { ListIcon } from '../../icons/FormIcons';
+import { ListIcon } from '../../icons/GeneralIcons';
 
 interface ViewArtistListButtonProps {
     onClick: () => void;
