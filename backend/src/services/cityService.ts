@@ -30,10 +30,22 @@ export const CityService = {
                     OR display_name ILIKE $1
                 )
             ORDER BY
-                ST_Area(boundary::geometry) DESC,
-                importance DESC NULLS LAST
-            LIMIT $2
-        `, [`%${query}%`, limit]);
+                -- Prioritize exact name matches first
+                CASE WHEN LOWER(name) = LOWER($2) THEN 0 ELSE 1 END,
+                -- Then prioritize name starts with query
+                CASE WHEN LOWER(name) LIKE LOWER($2) || '%' THEN 0 ELSE 1 END,
+                -- Then prioritize city/town/administrative types over small POIs
+                CASE
+                    WHEN type IN ('city', 'town', 'administrative', 'village', 'municipality', 'county', 'state', 'region') THEN 0
+                    WHEN type IN ('suburb', 'neighbourhood', 'district') THEN 1
+                    ELSE 2
+                END,
+                -- Then by importance (higher is better for cities)
+                importance DESC NULLS LAST,
+                -- Finally by area for same importance level
+                ST_Area(boundary::geometry) DESC
+            LIMIT $3
+        `, [`%${query}%`, query, limit]);
 
         return result.rows.map(row => ({
             id: row.id,
@@ -612,6 +624,93 @@ export const CityService = {
             console.error('Error reverse geocoding:', error);
             return null;
         }
+    },
+
+    /**
+     * Get all administrative boundaries containing a point using Overpass API
+     * Returns multiple results (country, state, city, etc.) in one call
+     */
+    getContainingBoundaries: async (lat: number, lng: number): Promise<City[]> => {
+        // Only get admin levels 2-8 (country to city)
+        const query = `
+            [out:json][timeout:10];
+            is_in(${lat},${lng})->.a;
+            rel(pivot.a)[boundary=administrative][admin_level~"^[2-8]$"];
+            out tags;
+        `;
+
+        // Try multiple Overpass endpoints for reliability
+        const endpoints = [
+            'https://overpass.kumi.systems/api/interpreter',
+            'https://overpass-api.de/api/interpreter'
+        ];
+
+        for (const url of endpoints) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `data=${encodeURIComponent(query)}`,
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    console.warn(`Overpass endpoint ${url} returned ${response.status}, trying next...`);
+                    continue;
+                }
+
+                const data = await response.json();
+                const results: City[] = [];
+
+                // Process each relation (administrative boundary)
+                for (const element of data.elements || []) {
+                    if (element.type !== 'relation') continue;
+
+                    const tags = element.tags || {};
+                    const adminLevel = parseInt(tags.admin_level || '0', 10);
+
+                    // Prefer native name
+                    const name = tags.name || tags['name:en'] || '';
+                    if (!name) continue;
+
+                    // Determine type based on admin_level
+                    let type = 'administrative';
+                    if (adminLevel === 2) type = 'country';
+                    else if (adminLevel === 4) type = 'state';
+                    else if (adminLevel >= 6 && adminLevel <= 8) type = 'city';
+
+                    results.push({
+                        id: '',
+                        name: name,
+                        province: tags['is_in:state'] || tags['is_in:province'] || '',
+                        country: tags['is_in:country'] || '',
+                        displayName: name,
+                        osmId: element.id,
+                        osmType: 'relation',
+                        type: type,
+                        class: 'boundary',
+                        importance: 1 - (adminLevel / 10),
+                        center: { lat, lng }
+                    });
+                }
+
+                // Sort by admin level (country first, then province, then city)
+                results.sort((a, b) => (b.importance || 0) - (a.importance || 0));
+
+                return results;
+            } catch (error) {
+                console.warn(`Overpass endpoint ${url} failed:`, error);
+                continue;
+            }
+        }
+
+        console.error('All Overpass endpoints failed');
+        return [];
     },
 
     /**

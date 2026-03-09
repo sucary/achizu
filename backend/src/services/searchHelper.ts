@@ -148,47 +148,67 @@ export const ReverseSearch = {
         }));
     },
 
-    async getNominatimResult(lat: number, lng: number): Promise<SearchResult | null> {
-        const result = await CityService.reverseGeocodeNominatim(lat, lng);
+    async getOverpassResults(lat: number, lng: number): Promise<SearchResult[]> {
+        // Get all administrative boundaries containing this point in ONE call
+        const boundaries = await CityService.getContainingBoundaries(lat, lng);
 
-        if (result) {
-            // Fetch and save full boundary data (fire-and-forget)
-            CityService.fetchByOsmId(result.osmId, result.osmType)
+        // If Overpass failed, fall back to Nominatim reverse geocode
+        if (boundaries.length === 0) {
+            const nominatimResult = await CityService.reverseGeocodeNominatim(lat, lng);
+            if (nominatimResult) {
+                // Fetch and save boundary data
+                CityService.fetchByOsmId(nominatimResult.osmId, nominatimResult.osmType)
+                    .then(fullData => {
+                        if (fullData) return CityService.saveFromNominatim(fullData);
+                    })
+                    .catch(() => {});
+
+                return [{
+                    ...nominatimResult,
+                    isLocal: false,
+                    clickedCoordinates: { lat, lng }
+                }];
+            }
+            return [];
+        }
+
+        // Convert to SearchResult format and save boundaries to DB
+        const results: SearchResult[] = [];
+
+        for (const boundary of boundaries) {
+            results.push({
+                ...boundary,
+                isLocal: false,
+                clickedCoordinates: { lat, lng }
+            });
+
+            // Fetch and save full boundary polygon data (fire-and-forget)
+            CityService.fetchByOsmId(boundary.osmId, boundary.osmType)
                 .then(fullData => {
                     if (fullData) {
                         return CityService.saveFromNominatim(fullData);
                     }
                 })
                 .catch(() => {});
-
-            return {
-                ...result,
-                isLocal: false,
-                clickedCoordinates: { lat, lng }
-            };
         }
 
-        return null;
+        return results;
     },
 
     async search(lat: number, lng: number, limit: number, source: 'auto' | 'nominatim'): Promise<SearchResponse> {
-        // Always get both local and Nominatim results for reverse search
-        // This ensures we get specific city/town even if only prefecture is in local DB
-        const [localResults, nominatimResult] = await Promise.all([
+        // Get local results (from DB) and Overpass results (all admin boundaries) in parallel
+        const [localResults, overpassResults] = await Promise.all([
             this.getLocalResults(lat, lng, limit),
-            this.getNominatimResult(lat, lng)
+            this.getOverpassResults(lat, lng)
         ]);
 
-        const allResults = nominatimResult
-            ? [...localResults, nominatimResult]
-            : localResults;
-
+        const allResults = [...localResults, ...overpassResults];
         const deduplicated = deduplicateResults(allResults).slice(0, limit);
 
         if (deduplicated.length > 0) {
             return {
                 results: deduplicated,
-                source: nominatimResult ? 'nominatim' : 'local',
+                source: overpassResults.length > 0 ? 'nominatim' : 'local',
                 hasMore: false
             };
         }
