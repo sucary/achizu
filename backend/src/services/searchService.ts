@@ -9,7 +9,7 @@ export interface ArtistSearchResult {
     name: string;
     sourceImage?: string;
     avatarCrop?: CropArea;
-    activeLocation: { city: string; province: string };
+    activeLocation: { city: string; province: string; country?: string };
     coordinates: { lat: number; lng: number };
 }
 
@@ -49,6 +49,7 @@ function mapArtistToSearchResult(artist: Artist): ArtistSearchResult {
         activeLocation: {
             city: artist.activeLocation.city,
             province: artist.activeLocation.province,
+            country: artist.activeLocation.country,
         },
         coordinates: {
             lat: artist.activeLocation.coordinates.lat,

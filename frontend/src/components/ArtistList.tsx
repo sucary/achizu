@@ -114,7 +114,7 @@ const ArtistList = ({ username, onClose, onNavigateToArtist, onEditArtist, onDel
                                             onClick={(e) => e.stopPropagation()}
                                             className="text-xs text-text-secondary truncate select-text cursor-text w-fit"
                                         >
-                                            {artist.activeLocation.city}, {artist.activeLocation.province}
+                                            {[artist.activeLocation.city, artist.activeLocation.province, artist.activeLocation.country].filter(Boolean).join(', ')}
                                         </p>
                                     </div>
                                     {/* Actions */}

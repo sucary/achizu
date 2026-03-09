@@ -31,7 +31,7 @@ function ArtistRow({ result, onSelect }: { result: ArtistSearchResult; onSelect:
                         Active
                     </span>
                     <span className="text-xs text-text-secondary truncate">
-                        {result.activeLocation.city}, {result.activeLocation.province}
+                        {[result.activeLocation.city, result.activeLocation.province, result.activeLocation.country].filter(Boolean).join(', ')}
                     </span>
                 </div>
             </div>

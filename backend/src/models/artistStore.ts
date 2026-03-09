@@ -3,10 +3,10 @@ import pool from '../config/database';
 
 const ARTIST_SELECT_COLUMNS = `
     id, user_id, name, source_image, avatar_crop, profile_crop,
-    original_city, original_province, original_city_id,
+    original_city, original_province, original_country, original_city_id,
     ST_Y(original_coordinates::geometry) as original_lat,
     ST_X(original_coordinates::geometry) as original_lng,
-    active_city, active_province, active_city_id,
+    active_city, active_province, active_country, active_city_id,
     ST_Y(active_coordinates::geometry) as active_lat,
     ST_X(active_coordinates::geometry) as active_lng,
     ST_Y(original_display_coordinates::geometry) as original_display_lat,
@@ -32,6 +32,7 @@ function rowToArtist(row: Record<string, unknown>): Artist {
         originalLocation: {
             city: row.original_city as string,
             province: row.original_province as string,
+            country: row.original_country as string | undefined,
             coordinates: {
                 lat: parseFloat(row.original_lat as string),
                 lng: parseFloat(row.original_lng as string)
@@ -40,6 +41,7 @@ function rowToArtist(row: Record<string, unknown>): Artist {
         activeLocation: {
             city: row.active_city as string,
             province: row.active_province as string,
+            country: row.active_country as string | undefined,
             coordinates: {
                 lat: parseFloat(row.active_lat as string),
                 lng: parseFloat(row.active_lng as string)
@@ -153,20 +155,20 @@ export const ArtistStore = {
             const result = await pool.query(`
                 INSERT INTO artists (
                     user_id, name, source_image, avatar_crop, profile_crop,
-                    original_city, original_province, original_coordinates, original_city_id,
-                    active_city, active_province, active_coordinates, active_city_id,
+                    original_city, original_province, original_country, original_coordinates, original_city_id,
+                    active_city, active_province, active_country, active_coordinates, active_city_id,
                     original_display_coordinates,
                     active_display_coordinates,
                     instagram_url, twitter_url, apple_music_url, website_url, youtube_url,
                     debut_year, inactive_year
                 ) VALUES (
                     $1, $2, $3, $4, $5,
-                    $6, $7, ST_SetSRID(ST_MakePoint($8, $9), 4326)::geography, $19,
-                    $10, $11, ST_SetSRID(ST_MakePoint($12, $13), 4326)::geography, $20,
-                    ST_SetSRID(ST_MakePoint($21, $22), 4326)::geography,
+                    $6, $7, $8, ST_SetSRID(ST_MakePoint($9, $10), 4326)::geography, $21,
+                    $11, $12, $13, ST_SetSRID(ST_MakePoint($14, $15), 4326)::geography, $22,
                     ST_SetSRID(ST_MakePoint($23, $24), 4326)::geography,
-                    $14, $15, $16, $17, $18,
-                    $25, $26
+                    ST_SetSRID(ST_MakePoint($25, $26), 4326)::geography,
+                    $16, $17, $18, $19, $20,
+                    $27, $28
                 )
                 RETURNING ${ARTIST_SELECT_COLUMNS}
             `, [
@@ -177,10 +179,12 @@ export const ArtistStore = {
                 data.profileCrop ? JSON.stringify(data.profileCrop) : null,
                 data.originalLocation.city,
                 data.originalLocation.province,
+                data.originalLocation.country || null,
                 data.originalLocation.coordinates.lng,  // PostGIS uses lng first
                 data.originalLocation.coordinates.lat,
                 data.activeLocation.city,
                 data.activeLocation.province,
+                data.activeLocation.country || null,
                 data.activeLocation.coordinates.lng,
                 data.activeLocation.coordinates.lat,
                 data.socialLinks?.instagram || null,
@@ -239,6 +243,8 @@ export const ArtistStore = {
                 values.push(data.originalLocation.city);
                 updates.push(`original_province = $${paramIndex++}`);
                 values.push(data.originalLocation.province);
+                updates.push(`original_country = $${paramIndex++}`);
+                values.push(data.originalLocation.country || null);
                 updates.push(`original_coordinates = ST_SetSRID(ST_MakePoint($${paramIndex++}, $${paramIndex++}), 4326)::geography`);
                 values.push(data.originalLocation.coordinates.lng);
                 values.push(data.originalLocation.coordinates.lat);
@@ -254,6 +260,8 @@ export const ArtistStore = {
                 values.push(data.activeLocation.city);
                 updates.push(`active_province = $${paramIndex++}`);
                 values.push(data.activeLocation.province);
+                updates.push(`active_country = $${paramIndex++}`);
+                values.push(data.activeLocation.country || null);
                 updates.push(`active_coordinates = ST_SetSRID(ST_MakePoint($${paramIndex++}, $${paramIndex++}), 4326)::geography`);
                 values.push(data.activeLocation.coordinates.lng);
                 values.push(data.activeLocation.coordinates.lat);

@@ -6,7 +6,7 @@ export interface ArtistSearchResult {
     name: string;
     sourceImage?: string;
     avatarCrop?: CropArea;
-    activeLocation: { city: string; province: string };
+    activeLocation: { city: string; province: string; country?: string };
     coordinates: { lat: number; lng: number };
 }
 

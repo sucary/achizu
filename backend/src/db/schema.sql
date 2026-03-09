@@ -81,11 +81,13 @@ CREATE TABLE IF NOT EXISTS artists (
 
   original_city VARCHAR(100) NOT NULL,
   original_province VARCHAR(100) NOT NULL,
+  original_country VARCHAR(100),
   original_coordinates GEOGRAPHY(POINT, 4326) NOT NULL,
   original_city_id UUID REFERENCES city_boundaries(id),
 
   active_city VARCHAR(100) NOT NULL,
   active_province VARCHAR(100) NOT NULL,
+  active_country VARCHAR(100),
   active_coordinates GEOGRAPHY(POINT, 4326) NOT NULL,
   active_city_id UUID REFERENCES city_boundaries(id),
 
