@@ -47,7 +47,7 @@ export const CityService = {
             LIMIT $3
         `, [`%${query}%`, query, limit]);
 
-        return result.rows.map(row => ({
+        return result.rows.map((row: any) => ({
             id: row.id,
             name: row.name,
             province: row.province,
@@ -89,7 +89,7 @@ export const CityService = {
             ORDER BY pl.rank ASC
         `, [query]);
 
-        return result.rows.map(row => ({
+        return result.rows.map((row: any) => ({
             id: row.id,
             name: row.name,
             province: row.province,
@@ -577,7 +577,7 @@ export const CityService = {
             LIMIT $3
         `, [lng, lat, limit]);
 
-        return result.rows.map(row => ({
+        return result.rows.map((row: any) => ({
             id: row.id,
             name: row.name,
             province: row.province,

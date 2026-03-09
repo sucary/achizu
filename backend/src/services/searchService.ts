@@ -77,7 +77,7 @@ async function searchUsers(query: string, limit: number, excludeUsername?: strin
          LIMIT $2`,
         params
     );
-    return result.rows.map((row) => ({
+    return result.rows.map((row: any) => ({
         type: 'user' as const,
         id: row.id,
         username: row.username,
