@@ -3,7 +3,8 @@ import { CityService } from './cityService';
 import { CreateArtistDTO, UpdateArtistDTO, Artist, StoreArtistDTO, UpdateStoreArtistDTO, ArtistQueryParams, Coordinates } from '../types/artist';
 import { City } from '../types/city';
 
-const COORD_TOLERANCE = 0.0001;
+// ~1km tolerance to account for Nominatim coordinate variations
+const COORD_TOLERANCE = 0.01;
 
 function coordsMatch(a: Coordinates, b: Coordinates): boolean {
     return Math.abs(a.lat - b.lat) < COORD_TOLERANCE &&
@@ -58,14 +59,24 @@ export const ArtistService = {
         const isCopiedFromOriginal = data.originalLocation.coordinates && data.activeLocation.coordinates &&
             coordsMatch(data.originalLocation.coordinates, data.activeLocation.coordinates);
 
+        console.log('DEBUG create:', {
+            inputCoords: data.originalLocation.coordinates,
+            cityCenter: originalCity.center,
+            isOriginalPointLocation,
+            originalManual,
+            osmType: data.originalLocation.osmType
+        });
+
         // 5. Set coordinates and display coordinates based on selection method
         let originalDisplayCoordinates, activeDisplayCoordinates;
 
         if (originalManual) {
             originalDisplayCoordinates = data.originalLocation.coordinates;
+            console.log('DEBUG: Using manual coords');
         } else {
             data.originalLocation.coordinates = originalCity.center;
             const randomPoint = await CityService.generateRandomPoint(originalCity.id);
+            console.log('DEBUG: Random point result:', randomPoint);
             originalDisplayCoordinates = randomPoint || originalCity.center;
         }
 

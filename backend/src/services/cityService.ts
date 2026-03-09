@@ -80,7 +80,9 @@ export const CityService = {
                 pl.rank,
                 cb.type,
                 cb.class,
-                cb.importance
+                cb.importance,
+                ST_Y(cb.center::geometry) as cb_lat,
+                ST_X(cb.center::geometry) as cb_lng
             FROM priority_locations pl
             LEFT JOIN city_boundaries cb ON cb.osm_id = pl.osm_id AND cb.osm_type = pl.osm_type
             WHERE pl.search_query = LOWER($1)
@@ -93,7 +95,10 @@ export const CityService = {
             province: row.province,
             country: row.country,
             displayName: row.display_name,
-            center: { lat: parseFloat(row.lat), lng: parseFloat(row.lng) },
+            // Use city_boundaries center if available, otherwise fall back to priority_locations coords
+            center: row.cb_lat != null
+                ? { lat: parseFloat(row.cb_lat), lng: parseFloat(row.cb_lng) }
+                : { lat: parseFloat(row.lat), lng: parseFloat(row.lng) },
             osmId: parseInt(row.osm_id),
             osmType: row.osm_type,
             type: row.type,
