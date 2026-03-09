@@ -3,10 +3,10 @@ import pool from '../config/database';
 
 const ARTIST_SELECT_COLUMNS = `
     id, user_id, name, source_image, avatar_crop, profile_crop,
-    original_city, original_province, original_country, original_city_id,
+    original_city, original_province, original_country, original_city_id, original_display_name,
     ST_Y(original_coordinates::geometry) as original_lat,
     ST_X(original_coordinates::geometry) as original_lng,
-    active_city, active_province, active_country, active_city_id,
+    active_city, active_province, active_country, active_city_id, active_display_name,
     ST_Y(active_coordinates::geometry) as active_lat,
     ST_X(active_coordinates::geometry) as active_lng,
     ST_Y(original_display_coordinates::geometry) as original_display_lat,
@@ -22,6 +22,12 @@ const ARTIST_SELECT_COLUMNS = `
  * Helper function to convert database row to Artist object
  */
 function rowToArtist(row: Record<string, unknown>): Artist {
+    console.log('[rowToArtist] Raw row displayName fields:', {
+        original_display_name: row.original_display_name,
+        active_display_name: row.active_display_name,
+        original_country: row.original_country,
+        active_country: row.active_country
+    });
     return {
         id: row.id as string,
         userId: row.user_id as string | undefined,
@@ -33,6 +39,7 @@ function rowToArtist(row: Record<string, unknown>): Artist {
             city: row.original_city as string,
             province: row.original_province as string,
             country: row.original_country as string | undefined,
+            displayName: row.original_display_name as string | undefined,
             coordinates: {
                 lat: parseFloat(row.original_lat as string),
                 lng: parseFloat(row.original_lng as string)
@@ -42,6 +49,7 @@ function rowToArtist(row: Record<string, unknown>): Artist {
             city: row.active_city as string,
             province: row.active_province as string,
             country: row.active_country as string | undefined,
+            displayName: row.active_display_name as string | undefined,
             coordinates: {
                 lat: parseFloat(row.active_lat as string),
                 lng: parseFloat(row.active_lng as string)
@@ -152,19 +160,23 @@ export const ArtistStore = {
 
     create: async (data: StoreArtistDTO): Promise<Artist> => {
         try {
+            console.log('[ArtistStore.create] Input data locations:', {
+                originalLocation: data.originalLocation,
+                activeLocation: data.activeLocation
+            });
             const result = await pool.query(`
                 INSERT INTO artists (
                     user_id, name, source_image, avatar_crop, profile_crop,
-                    original_city, original_province, original_country, original_coordinates, original_city_id,
-                    active_city, active_province, active_country, active_coordinates, active_city_id,
+                    original_city, original_province, original_country, original_coordinates, original_city_id, original_display_name,
+                    active_city, active_province, active_country, active_coordinates, active_city_id, active_display_name,
                     original_display_coordinates,
                     active_display_coordinates,
                     instagram_url, twitter_url, apple_music_url, website_url, youtube_url,
                     debut_year, inactive_year
                 ) VALUES (
                     $1, $2, $3, $4, $5,
-                    $6, $7, $8, ST_SetSRID(ST_MakePoint($9, $10), 4326)::geography, $21,
-                    $11, $12, $13, ST_SetSRID(ST_MakePoint($14, $15), 4326)::geography, $22,
+                    $6, $7, $8, ST_SetSRID(ST_MakePoint($9, $10), 4326)::geography, $21, $29,
+                    $11, $12, $13, ST_SetSRID(ST_MakePoint($14, $15), 4326)::geography, $22, $30,
                     ST_SetSRID(ST_MakePoint($23, $24), 4326)::geography,
                     ST_SetSRID(ST_MakePoint($25, $26), 4326)::geography,
                     $16, $17, $18, $19, $20,
@@ -199,7 +211,9 @@ export const ArtistStore = {
                 data.activeLocationDisplayCoordinates.lng,
                 data.activeLocationDisplayCoordinates.lat,
                 data.debutYear || null,
-                data.inactiveYear || null
+                data.inactiveYear || null,
+                data.originalLocation.displayName || null,
+                data.activeLocation.displayName || null
             ]);
 
             return rowToArtist(result.rows[0]);
@@ -211,6 +225,10 @@ export const ArtistStore = {
 
     update: async (id: string, data: UpdateStoreArtistDTO): Promise<Artist | undefined> => {
         try {
+            console.log('[ArtistStore.update] Input data locations:', {
+                originalLocation: data.originalLocation,
+                activeLocation: data.activeLocation
+            });
             // Build dynamic update query based on provided fields
             const updates: string[] = [];
             const values: unknown[] = [];
@@ -245,6 +263,8 @@ export const ArtistStore = {
                 values.push(data.originalLocation.province);
                 updates.push(`original_country = $${paramIndex++}`);
                 values.push(data.originalLocation.country || null);
+                updates.push(`original_display_name = $${paramIndex++}`);
+                values.push(data.originalLocation.displayName || null);
                 updates.push(`original_coordinates = ST_SetSRID(ST_MakePoint($${paramIndex++}, $${paramIndex++}), 4326)::geography`);
                 values.push(data.originalLocation.coordinates.lng);
                 values.push(data.originalLocation.coordinates.lat);
@@ -262,6 +282,8 @@ export const ArtistStore = {
                 values.push(data.activeLocation.province);
                 updates.push(`active_country = $${paramIndex++}`);
                 values.push(data.activeLocation.country || null);
+                updates.push(`active_display_name = $${paramIndex++}`);
+                values.push(data.activeLocation.displayName || null);
                 updates.push(`active_coordinates = ST_SetSRID(ST_MakePoint($${paramIndex++}, $${paramIndex++}), 4326)::geography`);
                 values.push(data.activeLocation.coordinates.lng);
                 values.push(data.activeLocation.coordinates.lat);

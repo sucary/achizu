@@ -36,6 +36,11 @@ export const ArtistService = {
     },
 
     create: async (data: CreateArtistDTO, userId: string): Promise<Artist> => {
+        console.log('[ArtistService.create] Input locations:', {
+            originalLocation: data.originalLocation,
+            activeLocation: data.activeLocation
+        });
+
         // 1. Resolve cities
         if (!data.originalLocation.osmId || !data.originalLocation.osmType) {
             throw new Error('Original location must include osmId and osmType');
@@ -45,12 +50,20 @@ export const ArtistService = {
         }
 
         const originalCity = await resolveCity(data.originalLocation.osmId, data.originalLocation.osmType);
+        console.log('[ArtistService.create] Resolved originalCity:', {
+            id: originalCity.id,
+            name: originalCity.name,
+            displayName: originalCity.displayName
+        });
         const activeCity = await resolveCity(data.activeLocation.osmId, data.activeLocation.osmType);
 
         // 2. Determine coordinate selection method
-        const originalManual = data.originalLocation.coordinates &&
+        // Point locations (node) always use random placement; only non-point manual selections use exact coords
+        const isOriginalPointLocation = data.originalLocation.osmType === 'node';
+        const isActivePointLocation = data.activeLocation.osmType === 'node';
+        const originalManual = !isOriginalPointLocation && data.originalLocation.coordinates &&
             isManualSelection(data.originalLocation.coordinates, originalCity.center);
-        const activeManual = data.activeLocation.coordinates &&
+        const activeManual = !isActivePointLocation && data.activeLocation.coordinates &&
             isManualSelection(data.activeLocation.coordinates, activeCity.center);
         const isCopiedFromOriginal = data.originalLocation.coordinates && data.activeLocation.coordinates &&
             coordsMatch(data.originalLocation.coordinates, data.activeLocation.coordinates);
@@ -87,11 +100,21 @@ export const ArtistService = {
             activeLocationDisplayCoordinates: activeDisplayCoordinates
         };
 
+        console.log('[ArtistService.create] storeData locations:', {
+            originalLocation: storeData.originalLocation,
+            activeLocation: storeData.activeLocation
+        });
+
         // 6. Create artist
         return await ArtistStore.create(storeData);
     },
 
     update: async (id: string, data: UpdateArtistDTO): Promise<Artist | undefined> => {
+        console.log('[ArtistService.update] Input locations:', {
+            originalLocation: data.originalLocation,
+            activeLocation: data.activeLocation
+        });
+
         const storeData: UpdateStoreArtistDTO = { ...data };
 
         // Fetch current artist to check city IDs
@@ -134,11 +157,14 @@ export const ArtistService = {
             delete storeData.activeLocation;
         }
 
-        const originalManual = originalLocationChanged && originalCity &&
+        // Point locations (node) always use random placement; only non-point manual selections use exact coords
+        const isOriginalPointLocation = data.originalLocation?.osmType === 'node';
+        const isActivePointLocation = data.activeLocation?.osmType === 'node';
+        const originalManual = originalLocationChanged && originalCity && !isOriginalPointLocation &&
             data.originalLocation!.coordinates &&
             isManualSelection(data.originalLocation!.coordinates, originalCity.center);
 
-        const activeManual = activeLocationChanged && activeCity &&
+        const activeManual = activeLocationChanged && activeCity && !isActivePointLocation &&
             data.activeLocation!.coordinates &&
             isManualSelection(data.activeLocation!.coordinates, activeCity.center);
 
@@ -168,6 +194,11 @@ export const ArtistService = {
                 storeData.activeLocationDisplayCoordinates = randomPoint || activeCity!.center;
             }
         }
+
+        console.log('[ArtistService.update] storeData locations:', {
+            originalLocation: storeData.originalLocation,
+            activeLocation: storeData.activeLocation
+        });
 
         return await ArtistStore.update(id, storeData);
     },

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getArtists, getArtistsByUsername } from '../services/api';
 import { SearchIcon, MapPinIcon, EditIcon, TrashIcon } from './icons/FormIcons';
 import { getAvatarUrl } from '../utils/cloudinaryUrl';
+import { formatLocation } from '../utils/locationUtils';
 import { Input, IconButton, Spinner, CloseButton } from './ui';
 import ArtistProfile from './ArtistProfile';
 import type { Artist } from '../types/artist';
@@ -114,7 +115,7 @@ const ArtistList = ({ username, onClose, onNavigateToArtist, onEditArtist, onDel
                                             onClick={(e) => e.stopPropagation()}
                                             className="text-xs text-text-secondary truncate select-text cursor-text w-fit"
                                         >
-                                            {[artist.activeLocation.city, artist.activeLocation.province, artist.activeLocation.country].filter(Boolean).join(', ')}
+                                            {formatLocation(artist.activeLocation)}
                                         </p>
                                     </div>
                                     {/* Actions */}

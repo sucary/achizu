@@ -1,19 +1,12 @@
-import type { Artist, Location } from '../types/artist';
+import type { Artist } from '../types/artist';
 import { HomeIcon, MusicIcon, YoutubeIcon, InstagramIcon, XIcon } from './icons/SocialIcons';
 import { EditIcon, TrashIcon } from './icons/FormIcons';
 import { getProfileUrl } from '../utils/cloudinaryUrl';
+import { formatLocation } from '../utils/locationUtils';
 
 interface ArtistProfileProps {
     artist: Artist;
 }
-
-const formatLocation = (location: Location): string => {
-    const parts = [location.city, location.province];
-    if (location.country) {
-        parts.push(location.country);
-    }
-    return parts.join(', ');
-};
 
 // URL sanitizer
 const safeUrl = (url: string): string => {

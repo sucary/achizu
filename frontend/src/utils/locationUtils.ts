@@ -1,4 +1,55 @@
 import type { SearchResult } from '../services/api';
+import type { Location } from '../types/artist';
+
+/**
+ * Formats location for display. Parses displayName to show key parts only.
+ */
+export const formatLocation = (location: Location): string => {
+    if (location.displayName) {
+        const parts = location.displayName.split(',').map(p => p.trim());
+
+        // Point locations have more parts; extract name, city, province, country
+        if (parts.length > 3) {
+            const name = parts[0];
+            const country = parts[parts.length - 1];
+            let province = '';
+            let city = '';
+
+            // Find province (skip postal codes)
+            for (let i = parts.length - 2; i >= 0; i--) {
+                const part = parts[i];
+                if (!part.match(/^\d/) && !part.match(/\d{3,}/)) {
+                    province = part;
+                    break;
+                }
+            }
+
+            // Find city/ward
+            const cityPatterns = /[区市町村郡]$|County|City|District|Borough|Municipality/i;
+            for (let i = 1; i < parts.length - 1; i++) {
+                const part = parts[i];
+                if (part !== province && part !== country && cityPatterns.test(part)) {
+                    city = part;
+                    break;
+                }
+            }
+
+            const result = [name];
+            if (city && city !== name && city !== province) result.push(city);
+            if (province && province !== name) result.push(province);
+            if (country && country !== province) result.push(country);
+
+            return result.join(', ');
+        }
+    }
+
+    // Fallback for administrative locations
+    const parts = [location.city, location.province];
+    if (location.country) {
+        parts.push(location.country);
+    }
+    return parts.join(', ');
+};
 
 export interface ExtractedLocation {
     city: string;

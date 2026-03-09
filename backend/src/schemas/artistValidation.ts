@@ -8,6 +8,8 @@ export const CoordinatesSchema = z.object({
 export const LocationSchema = z.object({
     city: z.string().min(1, "City is required"),
     province: z.string().min(1, "Province is required"),
+    country: z.string().optional().nullable().transform(val => val ?? undefined),
+    displayName: z.string().optional().nullable().transform(val => val ?? undefined),
     coordinates: CoordinatesSchema,
     osmId: z.number().optional(),
     osmType: z.string().optional(),

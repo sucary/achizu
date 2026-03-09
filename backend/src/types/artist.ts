@@ -14,6 +14,7 @@ export interface Location {
     province: string;
     country?: string;
     coordinates: Coordinates;   // For determining the city, not for locating the artist
+    displayName?: string;       // Full Nominatim display name for point locations
     osmId?: number;
     osmType?: string;
 }

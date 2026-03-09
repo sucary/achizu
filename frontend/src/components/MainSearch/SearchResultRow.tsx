@@ -1,5 +1,6 @@
 import type { ArtistSearchResult, LocationSearchResult, UserSearchResult, SearchResult } from '../../types/search';
 import { getAvatarUrl } from '../../utils/cloudinaryUrl';
+import { formatLocation } from '../../utils/locationUtils';
 import { UserIcon } from '../icons/FormIcons';
 import { useAuth } from '../../context/AuthContext';
 
@@ -31,7 +32,7 @@ function ArtistRow({ result, onSelect }: { result: ArtistSearchResult; onSelect:
                         Active
                     </span>
                     <span className="text-xs text-text-secondary truncate">
-                        {[result.activeLocation.city, result.activeLocation.province, result.activeLocation.country].filter(Boolean).join(', ')}
+                        {formatLocation(result.activeLocation)}
                     </span>
                 </div>
             </div>
