@@ -1,10 +1,16 @@
 import type { SearchResult } from '../services/api';
-import type { Location } from '../types/artist';
+
+type LocationLike = {
+    city?: string;
+    province?: string;
+    country?: string;
+    displayName?: string;
+};
 
 /**
  * Formats location for display. Parses displayName to show key parts only.
  */
-export const formatLocation = (location: Location): string => {
+export const formatLocation = (location: LocationLike): string => {
     if (location.displayName) {
         const parts = location.displayName.split(',').map(p => p.trim());
 
