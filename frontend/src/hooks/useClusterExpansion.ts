@@ -92,14 +92,19 @@ export const useClusterExpansion = ({
       const clusterGroup = getClusterGroup?.();
 
       if (clusterGroup) {
-        // Get other visible cluster positions
-        const visibleClusters = (clusterGroup as unknown as { _featureGroup?: L.FeatureGroup })._featureGroup;
-        if (visibleClusters) {
-          visibleClusters.eachLayer((layer) => {
-            // Check if it's a cluster marker (has _childCount)
+        // Get other visible cluster and marker positions
+        const visibleLayers = (clusterGroup as unknown as { _featureGroup?: L.FeatureGroup })._featureGroup;
+        if (visibleLayers) {
+          visibleLayers.eachLayer((layer) => {
             const maybeCluster = layer as L.MarkerCluster & { _childCount?: number };
-            if (maybeCluster._childCount && maybeCluster !== cluster) {
-              avoidPixels.push(map.latLngToLayerPoint(maybeCluster.getLatLng()));
+            if (maybeCluster._childCount) {
+              // Avoid other clusters
+              if (maybeCluster !== cluster) {
+                avoidPixels.push(map.latLngToLayerPoint(maybeCluster.getLatLng()));
+              }
+            } else if ((layer as L.Marker).getLatLng) {
+              // Avoid other markers
+              avoidPixels.push(map.latLngToLayerPoint((layer as L.Marker).getLatLng()));
             }
           });
         }

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import { LocationIcon, ExpandIcon, CollapseIcon } from '../../icons/MapIcons';
 import type { LocationView } from '../../../types/artist';
@@ -14,16 +15,29 @@ interface MapControlsProps {
 
 const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedClusters, onToggleClusters }: MapControlsProps) => {
     const map = useMap();
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Stop double-click from reaching Leaflet using capture phase
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        const stop = (e: Event) => {
+            e.stopPropagation();
+        };
+
+        el.addEventListener('dblclick', stop, true);
+        return () => el.removeEventListener('dblclick', stop, true);
+    }, []);
 
     const handleZoomIn = () => map.zoomIn();
     const handleZoomOut = () => map.zoomOut();
     const handleLocate = () => map.locate({ setView: true, maxZoom: 15 });
-    const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
 
     const mapButtonClass = "bg-surface w-10 h-10 flex items-center justify-center hover:bg-surface-muted transition-colors text-text";
 
     return (
-        <div className="absolute bottom-6 right-2 z-[1000] flex gap-2 items-end font-sans" onDoubleClick={stopPropagation}>
+        <div ref={containerRef} className="absolute bottom-6 right-2 z-[1000] flex gap-2 items-end font-sans">
             {/* Toggles (left) */}
             <div className="flex flex-col gap-2">
                 {/* View Toggle */}

@@ -44,10 +44,10 @@ export const formatLocation = (location: Location): string => {
     }
 
     // Fallback for administrative locations
-    const parts = [location.city, location.province];
-    if (location.country) {
-        parts.push(location.country);
-    }
+    const parts: string[] = [];
+    if (location.city) parts.push(location.city);
+    if (location.province && location.province !== location.city) parts.push(location.province);
+    if (location.country && location.country !== location.province) parts.push(location.country);
     return parts.join(', ');
 };
 
