@@ -36,6 +36,7 @@ export function deduplicateResults<T extends { osmId: number; osmType: string }>
     return unique;
 }
 
+
 /**
  * Text search helpers
  */
@@ -68,11 +69,14 @@ export const TextSearch = {
             });
         }
 
+        // Filter out uninformative "yes" types (from OSM boolean tags like bridge=yes)
+        const filtered = results.filter(r => (r.type as string)?.toLowerCase() !== 'yes');
+
         // Cross-reference with local DB to set isLocal flag
-        const osmPairs = results.map(r => ({ osmId: r.osmId, osmType: r.osmType }));
+        const osmPairs = filtered.map(r => ({ osmId: r.osmId, osmType: r.osmType }));
         const existingMap = await CityService.getExistingOsmIds(osmPairs);
 
-        const withFlags = results.map(r => {
+        const withFlags = filtered.map(r => {
             const key = `${String(r.osmId)}:${r.osmType}`;
             const isLocal = existingMap.has(key);
 
