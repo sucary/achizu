@@ -16,6 +16,7 @@ interface ExpandedClusterState {
 
 interface UseClusterExpansionOptions extends PopupEventHandlers {
   map: L.Map;
+  getClusterGroup?: () => L.MarkerClusterGroup | null;
 }
 
 // Generate unique key for a cluster based on its position
@@ -34,8 +35,10 @@ export const useClusterExpansion = ({
   onArtistDeselect,
   onEditArtist,
   onDeleteArtist,
+  getClusterGroup,
 }: UseClusterExpansionOptions) => {
   const expandedStatesRef = useRef<Map<string, ExpandedClusterState>>(new Map());
+  const popupJustClosedRef = useRef(false);
 
   const collapseOne = useCallback((key: string) => {
     const state = expandedStatesRef.current.get(key);
@@ -66,7 +69,7 @@ export const useClusterExpansion = ({
   }, [collapseOne]);
 
 
-  // Expand cluster with geographic layout
+  // Expand cluster with geographic layout, avoiding other clusters and expanded markers
   const expandCluster = useCallback(
     (cluster: L.MarkerCluster) => {
       const clusterKey = getClusterKey(cluster);
@@ -82,6 +85,33 @@ export const useClusterExpansion = ({
       const clusterLatLng = cluster.getLatLng();
       const clusterPixel = map.latLngToLayerPoint(clusterLatLng);
 
+      // Collect positions of other clusters and already expanded markers to avoid
+      const avoidPixels: L.Point[] = [];
+      const clusterGroup = getClusterGroup?.();
+
+      if (clusterGroup) {
+        // Get other visible cluster positions
+        const visibleClusters = (clusterGroup as unknown as { _featureGroup?: L.FeatureGroup })._featureGroup;
+        if (visibleClusters) {
+          visibleClusters.eachLayer((layer) => {
+            // Check if it's a cluster marker (has _childCount)
+            const maybeCluster = layer as L.MarkerCluster & { _childCount?: number };
+            if (maybeCluster._childCount && maybeCluster !== cluster) {
+              avoidPixels.push(map.latLngToLayerPoint(maybeCluster.getLatLng()));
+            }
+          });
+        }
+      }
+
+      // Add already expanded markers from other clusters
+      expandedStatesRef.current.forEach((state, key) => {
+        if (key !== clusterKey) {
+          state.expandedMarkers.forEach((marker) => {
+            avoidPixels.push(map.latLngToLayerPoint(marker.getLatLng()));
+          });
+        }
+      });
+
       // Generate positions with geographic layout
       const { positions: geoPositions } = generateGeoPositions(
         childMarkers,
@@ -90,6 +120,56 @@ export const useClusterExpansion = ({
         CLUSTER_CONFIG.gridSpacing
       );
 
+      // Adjust positions to avoid overlaps
+      const minSpacing = CLUSTER_CONFIG.gridSpacing;
+      const adjustedPositions = geoPositions.map(pos => L.point(pos.x, pos.y));
+
+      // Multiple passes to resolve overlaps (external + siblings)
+      for (let pass = 0; pass < 5; pass++) {
+        for (let i = 0; i < adjustedPositions.length; i++) {
+          const expandedPixel = clusterPixel.add(adjustedPositions[i]);
+
+          // Avoid external obstacles
+          for (const avoidPixel of avoidPixels) {
+            const dx = expandedPixel.x - avoidPixel.x;
+            const dy = expandedPixel.y - avoidPixel.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < minSpacing && dist > 0) {
+              const pushDist = (minSpacing - dist) / 2 + 2;
+              adjustedPositions[i] = L.point(
+                adjustedPositions[i].x + (dx / dist) * pushDist,
+                adjustedPositions[i].y + (dy / dist) * pushDist
+              );
+            }
+          }
+
+          // Avoid siblings within same cluster
+          for (let j = 0; j < adjustedPositions.length; j++) {
+            if (i === j) continue;
+            const siblingPixel = clusterPixel.add(adjustedPositions[j]);
+            const currentPixel = clusterPixel.add(adjustedPositions[i]);
+            const dx = currentPixel.x - siblingPixel.x;
+            const dy = currentPixel.y - siblingPixel.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < minSpacing && dist > 0) {
+              const pushDist = (minSpacing - dist) / 2 + 2;
+              adjustedPositions[i] = L.point(
+                adjustedPositions[i].x + (dx / dist) * pushDist,
+                adjustedPositions[i].y + (dy / dist) * pushDist
+              );
+            } else if (dist === 0) {
+              const angle = Math.random() * Math.PI * 2;
+              adjustedPositions[i] = L.point(
+                adjustedPositions[i].x + Math.cos(angle) * minSpacing / 2,
+                adjustedPositions[i].y + Math.sin(angle) * minSpacing / 2
+              );
+            }
+          }
+        }
+      }
+
       const expandedMarkers: L.Marker[] = [];
       const connectionLines: L.Polyline[] = [];
 
@@ -97,7 +177,7 @@ export const useClusterExpansion = ({
       const collapseThisCluster = () => collapseOne(clusterKey);
 
       childMarkers.forEach((marker, index) => {
-        const offset = geoPositions[index];
+        const offset = adjustedPositions[index];
         const expandedPixel = clusterPixel.add(offset);
         const expandedLatLng = map.layerPointToLatLng(expandedPixel);
 
@@ -175,6 +255,7 @@ export const useClusterExpansion = ({
       onArtistDeselect,
       onEditArtist,
       onDeleteArtist,
+      getClusterGroup,
     ]
   );
 
@@ -190,9 +271,30 @@ export const useClusterExpansion = ({
     };
   }, [map, collapseAll]);
 
-  // Collapse all on map click (empty space)
+  // Track popup close to prevent cluster collapse when just deselecting artist
+  useEffect(() => {
+    const handlePopupClose = () => {
+      popupJustClosedRef.current = true;
+      // Reset flag after a short delay
+      setTimeout(() => {
+        popupJustClosedRef.current = false;
+      }, 50);
+    };
+
+    map.on('popupclose', handlePopupClose);
+    return () => {
+      map.off('popupclose', handlePopupClose);
+    };
+  }, [map]);
+
+  // Collapse all on map click
   useEffect(() => {
     const handleMapClick = () => {
+      // don't collapse user is just deselecting - 
+      if (popupJustClosedRef.current) {
+        return;
+      }
+
       if (expandedStatesRef.current.size > 0) {
         collapseAll();
       }

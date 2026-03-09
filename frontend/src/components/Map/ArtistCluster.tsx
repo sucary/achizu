@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.markercluster';
@@ -37,7 +37,10 @@ const ArtistCluster = ({
   onFocusedArtistHandled,
 }: ArtistClusterProps) => {
   const map = useMap();
-  const markerClusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
+  const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const markersRef = useRef<Map<string, L.Marker>>(new Map());
+
+  const getClusterGroup = useCallback(() => clusterRef.current, []);
 
   const { expandCluster, collapseCluster } = useClusterExpansion({
     map,
@@ -45,14 +48,48 @@ const ArtistCluster = ({
     onArtistDeselect,
     onEditArtist,
     onDeleteArtist,
+    getClusterGroup,
   });
 
   useEffect(() => {
     preloadArtistImages(artists);
   }, [artists]);
 
+  // Create artist markers
+  const createMarkerForArtist = useCallback((artist: Artist): L.Marker => {
+    const icon = createArtistMarker(artist);
+    const location = view === 'active' ? artist.activeLocation : artist.originalLocation;
+    const displayCoords = view === 'active'
+      ? artist.activeLocationDisplayCoordinates
+      : artist.originalLocationDisplayCoordinates;
+    const coords = displayCoords || location.coordinates;
+
+    const marker = L.marker([coords.lat, coords.lng], { icon });
+    (marker as L.Marker & { _artistData?: Artist })._artistData = artist;
+
+    const popupContent = renderToStaticMarkup(<ArtistProfile artist={artist} />);
+    marker.bindPopup(popupContent, {
+      className: 'artist-popup',
+      closeButton: false,
+      minWidth: 320,
+    });
+
+    setupMarkerPopupEvents({
+      map,
+      marker,
+      artist,
+      onArtistSelect,
+      onArtistDeselect,
+      onEditArtist,
+      onDeleteArtist,
+    });
+
+    return marker;
+  }, [map, view, onArtistSelect, onArtistDeselect, onEditArtist, onDeleteArtist]);
+
+  // Main effect for cluster management
   useEffect(() => {
-    const markerClusterGroup = L.markerClusterGroup({
+    const cluster = L.markerClusterGroup({
       showCoverageOnHover: false,
       maxClusterRadius: CLUSTER_CONFIG.maxClusterRadius,
       disableClusteringAtZoom: CLUSTER_CONFIG.disableClusteringAtZoomLevel,
@@ -61,105 +98,58 @@ const ArtistCluster = ({
       iconCreateFunction: createClusterIconFactory({ map }),
     });
 
-    markerClusterGroupRef.current = markerClusterGroup;
-
-    // Handle cluster click - expand instead of zoom
-    markerClusterGroup.on('clusterclick', (e: L.LeafletEvent) => {
+    cluster.on('clusterclick', (e: L.LeafletEvent) => {
       expandCluster((e as L.LeafletEvent & { layer: L.MarkerCluster }).layer);
     });
 
-    // Add artist markers
+    clusterRef.current = cluster;
+
+    // Add markers to cluster
     artists.forEach((artist) => {
-      const icon = createArtistMarker(artist);
-      const location =
-        view === 'active' ? artist.activeLocation : artist.originalLocation;
-      const marker = L.marker(
-        [location.coordinates.lat, location.coordinates.lng],
-        { icon }
-      );
-
-      // Store artist data on marker for later retrieval
-      (marker as L.Marker & { _artistData?: Artist })._artistData = artist;
-
-      // Bind the popup
-      const popupContent = renderToStaticMarkup(<ArtistProfile artist={artist} />);
-      marker.bindPopup(popupContent, {
-        className: 'artist-popup',
-        closeButton: false,
-        minWidth: 320,
-      });
-
-      setupMarkerPopupEvents({
-        map,
-        marker,
-        artist,
-        onArtistSelect,
-        onArtistDeselect,
-        onEditArtist,
-        onDeleteArtist,
-      });
-
-      markerClusterGroup.addLayer(marker);
+      const marker = createMarkerForArtist(artist);
+      markersRef.current.set(artist.id, marker);
+      cluster.addLayer(marker);
     });
 
-    map.addLayer(markerClusterGroup);
+    map.addLayer(cluster);
 
-    // Force refresh clusters after map is fully ready
+    // Force refresh
     const refreshTimeout = setTimeout(() => {
-      markerClusterGroup.refreshClusters();
+      cluster.refreshClusters();
     }, CLUSTER_CONFIG.refreshDelay);
 
     return () => {
       clearTimeout(refreshTimeout);
       collapseCluster();
-      map.removeLayer(markerClusterGroup);
-      markerClusterGroupRef.current = null;
+      if (map.hasLayer(cluster)) map.removeLayer(cluster);
+      clusterRef.current = null;
+      markersRef.current.clear();
     };
-  }, [
-    map,
-    artists,
-    view,
-    onArtistSelect,
-    onArtistDeselect,
-    onEditArtist,
-    onDeleteArtist,
-    expandCluster,
-    collapseCluster,
-  ]);
+  }, [map, artists, view, createMarkerForArtist, expandCluster, collapseCluster]);
 
   // Handle focused artist
   useEffect(() => {
-    if (!focusedArtist || !markerClusterGroupRef.current) return;
+    if (!focusedArtist) return;
 
-    const artistId = focusedArtist.id;
     const location = view === 'active'
       ? focusedArtist.activeLocation
       : focusedArtist.originalLocation;
-
-    // Find the marker for the focused artist
-    const findMarker = (): L.Marker | null => {
-      let found: L.Marker | null = null;
-      markerClusterGroupRef.current?.eachLayer((layer) => {
-        const marker = layer as L.Marker & { _artistData?: Artist };
-        if (marker._artistData?.id === artistId) {
-          found = marker;
-        }
-      });
-      return found;
-    };
 
     map.flyTo([location.coordinates.lat, location.coordinates.lng], 11, {
       duration: 2,
     });
 
-    // Open popup after fly animation completes
     setTimeout(() => {
-      const marker = findMarker();
-      if (marker && markerClusterGroupRef.current) {
-        markerClusterGroupRef.current.zoomToShowLayer(marker, () => {
+      const marker = markersRef.current.get(focusedArtist.id);
+
+      if (marker && clusterRef.current) {
+        clusterRef.current.zoomToShowLayer(marker, () => {
           marker.openPopup();
           onArtistSelect?.(focusedArtist);
         });
+      } else if (marker) {
+        marker.openPopup();
+        onArtistSelect?.(focusedArtist);
       }
       onFocusedArtistHandled?.();
     }, 1600);

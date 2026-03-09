@@ -1,5 +1,4 @@
 export { CLUSTER_CONFIG } from '../../../constants/mapCluster';
-export { generateGeoPositions } from '../../../utils/map/layout';
 export { createClusterIconFactory } from '../../../utils/map/createClusterIcon';
 export {
   setupMarkerPopupEvents,
