@@ -25,7 +25,12 @@ router.get('/search', searchLimiter, asyncHandler(async (req, res) => {
         throw new AppError('Query must be at least 2 characters', 400);
     }
 
+    console.log(`[SEARCH] Text search: "${query.trim()}" (source: ${source}, limit: ${limit})`);
+
     const result = await TextSearch.search(query.trim(), limit, source);
+
+    console.log(`[SEARCH] Results: ${result.results.length} from ${result.source}, hasMore: ${result.hasMore}`);
+
     res.json(result);
 }));
 
@@ -35,11 +40,15 @@ router.post('/reverse/search', searchLimiter, asyncHandler(async (req, res) => {
     const limit = parseInt(req.query.limit as string) || 50;
     const source = (req.query.source as string || 'auto') as 'auto' | 'nominatim';
 
+    console.log(`[SEARCH] Reverse search: (${lat}, ${lng}) (source: ${source}, limit: ${limit})`);
+
     const result = await ReverseSearch.search(lat, lng, limit, source);
 
     if (result.results.length === 0) {
         throw new AppError('No location found at these coordinates', 404);
     }
+
+    console.log(`[SEARCH] Reverse results: ${result.results.length} from ${result.source}`);
 
     res.json(result);
 }));

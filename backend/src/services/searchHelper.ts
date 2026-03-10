@@ -60,6 +60,7 @@ export const TextSearch = {
         let fromCache = true;
 
         if (!results) {
+            console.log(`[SEARCH] Cache miss for: "${query}" - calling Nominatim`);
             fromCache = false;
             results = await CityService.searchNominatim(query, limit);
 
@@ -67,6 +68,8 @@ export const TextSearch = {
             SearchCacheService.set(query, results).catch(err => {
                 console.error('Failed to cache search results:', err);
             });
+        } else {
+            console.log(`[SEARCH] Cache hit for: "${query}" (${results.length} results)`);
         }
 
         // Filter out uninformative "yes" types (from OSM boolean tags like bridge=yes)

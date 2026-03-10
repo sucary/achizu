@@ -22,12 +22,12 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const autoFocusTriggered = useRef(false);
 
-    // Debounce the query
+    // Debounce the query - increased to reduce Nominatim API calls
     useEffect(() => {
         autoFocusTriggered.current = false;
         const timer = setTimeout(() => {
             setDebouncedQuery(query);
-        }, 300);
+        }, 1500);
 
         return () => clearTimeout(timer);
     }, [query]);

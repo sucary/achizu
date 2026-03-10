@@ -123,6 +123,8 @@ export const CityService = {
 
         const url = `https://nominatim.openstreetmap.org/search?${params.toString()}`;
 
+        console.log(`[NOMINATIM] Calling API for: "${query}"`);
+
         try {
             const response = await fetch(url, {
                 headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
@@ -130,16 +132,18 @@ export const CityService = {
 
             // Handle rate limit - throw specific error
             if (response.status === 429) {
-                console.error('Nominatim rate limit exceeded (429) - Too many requests');
+                console.error('[NOMINATIM] Rate limit exceeded (429) - Too many requests');
                 throw new Error('Rate limit exceeded. Please try again in a few minutes.');
             }
 
             if (!response.ok) {
-                console.error(`Nominatim API error: ${response.status} ${response.statusText}`);
+                console.error(`[NOMINATIM] API error: ${response.status} ${response.statusText}`);
                 throw new Error(`Location search service error: ${response.statusText}`);
             }
 
             const data = await response.json() as NominatimResponse[];
+
+            console.log(`[NOMINATIM] Received ${data.length} results for: "${query}"`);
 
             // Save all results to city_boundaries in background instantly
             for (const item of data) {
