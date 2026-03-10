@@ -37,12 +37,10 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
                 onClick={() => setIsOpen(!isOpen)}
                 className={`flex items-center justify-between gap-2 px-4 py-2 bg-surface shadow-md hover:bg-surface-muted transition-colors w-48 ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
             >
-                <div className="flex flex-col items-start min-w-0 flex-1">
-                    {profile.username && (
-                        <span className="text-sm font-medium text-text  truncate w-full text-left">
-                            {profile.username}
-                        </span>
-                    )}
+                <div className="flex flex-col items-start min-w-0 flex-1 gap-0.5">
+                    <span className="text-sm font-medium text-text truncate w-full text-left h-5">
+                        {profile.username || ''}
+                    </span>
                     <span className="text-xs text-text-muted truncate w-full text-left">
                         {user.email}
                     </span>

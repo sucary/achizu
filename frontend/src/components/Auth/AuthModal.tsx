@@ -16,16 +16,17 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const [isForgotPassword, setIsForgotPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [username, setUsername] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(true);
-    const [usernameError, setUsernameError] = useState<string | null>(null);
     const [emailError, setEmailError] = useState<string | null>(null);
     const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
     const [forgotPasswordEmailError, setForgotPasswordEmailError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
     const [oauthLoading, setOauthLoading] = useState<'google' | 'github' | null>(null);
 
@@ -35,6 +36,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setError(null);
         setMessage(null);
         setPasswordError(null);
+        setConfirmPasswordError(null);
         setForgotPasswordEmailError(null);
     };
 
@@ -69,29 +71,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         return true;
     };
 
-    const validateUsername = (value: string): boolean => {
-        if (value.length < 3) {
-            setUsernameError('Username must be at least 3 characters');
+    const validateConfirmPassword = (value: string): boolean => {
+        if (!value) {
+            setConfirmPasswordError('Please confirm your password');
             return false;
         }
-        if (!/^[a-zA-Z0-9_]+$/.test(value)) {
-            setUsernameError('Username can only contain letters, numbers, and underscores');
+        if (value !== password) {
+            setConfirmPasswordError('Passwords do not match');
             return false;
         }
         return true;
-    };
-
-    const checkUsernameAvailability = async (username: string) => {
-        if (!validateUsername(username)) return;
-        try {
-            const response = await fetch(
-                `${API_URL}/auth/check-username?username=${encodeURIComponent(username)}`
-            );
-            const data = await response.json();
-            if (!data.available) setUsernameError('Username already taken');
-        } catch (error) {
-            console.error('Failed to check username:', error);
-        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -99,14 +88,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         clearMessages();
         setEmailError(null);
         setPasswordError(null);
-        setUsernameError(null);
+        setConfirmPasswordError(null);
 
         // Validate all fields simultaneously
         const isEmailValid = validateEmail(email);
         const isPasswordValid = validatePassword(password);
-        const isUsernameValid = isSignUp ? validateUsername(username) : true;
+        const isConfirmPasswordValid = isSignUp ? validateConfirmPassword(confirmPassword) : true;
 
-        if (!isEmailValid || !isPasswordValid || !isUsernameValid) {
+        if (!isEmailValid || !isPasswordValid || !isConfirmPasswordValid) {
             return;
         }
 
@@ -129,7 +118,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     // If check fails, proceed with signup (Supabase will handle it)
                 }
 
-                const { error } = await signUp(email, password, username);
+                const { error } = await signUp(email, password);
                 if (error) {
                     if (error.message.toLowerCase().includes('email')) {
                         setEmailError(error.message);
@@ -193,7 +182,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
 
             <div className="relative bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
@@ -287,27 +276,17 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             required
                         />
 
-                        {isSignUp && (
-                            <Input
-                                type="text"
-                                label="Username"
-                                value={username}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setUsername(value);
-                                    if (value.length >= 3) setTimeout(() => checkUsernameAvailability(value), 500);
-                                }}
-                                placeholder="username"
-                                error={usernameError || undefined}
-                                required
-                            />
-                        )}
-
                         <Input
                             type={showPassword ? 'text' : 'password'}
                             label="Password"
                             value={password}
-                            onChange={(e) => { setPassword(e.target.value); setPasswordError(null); }}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                setPasswordError(null);
+                                if (isSignUp && confirmPassword) {
+                                    setConfirmPasswordError(null);
+                                }
+                            }}
                             error={passwordError || undefined}
                             required
                             minLength={6}
@@ -317,6 +296,26 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                 </IconButton>
                             }
                         />
+
+                        {isSignUp && (
+                            <Input
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                label="Confirm Password"
+                                value={confirmPassword}
+                                onChange={(e) => {
+                                    setConfirmPassword(e.target.value);
+                                    setConfirmPasswordError(null);
+                                }}
+                                error={confirmPasswordError || undefined}
+                                required
+                                minLength={6}
+                                rightIcon={
+                                    <IconButton type="button" size="sm" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                        {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                                    </IconButton>
+                                }
+                            />
+                        )}
 
                         {!isSignUp && (
                             <div className="flex items-center justify-between">

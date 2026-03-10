@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import './App.css';
 import { deleteArtist, getArtistsByUsername } from './services/api';
@@ -201,14 +201,18 @@ function App() {
             </div>
 
             {/* Top right controls */}
-            <div className="absolute top-2 right-2 z-[1100] flex items-center gap-2">
-                {user && <NotificationButton />}
-                <AccountButton
-                    showAuthModal={showAuthModal}
-                    onOpenAuthModal={() => setShowAuthModal(true)}
-                    onCloseAuthModal={() => setShowAuthModal(false)}
-                    onOpenAdminDashboard={() => setShowAdminDashboard(true)}
-                />
+            <div className="absolute top-2 right-2 flex items-center gap-2">
+                <div className="z-[1250]">
+                    {user && <NotificationButton />}
+                </div>
+                <div className="z-[1100]">
+                    <AccountButton
+                        showAuthModal={showAuthModal}
+                        onOpenAuthModal={() => setShowAuthModal(true)}
+                        onCloseAuthModal={() => setShowAuthModal(false)}
+                        onOpenAdminDashboard={() => setShowAdminDashboard(true)}
+                    />
+                </div>
             </div>
 
             {/* Bottom center: Viewing banner */}
@@ -216,6 +220,20 @@ function App() {
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1100]">
                     <ViewingUserBanner username={username} />
                 </div>
+            )}
+
+            {/* Bottom left: About link */}
+            {!showAuthModal && (
+                <Link
+                    to="/about"
+                    className="absolute bottom-8 left-[10px] z-[1100] p-1.5 rounded-md shadow-md bg-surface hover:bg-surface-muted text-text-muted hover:text-text-secondary transition-colors"
+                    title="About"
+                >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7.9 7a4 4 0 0 1 7.5 2c0 2-3.4 3-3.4 6" />
+                        <circle cx="12" cy="19" r="0.5" fill="currentColor" />
+                    </svg>
+                </Link>
             )}
 
             {/* Show username prompt for OAuth users without username */}

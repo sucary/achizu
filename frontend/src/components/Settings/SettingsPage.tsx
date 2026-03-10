@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { API_URL } from '../../services/api';
+import { PageLayout, PageSection } from '../ui';
 
 export function SettingsPage() {
-    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { user, profile } = useAuth();
 
@@ -157,136 +156,113 @@ export function SettingsPage() {
     const inputClass = 'w-full px-3 py-2 border border-border-strong rounded-md text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary';
 
     return (
-        <div className="min-h-screen bg-background">
-            {/* Content */}
-            <div className="max-w-lg mx-auto px-4 py-4">
-                <div className="flex items-center gap-4 mb-4">
+        <PageLayout title="Settings">
+            {/* Privacy */}
+            <PageSection title="Privacy">
+                <div className="flex items-center justify-between gap-5">
+                    <div>
+                        <p className="text-sm text-text-secondary">
+                            Hide your account from other users.
+                        </p>
+                        {privacyError && <p className="text-xs text-error mt-1">{privacyError}</p>}
+                    </div>
                     <button
-                        onClick={() => navigate('/')}
-                        className="flex items-center gap-1 text-sm text-text-secondary hover:text-text transition-colors cursor-pointer"
+                        type="button"
+                        role="switch"
+                        aria-checked={isPrivate}
+                        onClick={handlePrivacyToggle}
+                        disabled={privacySaving}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${isPrivate ? 'bg-primary' : 'bg-border-strong'}`}
                     >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        <span>Back to map</span>
+                        <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${isPrivate ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
-                    <span className="text-border-strong">|</span>
-                    <h1 className="text-lg font-bold text-text">Settings</h1>
                 </div>
-                <div className="bg-surface rounded-lg border border-border divide-y divide-border">
+            </PageSection>
 
-                    {/* Privacy */}
-                    <div className="p-5">
-                        <h2 className="text-lg text-text mb-3">Privacy</h2>
-                        <div className="flex items-center justify-between gap-5">
-                            <div>
-                                <p className="text-sm text-text-secondary">
-                                    Hide your account from other users.
-                                </p>
-                                {privacyError && <p className="text-xs text-error mt-1">{privacyError}</p>}
-                            </div>
-                            <button
-                                type="button"
-                                role="switch"
-                                aria-checked={isPrivate}
-                                onClick={handlePrivacyToggle}
-                                disabled={privacySaving}
-                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${isPrivate ? 'bg-primary' : 'bg-border-strong'}`}
-                            >
-                                <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${isPrivate ? 'translate-x-4' : 'translate-x-0'}`} />
+            {/* Username */}
+            <PageSection title="Username">
+                <form onSubmit={handleUsernameSubmit} className="space-y-3">
+                    <div>
+                        <label className="block text-sm font-medium text-text-secondary mb-1">Change username</label>
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => {
+                                setUsername(e.target.value);
+                                setUsernameError(null);
+                            }}
+                            className={inputClass}
+                        />
+                        {usernameError && <p className="text-xs text-error mt-1">{usernameError}</p>}
+                    </div>
+                    <div className="flex justify-end">
+                        <button
+                            type="submit"
+                            disabled={usernameSaving || username === profile.username || username.length < 3}
+                            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {usernameSaving ? 'Saving...' : 'Save username'}
+                        </button>
+                    </div>
+                </form>
+            </PageSection>
+
+            {/* Password */}
+            <PageSection title="Change Password">
+                <form onSubmit={handlePasswordSubmit} className="space-y-3">
+                    <div>
+                        <label className="block text-sm font-medium text-text-secondary mb-1">Current password</label>
+                        <div className="relative">
+                            <input
+                                type={showCurrentPassword ? 'text' : 'password'}
+                                value={currentPassword}
+                                onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError(null); setPasswordSuccess(false); }}
+                                className={`${inputClass} pr-10`}
+                            />
+                            <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary">
+                                <EyeIcon open={showCurrentPassword} />
                             </button>
                         </div>
                     </div>
-
-                    {/* Username */}
-                    <div className="p-5">
-                        <h2 className="text-lg text-text mb-3">Username</h2>
-                        <form onSubmit={handleUsernameSubmit} className="space-y-3">
-                            <div>
-                                <label className="block text-sm font-medium text-text-secondary mb-1">Change username</label>
-                                <input
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => {
-                                        setUsername(e.target.value);
-                                        setUsernameError(null);
-                                    }}
-                                    className={inputClass}
-                                />
-                                {usernameError && <p className="text-xs text-error mt-1">{usernameError}</p>}
-                            </div>
-                            <div className="flex justify-end">
-                                <button
-                                    type="submit"
-                                    disabled={usernameSaving || username === profile.username || username.length < 3}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {usernameSaving ? 'Saving...' : 'Save username'}
-                                </button>
-                            </div>
-                        </form>
+                    <div>
+                        <label className="block text-sm font-medium text-text-secondary mb-1">New password</label>
+                        <div className="relative">
+                            <input
+                                type={showNewPassword ? 'text' : 'password'}
+                                value={newPassword}
+                                onChange={(e) => { setNewPassword(e.target.value); setPasswordError(null); setPasswordSuccess(false); }}
+                                className={`${inputClass} pr-10`}
+                                minLength={6}
+                            />
+                            <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary">
+                                <EyeIcon open={showNewPassword} />
+                            </button>
+                        </div>
                     </div>
-
-                    {/* Password */}
-                    <div className="p-5">
-                        <h2 className="text-lg text-text mb-3">Change Password</h2>
-                        <form onSubmit={handlePasswordSubmit} className="space-y-3">
-                            <div>
-                                <label className="block text-sm font-medium text-text-secondary mb-1">Current password</label>
-                                <div className="relative">
-                                    <input
-                                        type={showCurrentPassword ? 'text' : 'password'}
-                                        value={currentPassword}
-                                        onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError(null); setPasswordSuccess(false); }}
-                                        className={`${inputClass} pr-10`}
-                                    />
-                                    <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary">
-                                        <EyeIcon open={showCurrentPassword} />
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-text-secondary mb-1">New password</label>
-                                <div className="relative">
-                                    <input
-                                        type={showNewPassword ? 'text' : 'password'}
-                                        value={newPassword}
-                                        onChange={(e) => { setNewPassword(e.target.value); setPasswordError(null); setPasswordSuccess(false); }}
-                                        className={`${inputClass} pr-10`}
-                                        minLength={6}
-                                    />
-                                    <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary">
-                                        <EyeIcon open={showNewPassword} />
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-text-secondary mb-1">Confirm new password</label>
-                                <input
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(null); setPasswordSuccess(false); }}
-                                    className={inputClass}
-                                    minLength={6}
-                                />
-                            </div>
-                            {passwordError && <p className="text-xs text-error">{passwordError}</p>}
-                            {passwordSuccess && <p className="text-xs text-green-600">Password updated successfully</p>}
-                            <div className="flex justify-end">
-                                <button
-                                    type="submit"
-                                    disabled={passwordSaving || !currentPassword || !newPassword || !confirmPassword}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {passwordSaving ? 'Updating...' : 'Change password'}
-                                </button>
-                            </div>
-                        </form>
+                    <div>
+                        <label className="block text-sm font-medium text-text-secondary mb-1">Confirm new password</label>
+                        <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(null); setPasswordSuccess(false); }}
+                            className={inputClass}
+                            minLength={6}
+                        />
                     </div>
-
-                </div>
-            </div>
-        </div>
+                    {passwordError && <p className="text-xs text-error">{passwordError}</p>}
+                    {passwordSuccess && <p className="text-xs text-green-600">Password updated successfully</p>}
+                    <div className="flex justify-end">
+                        <button
+                            type="submit"
+                            disabled={passwordSaving || !currentPassword || !newPassword || !confirmPassword}
+                            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {passwordSaving ? 'Updating...' : 'Change password'}
+                        </button>
+                    </div>
+                </form>
+            </PageSection>
+        </PageLayout>
     );
 }
 

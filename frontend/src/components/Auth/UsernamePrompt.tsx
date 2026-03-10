@@ -75,7 +75,7 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
     const isAvailable = !error && username.length >= 3 && !checking;
 
     return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" />
             <div className="relative bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
                 <h2 className="text-xl font-bold text-text mb-2">Create your username</h2>
@@ -100,7 +100,7 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
                             placeholder="your_username"
                             maxLength={16}
                             error={error || undefined}
-                            helperText={isAvailable ? 'Available' : undefined}
+                            helperText={isAvailable ? 'Username available' : undefined}
                             autoFocus
                         />
                     </div>

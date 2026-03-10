@@ -18,3 +18,5 @@ export type { FormGroupProps } from './FormGroup';
 
 export { CloseButton } from './CloseButton';
 export type { CloseButtonProps } from './CloseButton';
+
+export { PageLayout, PageSection } from './PageLayout';
