@@ -23,7 +23,7 @@ export function AccountButton({ showAuthModal, onOpenAuthModal, onCloseAuthModal
             ) : (
                 <button
                     onClick={onOpenAuthModal}
-                    className="px-4 py-2 bg-surface rounded-lg shadow-md hover:shadow-lg transition-shadow text-sm font-medium text-text"
+                    className="bg-surface px-4 py-2 rounded-md shadow-md hover:bg-surface-muted transition-colors text-text text-sm font-medium"
                 >
                     Sign In
                 </button>

@@ -19,6 +19,7 @@ import type { ArtistSearchResult, LocationSearchResult } from './types/search';
 import { UsernamePrompt } from './components/Auth/UsernamePrompt';
 import { ResetPasswordModal } from './components/Auth/ResetPasswordModal';
 import { ViewingUserBanner } from './components/ViewingUserBanner';
+import { AnonymousUserBanner } from './components/AnonymousUserBanner';
 import { UserNotFound } from './components/UserNotFound';
 import { supabase } from './lib/supabase';
 
@@ -215,10 +216,14 @@ function App() {
                 </div>
             </div>
 
-            {/* Bottom center: Viewing banner */}
-            {isViewingOther && username && (
+            {/* Bottom center: Viewing banner or Anonymous banner */}
+            {isViewingOther && username ? (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1100]">
                     <ViewingUserBanner username={username} />
+                </div>
+            ) : !user && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1100]">
+                    <AnonymousUserBanner onSignInClick={() => setShowAuthModal(true)} />
                 </div>
             )}
 
