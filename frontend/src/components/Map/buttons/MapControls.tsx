@@ -11,9 +11,10 @@ interface MapControlsProps {
     setTileLayer: (layer: TileLayerType) => void;
     hasExpandedClusters?: boolean;
     onToggleClusters?: () => void;
+    showViewToggle?: boolean;
 }
 
-const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedClusters, onToggleClusters }: MapControlsProps) => {
+const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedClusters, onToggleClusters, showViewToggle = true }: MapControlsProps) => {
     const map = useMap();
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -40,25 +41,27 @@ const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedCluste
         <div ref={containerRef} className="absolute bottom-6 right-2 z-[1000] flex gap-2 items-end font-sans">
             {/* Toggles (left) */}
             <div className="flex flex-col gap-2">
-                {/* View Toggle */}
-                <div className="flex bg-surface rounded-md overflow-hidden shadow-md">
-                    <button
-                        onClick={() => setView('original')}
-                        className={`w-16 py-2 text-sm font-medium transition-colors ${
-                            view === 'original' ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'
-                        }`}
-                    >
-                        Origin
-                    </button>
-                    <button
-                        onClick={() => setView('active')}
-                        className={`w-16 py-2 text-sm font-medium transition-colors ${
-                            view === 'active' ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'
-                        }`}
-                    >
-                        Active
-                    </button>
-                </div>
+                {/* View Toggle - only shown when authenticated */}
+                {showViewToggle && (
+                    <div className="flex bg-surface rounded-md overflow-hidden shadow-md">
+                        <button
+                            onClick={() => setView('original')}
+                            className={`w-16 py-2 text-sm font-medium transition-colors ${
+                                view === 'original' ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'
+                            }`}
+                        >
+                            Origin
+                        </button>
+                        <button
+                            onClick={() => setView('active')}
+                            className={`w-16 py-2 text-sm font-medium transition-colors ${
+                                view === 'active' ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'
+                            }`}
+                        >
+                            Active
+                        </button>
+                    </div>
+                )}
 
                 {/* Tile Layer Toggle */}
                 <div className="flex bg-surface rounded-md overflow-hidden shadow-md">

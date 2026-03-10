@@ -57,7 +57,7 @@ const ArtistList = ({ username, onClose, onNavigateToArtist, onEditArtist, onDel
                     className="absolute right-full mr-2"
                     style={{ top: cardPosition, transform: 'translateY(-50%)' }}
                 >
-                    <ArtistProfile artist={selectedArtist} />
+                    <ArtistProfile artist={selectedArtist} showActions={!!(onEditArtist || onDeleteArtist)} />
                 </div>
             )}
 
@@ -73,7 +73,7 @@ const ArtistList = ({ username, onClose, onNavigateToArtist, onEditArtist, onDel
             <div className="px-4 py-2">
                 <Input
                     type="text"
-                    placeholder="Search artists or cities..."
+                    placeholder="Search artists or locations..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     rightIcon={<SearchIcon className="w-4 h-4" />}

@@ -384,5 +384,86 @@ export const ArtistStore = {
             console.error('Error counting artists by city:', error);
             throw error;
         }
+    },
+
+    /**
+     * Get featured artists for anonymous users.
+     * Returns up to 50 random artists from non-private users with avatars,
+     * spread out geographically using active location.
+     */
+    getFeaturedArtists: async (limit: number = 50, minDistanceKm: number = 50): Promise<Artist[]> => {
+        try {
+            // Get all eligible artists (non-private users, has avatar)
+            const candidatesResult = await pool.query(`
+                SELECT
+                    a.id, a.user_id, a.name, a.source_image, a.avatar_crop, a.profile_crop,
+                    a.original_city, a.original_province, a.original_country, a.original_city_id, a.original_display_name,
+                    ST_Y(a.original_coordinates::geometry) as original_lat,
+                    ST_X(a.original_coordinates::geometry) as original_lng,
+                    a.active_city, a.active_province, a.active_country, a.active_city_id, a.active_display_name,
+                    ST_Y(a.active_coordinates::geometry) as active_lat,
+                    ST_X(a.active_coordinates::geometry) as active_lng,
+                    ST_Y(a.original_display_coordinates::geometry) as original_display_lat,
+                    ST_X(a.original_display_coordinates::geometry) as original_display_lng,
+                    ST_Y(a.active_display_coordinates::geometry) as active_display_lat,
+                    ST_X(a.active_display_coordinates::geometry) as active_display_lng,
+                    a.instagram_url, a.twitter_url, a.apple_music_url, a.website_url, a.youtube_url,
+                    a.debut_year, a.inactive_year,
+                    a.created_at, a.updated_at,
+                    ST_Y(a.active_display_coordinates::geometry) as sort_lat,
+                    ST_X(a.active_display_coordinates::geometry) as sort_lng
+                FROM artists a
+                JOIN profiles p ON a.user_id = p.id
+                WHERE p.is_private = false
+                  AND a.source_image IS NOT NULL
+                  AND a.active_display_coordinates IS NOT NULL
+                ORDER BY RANDOM()
+            `);
+
+            if (candidatesResult.rows.length === 0) {
+                return [];
+            }
+
+            // Greedy selection: pick artists maintaining minimum distance
+            const selected: typeof candidatesResult.rows = [];
+            const minDistanceMeters = minDistanceKm * 1000;
+
+            for (const candidate of candidatesResult.rows) {
+                if (selected.length >= limit) break;
+
+                const candidateLat = parseFloat(candidate.sort_lat);
+                const candidateLng = parseFloat(candidate.sort_lng);
+
+                // Check distance from all already-selected artists
+                let tooClose = false;
+                for (const s of selected) {
+                    const sLat = parseFloat(s.sort_lat);
+                    const sLng = parseFloat(s.sort_lng);
+
+                    // Haversine approximation for speed
+                    const dLat = (candidateLat - sLat) * Math.PI / 180;
+                    const dLng = (candidateLng - sLng) * Math.PI / 180;
+                    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                              Math.cos(sLat * Math.PI / 180) * Math.cos(candidateLat * Math.PI / 180) *
+                              Math.sin(dLng/2) * Math.sin(dLng/2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    const distance = 6371000 * c; // Earth radius in meters
+
+                    if (distance < minDistanceMeters) {
+                        tooClose = true;
+                        break;
+                    }
+                }
+
+                if (!tooClose) {
+                    selected.push(candidate);
+                }
+            }
+
+            return selected.map(rowToArtist);
+        } catch (error) {
+            console.error('Error getting featured artists:', error);
+            throw error;
+        }
     }
 };

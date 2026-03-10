@@ -6,6 +6,7 @@ import { formatLocation } from '../utils/locationUtils';
 
 interface ArtistProfileProps {
     artist: Artist;
+    showActions?: boolean;
 }
 
 // URL sanitizer
@@ -25,7 +26,7 @@ const safeUrl = (url: string): string => {
 const getPlaceholderUrl = (name: string) =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=320&background=e5e7eb&color=9ca3af`;
 
-const ArtistProfile = ({ artist }: ArtistProfileProps) => {
+const ArtistProfile = ({ artist, showActions = true }: ArtistProfileProps) => {
     // Use Cloudinary transformation for profile banner
     const backgroundImageUrl = getProfileUrl(artist.sourceImage, artist.profileCrop) || getPlaceholderUrl(artist.name);
     
@@ -51,29 +52,31 @@ const ArtistProfile = ({ artist }: ArtistProfileProps) => {
                 <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/40 via-black/20 to-transparent pointer-events-none" />
 
                 {/* Action bar - shows on hover */}
-                <div
-                    className="artist-action-bar absolute inset-0 flex"
-                    style={{ opacity: 0, transition: 'opacity 0.2s ease-in-out' }}
-                >
-                    {/* Edit */}
+                {showActions && (
                     <div
-                        className="artist-action-edit flex items-center justify-center cursor-pointer"
-                        style={{ width: '80%', backgroundColor: 'rgba(0, 0, 0, 0.5)', transition: 'background-color 0.15s' }}
-                        data-action="edit"
-                        data-artist-id={artist.id}
+                        className="artist-action-bar absolute inset-0 flex"
+                        style={{ opacity: 0, transition: 'opacity 0.2s ease-in-out' }}
                     >
-                        <EditIcon className="w-6 h-6 text-white" />
+                        {/* Edit */}
+                        <div
+                            className="artist-action-edit flex items-center justify-center cursor-pointer"
+                            style={{ width: '80%', backgroundColor: 'rgba(0, 0, 0, 0.5)', transition: 'background-color 0.15s' }}
+                            data-action="edit"
+                            data-artist-id={artist.id}
+                        >
+                            <EditIcon className="w-6 h-6 text-white" />
+                        </div>
+                        {/* Delete */}
+                        <div
+                            className="artist-action-delete flex items-center justify-center cursor-pointer"
+                            style={{ width: '20%', backgroundColor: 'rgba(239, 68, 68, 0.85)', transition: 'background-color 0.15s' }}
+                            data-action="delete"
+                            data-artist-id={artist.id}
+                        >
+                            <TrashIcon className="w-5 h-5 text-white" />
+                        </div>
                     </div>
-                    {/* Delete */}
-                    <div
-                        className="artist-action-delete flex items-center justify-center cursor-pointer"
-                        style={{ width: '20%', backgroundColor: 'rgba(239, 68, 68, 0.85)', transition: 'background-color 0.15s' }}
-                        data-action="delete"
-                        data-artist-id={artist.id}
-                    >
-                        <TrashIcon className="w-5 h-5 text-white" />
-                    </div>
-                </div>
+                )}
 
                 {/* Artist Name */}
                 <h3

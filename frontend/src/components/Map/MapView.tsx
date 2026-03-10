@@ -113,6 +113,7 @@ interface MapViewProps {
     focusedLocation?: Coordinates | null;
     onFocusedLocationHandled?: () => void;
     focusedCityId?: string | null;
+    isAuthenticated?: boolean;
 }
 
 export type TileLayerType = 'osm' | 'voyager';
@@ -129,7 +130,7 @@ const TILE_LAYERS: Record<TileLayerType, { url: string; attribution: string; sub
     },
 };
 
-const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick, focusedArtist, onFocusedArtistHandled, focusedLocation, onFocusedLocationHandled, focusedCityId }: MapViewProps) => {
+const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick, focusedArtist, onFocusedArtistHandled, focusedLocation, onFocusedLocationHandled, focusedCityId, isAuthenticated = true }: MapViewProps) => {
     const defaultCenter: LatLngExpression = [35.6762, 139.6503]; // Tokyo
     const defaultZoom = 4;
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
@@ -204,6 +205,7 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
                 onToggleClusters={() => hasExpandedClusters
                     ? clusterRef.current?.collapseAll()
                     : clusterRef.current?.expandAll()}
+                showViewToggle={isAuthenticated}
             />
             <ScaleControl position="bottomleft" imperial={false} />
             <AttributionControl position="bottomright" />

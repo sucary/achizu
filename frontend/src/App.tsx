@@ -260,14 +260,15 @@ function App() {
                 username={username}
                 selectionMode={selectionMode}
                 onLocationPick={handleLocationPick}
-                onEditArtist={isViewingOther ? undefined : handleEditArtist}
-                onDeleteArtist={isViewingOther ? undefined : handleDeleteArtist}
+                onEditArtist={isViewingOther || !user ? undefined : handleEditArtist}
+                onDeleteArtist={isViewingOther || !user ? undefined : handleDeleteArtist}
                 onEmptyClick={showForm ? handleCloseForm : showArtistList ? () => setShowArtistList(false) : undefined}
                 focusedArtist={focusedArtist}
                 onFocusedArtistHandled={() => setFocusedArtist(null)}
                 focusedLocation={focusedLocation}
                 onFocusedLocationHandled={() => setFocusedLocation(null)}
                 focusedCityId={focusedCityId}
+                isAuthenticated={!!user}
             />
         </div>
     );

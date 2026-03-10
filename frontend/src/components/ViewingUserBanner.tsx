@@ -15,7 +15,7 @@ export function ViewingUserBanner({ username }: ViewingUserBannerProps) {
             <div className="w-px h-6 bg-border" />
             <button
                 onClick={() => navigate('/')}
-                className="px-3 h-full text-text-secondary hover:bg-primary hover:text-white transition-colors rounded-r-lg"
+                className="px-3 h-full text-text-secondary hover:bg-surface-muted hover:text-text transition-colors rounded-r-lg"
                 title="Back to my map"
             >
                 <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

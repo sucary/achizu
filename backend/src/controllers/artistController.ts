@@ -1,10 +1,30 @@
 import { Response } from 'express';
 import { ArtistService } from '../services/artistService';
-import { ArtistQueryParams, LocationView } from '../types/artist';
+import { ArtistQueryParams, LocationView, Artist } from '../types/artist';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { ArtistInputSchema } from '../schemas/artistValidation';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import pool from '../config/database';
+import { ArtistStore } from '../models/artistStore';
+
+// Cache for featured artists for anonymous users
+interface FeaturedArtistsCache {
+    artists: Artist[];
+    timestamp: number;
+}
+let featuredArtistsCache: FeaturedArtistsCache | null = null;
+const FEATURED_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
+
+async function getFeaturedArtists(): Promise<Artist[]> {
+    const now = Date.now();
+    if (featuredArtistsCache && (now - featuredArtistsCache.timestamp) < FEATURED_CACHE_TTL_MS) {
+        return featuredArtistsCache.artists;
+    }
+
+    const artists = await ArtistStore.getFeaturedArtists(50, 20);   // max count, max distance in km
+    featuredArtistsCache = { artists, timestamp: now };
+    return artists;
+}
 
 // Cache admin user ID to avoid repeated queries
 let cachedAdminUserId: string | null = null;
@@ -49,6 +69,15 @@ async function getTargetUserId(req: AuthenticatedRequest): Promise<string | unde
 }
 
 export const getAllArtists = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const isAuthenticated = !!req.user;
+
+    // Anonymous users get featured artists
+    if (!isAuthenticated) {
+        const featuredArtists = await getFeaturedArtists();
+        res.json(featuredArtists);
+        return;
+    }
+
     const targetUserId = await getTargetUserId(req);
 
     const filters: ArtistQueryParams = {

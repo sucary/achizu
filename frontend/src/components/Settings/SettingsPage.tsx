@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { API_URL } from '../../services/api';
 
 export function SettingsPage() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { user, profile } = useAuth();
 
     // Username state
@@ -143,6 +145,8 @@ export function SettingsPage() {
             }
 
             setIsPrivate(newValue);
+            // Invalidate profile cache so it reflects the new setting
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
         } catch {
             setPrivacyError('Unable to update privacy setting. Please try again.');
         } finally {

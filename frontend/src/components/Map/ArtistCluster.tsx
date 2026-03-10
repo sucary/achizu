@@ -83,7 +83,8 @@ const ArtistCluster = forwardRef<ArtistClusterHandle, ArtistClusterProps>(({
     const marker = L.marker([coords.lat, coords.lng], { icon });
     (marker as L.Marker & { _artistData?: Artist })._artistData = artist;
 
-    const popupContent = renderToStaticMarkup(<ArtistProfile artist={artist} />);
+    const showActions = !!(onEditArtist || onDeleteArtist);
+    const popupContent = renderToStaticMarkup(<ArtistProfile artist={artist} showActions={showActions} />);
     marker.bindPopup(popupContent, {
       className: 'artist-popup',
       closeButton: false,
