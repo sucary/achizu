@@ -125,7 +125,7 @@ const ArtistFormHeader = ({
                 ) : (
                     <h2
                         onClick={() => setIsEditingName(true)}
-                        className="text-lg font-bold text-white text-shadow-overlay hover:text-gray-100 whitespace-nowrap overflow-hidden p-0 m-0 leading-tight border-b-2 border-transparent cursor-pointer"
+                        className="text-lg font-bold text-white text-shadow-overlay hover:text-gray-100 whitespace-nowrap overflow-hidden p-0 m-0 leading-tight border-b-2 border-transparent cursor-pointer min-h-[1.75rem]"
                         title={name}
                     >
                         {displayName}

@@ -128,8 +128,15 @@ export const CityService = {
                 headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
             });
 
+            // Handle rate limit - throw specific error
+            if (response.status === 429) {
+                console.error('Nominatim rate limit exceeded (429) - Too many requests');
+                throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+            }
+
             if (!response.ok) {
-                throw new Error(`Nominatim API error: ${response.statusText}`);
+                console.error(`Nominatim API error: ${response.status} ${response.statusText}`);
+                throw new Error(`Location search service error: ${response.statusText}`);
             }
 
             const data = await response.json() as NominatimResponse[];

@@ -83,8 +83,15 @@ export class LocationSearchService {
                 this.isSearching = false;
                 return;
             }
-            this.callbacks.onError('Failed to search locations. Please try again.');
-            console.error('Search failed:', err);
+
+            // Extract error message from API response
+            let errorMessage = 'Failed to search locations. Please try again.';
+            if (axios.isAxiosError(err) && err.response?.data?.error) {
+                errorMessage = err.response.data.error;
+            }
+
+            console.error('Failed to search cities:', err);
+            this.callbacks.onError(errorMessage);
         }
 
         await this.processQueue();
@@ -106,8 +113,15 @@ export class LocationSearchService {
                 this.isSearching = false;
                 return;
             }
-            this.callbacks.onError('Failed to search for more results.');
-            console.error('Reverse search failed:', err);
+
+            // Extract error message from API response
+            let errorMessage = 'Failed to search for more results.';
+            if (axios.isAxiosError(err) && err.response?.data?.error) {
+                errorMessage = err.response.data.error;
+            }
+
+            console.error('Search failed:', err);
+            this.callbacks.onError(errorMessage);
         }
 
         await this.processQueue();
