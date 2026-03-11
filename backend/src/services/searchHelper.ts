@@ -60,7 +60,7 @@ export const TextSearch = {
         let fromCache = true;
 
         if (!results) {
-            console.log(`[SEARCH] Cache miss for: "${query}" - calling Nominatim`);
+            console.log(`[SEARCH] Cache miss for: "${query}" - calling geocoding API`);
             fromCache = false;
             results = await CityService.searchNominatim(query, limit);
 

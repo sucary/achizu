@@ -2,6 +2,10 @@ import pool from '../config/database';
 import { City, NominatimResponse, NominatimSearchResult } from '../types/city';
 import { nominatimLimiter } from './nominatimRateLimiter';
 
+// Geocoding API configuration (LocationIQ - Nominatim-compatible)
+const GEOCODING_API_BASE = 'https://us1.locationiq.com/v1';
+const GEOCODING_API_KEY = process.env.LOCATIONIQ_API_KEY;
+
 /**
  * Get display type for a location
  */
@@ -122,9 +126,9 @@ export const CityService = {
             dedupe: '0'
         });
 
-        const url = `https://nominatim.openstreetmap.org/search?${params.toString()}`;
+        const url = `${GEOCODING_API_BASE}/search?${params.toString()}&key=${GEOCODING_API_KEY}`;
 
-        console.log(`[NOMINATIM] Calling API for: "${query}"`);
+        console.log(`[GEOCODING] Calling API for: "${query}"`);
 
         try {
             // Use global rate limiter to ensure 1 req/sec across all users
@@ -136,18 +140,18 @@ export const CityService = {
 
             // Handle rate limit - throw specific error
             if (response.status === 429) {
-                console.error('[NOMINATIM] Rate limit exceeded (429) - Too many requests');
+                console.error('[GEOCODING] Rate limit exceeded (429) - Too many requests');
                 throw new Error('Rate limit exceeded. Please try again in a few minutes.');
             }
 
             if (!response.ok) {
-                console.error(`[NOMINATIM] API error: ${response.status} ${response.statusText}`);
+                console.error(`[GEOCODING] API error: ${response.status} ${response.statusText}`);
                 throw new Error(`Location search service error: ${response.statusText}`);
             }
 
             const data = await response.json() as NominatimResponse[];
 
-            console.log(`[NOMINATIM] Received ${data.length} results for: "${query}"`);
+            console.log(`[GEOCODING] Received ${data.length} results for: "${query}"`);
 
             // Save all results to city_boundaries in background instantly
             for (const item of data) {
@@ -249,7 +253,7 @@ export const CityService = {
             addressdetails: '1'
         });
 
-        const url = `https://nominatim.openstreetmap.org/lookup?${params.toString()}`;
+        const url = `${GEOCODING_API_BASE}/lookup?${params.toString()}&key=${GEOCODING_API_KEY}`;
 
         try {
             // Use global rate limiter to ensure 1 req/sec across all users
@@ -260,7 +264,7 @@ export const CityService = {
             );
 
             if (!response.ok) {
-                throw new Error(`Nominatim API error: ${response.statusText}`);
+                throw new Error(`Geocoding API error: ${response.statusText}`);
             }
 
             const data = await response.json() as NominatimResponse[];
@@ -284,7 +288,7 @@ export const CityService = {
             limit: '5'
         });
 
-        const url = `https://nominatim.openstreetmap.org/search?${params.toString()}`;
+        const url = `${GEOCODING_API_BASE}/search?${params.toString()}&key=${GEOCODING_API_KEY}`;
         console.log('Fetching parent city boundary:', url);
 
         try {
@@ -296,7 +300,7 @@ export const CityService = {
             );
 
             if (!response.ok) {
-                throw new Error(`Nominatim API error: ${response.statusText}`);
+                throw new Error(`Geocoding API error: ${response.statusText}`);
             }
 
             const data = await response.json() as NominatimResponse[];
@@ -660,7 +664,7 @@ export const CityService = {
             zoom: '18' // Most detailed level to get city/town/village
         });
 
-        const url = `https://nominatim.openstreetmap.org/reverse?${params.toString()}`;
+        const url = `${GEOCODING_API_BASE}/reverse?${params.toString()}&key=${GEOCODING_API_KEY}`;
 
         try {
             // Use global rate limiter to ensure 1 req/sec across all users
@@ -671,7 +675,7 @@ export const CityService = {
             );
 
             if (!response.ok) {
-                throw new Error(`Nominatim reverse API error: ${response.statusText}`);
+                throw new Error(`Geocoding reverse API error: ${response.statusText}`);
             }
 
             const data = await response.json() as NominatimResponse;
