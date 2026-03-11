@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 type BannerAction =
     | { type: 'text'; label: string; onClick: () => void }
