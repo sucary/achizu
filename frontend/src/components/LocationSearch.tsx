@@ -34,6 +34,8 @@ export const LocationSearch = ({
         isLoadingMore,
         error,
         hasMore,
+        queueSize,
+        retryFn,
         setQuery,
         handleSearch,
         handleSelect,
@@ -133,17 +135,24 @@ export const LocationSearch = ({
                             onKeyDown={handleKeyDown}
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                            {isLoading && (
-                                <Spinner size="sm" className="text-text-muted" />
+                            {(isLoading || queueSize > 0) && (
+                                <div className="relative inline-flex items-center justify-center">
+                                    {isLoading && <Spinner size="sm" className="text-text-muted" />}
+                                    {queueSize > 0 && (
+                                        <div className={`${isLoading ? 'absolute inset-0' : ''} flex items-center justify-center`}>
+                                            <span className={`text-[10px] font-bold ${isLoading ? 'text-text-muted' : 'text-primary'}`}>{queueSize}</span>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                             <button
-                                onClick={isLoading ? handleCancel : handleSearch}
+                                onClick={(isLoading || queueSize > 0) ? handleCancel : handleSearch}
                                 type="button"
-                                disabled={!isLoading && !canSearch}
-                                className={`p-1 rounded transition-colors ${isLoading ? 'text-text-secondary hover:bg-error hover:text-white' : 'text-text-secondary hover:bg-primary hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary'}`}
-                                title={isLoading ? "Cancel search" : "Search"}
+                                disabled={!isLoading && queueSize === 0 && !canSearch}
+                                className={`p-1 rounded transition-colors ${(isLoading || queueSize > 0) ? 'text-text-secondary hover:bg-error hover:text-white' : 'text-text-secondary hover:bg-primary hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary'}`}
+                                title={(isLoading || queueSize > 0) ? "Cancel search" : "Search"}
                             >
-                                {isLoading ? <CloseIcon className="w-4 h-4" /> : <SearchIcon className="w-4 h-4" />}
+                                {(isLoading || queueSize > 0) ? <CloseIcon className="w-4 h-4" /> : <SearchIcon className="w-4 h-4" />}
                             </button>
                         </div>
                     </div>
@@ -160,12 +169,14 @@ export const LocationSearch = ({
                 {error && (
                     <div className="mt-1 text-error text-sm flex items-center justify-between">
                         <span>{error}</span>
-                        <button
-                            onClick={handleRetry}
-                            className="ml-2 text-primary hover:underline"
-                        >
-                            Retry
-                        </button>
+                        {retryFn && (
+                            <button
+                                onClick={handleRetry}
+                                className="ml-2 text-primary hover:underline"
+                            >
+                                Retry
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
@@ -211,9 +222,19 @@ export const LocationSearch = ({
                                 type="button"
                                 disabled={isLoadingMore}
                                 variant="ghost"
-                                className="w-full border-t border-border rounded-none"
+                                className="w-full border-t border-border rounded-none flex items-center justify-center gap-2"
                             >
-                                {isLoadingMore ? 'Searching...' : 'Search for more results'}
+                                {isLoadingMore && (
+                                    <div className="relative inline-flex items-center justify-center">
+                                        <Spinner size="sm" />
+                                        {queueSize > 0 && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-[10px] font-bold text-text-muted">{queueSize}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                <span>{isLoadingMore ? 'Searching...' : 'Search for more results'}</span>
                             </Button>
                         )}
                     </div>

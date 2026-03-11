@@ -1,5 +1,6 @@
 import pool from '../config/database';
 import { City, NominatimResponse, NominatimSearchResult } from '../types/city';
+import { nominatimLimiter } from './nominatimRateLimiter';
 
 /**
  * Get display type for a location
@@ -126,9 +127,12 @@ export const CityService = {
         console.log(`[NOMINATIM] Calling API for: "${query}"`);
 
         try {
-            const response = await fetch(url, {
-                headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
-            });
+            // Use global rate limiter to ensure 1 req/sec across all users
+            const response = await nominatimLimiter.enqueue(() =>
+                fetch(url, {
+                    headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
+                })
+            );
 
             // Handle rate limit - throw specific error
             if (response.status === 429) {
@@ -248,9 +252,12 @@ export const CityService = {
         const url = `https://nominatim.openstreetmap.org/lookup?${params.toString()}`;
 
         try {
-            const response = await fetch(url, {
-                headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
-            });
+            // Use global rate limiter to ensure 1 req/sec across all users
+            const response = await nominatimLimiter.enqueue(() =>
+                fetch(url, {
+                    headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
+                })
+            );
 
             if (!response.ok) {
                 throw new Error(`Nominatim API error: ${response.statusText}`);
@@ -281,9 +288,12 @@ export const CityService = {
         console.log('Fetching parent city boundary:', url);
 
         try {
-            const response = await fetch(url, {
-                headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
-            });
+            // Use global rate limiter to ensure 1 req/sec across all users
+            const response = await nominatimLimiter.enqueue(() =>
+                fetch(url, {
+                    headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
+                })
+            );
 
             if (!response.ok) {
                 throw new Error(`Nominatim API error: ${response.statusText}`);
@@ -653,9 +663,12 @@ export const CityService = {
         const url = `https://nominatim.openstreetmap.org/reverse?${params.toString()}`;
 
         try {
-            const response = await fetch(url, {
-                headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
-            });
+            // Use global rate limiter to ensure 1 req/sec across all users
+            const response = await nominatimLimiter.enqueue(() =>
+                fetch(url, {
+                    headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
+                })
+            );
 
             if (!response.ok) {
                 throw new Error(`Nominatim reverse API error: ${response.statusText}`);

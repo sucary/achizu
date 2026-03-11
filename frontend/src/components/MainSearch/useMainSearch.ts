@@ -20,7 +20,10 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [searchMoreQueueSize, setSearchMoreQueueSize] = useState(0);
     const autoFocusTriggered = useRef(false);
+    const pendingSearchMore = useRef<string | null>(null);
+    const processingSearchMore = useRef(false);
 
     // Debounce the query - increased to reduce Nominatim API calls
     useEffect(() => {
@@ -31,6 +34,15 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
 
         return () => clearTimeout(timer);
     }, [query]);
+
+    // Clear pending Search More when query changes
+    useEffect(() => {
+        if (pendingSearchMore.current) {
+            console.log('[MainSearch] New search detected, clearing pending Search More');
+            pendingSearchMore.current = null;
+            setSearchMoreQueueSize(0);
+        }
+    }, [debouncedQuery]);
 
     // Open dropdown when query is entered
     useEffect(() => {
@@ -84,20 +96,70 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
         setQuery('');
     }, [navigate]);
 
-    const handleSearchMore = useCallback(async () => {
-        if (!debouncedQuery || isLoadingMore) return;
+    const processSearchMoreQueue = useCallback(async (hasResults: boolean = false) => {
+        // If we got results, clear the pending search - user already found what they need
+        if (hasResults && pendingSearchMore.current) {
+            pendingSearchMore.current = null;
+            processingSearchMore.current = false;
+            setIsLoadingMore(false);
+            setSearchMoreQueueSize(0);
+            console.log(`[MainSearch] Results found - cleared pending Search More request`);
+            return;
+        }
 
+        if (processingSearchMore.current) return;
+
+        const nextQuery = pendingSearchMore.current;
+        pendingSearchMore.current = null;
+        setSearchMoreQueueSize(0);
+
+        if (!nextQuery) {
+            processingSearchMore.current = false;
+            setIsLoadingMore(false);
+            console.log('[MainSearch] Search More queue empty');
+            return;
+        }
+
+        processingSearchMore.current = true;
         setIsLoadingMore(true);
+
+        console.log('[MainSearch] Processing Search More:', nextQuery);
+
         try {
-            const moreResults = await mainSearch(debouncedQuery, 10, 'nominatim', profile?.username ?? undefined);
+            const moreResults = await mainSearch(nextQuery, 10, 'nominatim', profile?.username ?? undefined);
             // Update the cache with the new results
-            queryClient.setQueryData(['mainSearch', debouncedQuery, profile?.username], moreResults);
+            queryClient.setQueryData(['mainSearch', nextQuery, profile?.username], moreResults);
+
+            processingSearchMore.current = false;
+
+            // Clear queue if we got more location results
+            const hasLocationResults = moreResults.locations && moreResults.locations.length > 0;
+            await processSearchMoreQueue(hasLocationResults);
         } catch (error) {
             console.error('Failed to load more results:', error);
-        } finally {
-            setIsLoadingMore(false);
+            processingSearchMore.current = false;
+
+            // Continue queue without clearing on error
+            await processSearchMoreQueue(false);
         }
-    }, [debouncedQuery, isLoadingMore, queryClient, profile?.username]);
+    }, [queryClient, profile?.username]);
+
+    const handleSearchMore = useCallback(async () => {
+        if (!debouncedQuery) return;
+
+        if (processingSearchMore.current) {
+            // Queue the request (overwrites any previous pending)
+            pendingSearchMore.current = debouncedQuery;
+            setSearchMoreQueueSize(1);
+            console.log('[MainSearch] Already loading more, queuing Search More:', debouncedQuery);
+            return;
+        }
+
+        // Start processing immediately
+        pendingSearchMore.current = debouncedQuery;
+        setSearchMoreQueueSize(1);
+        await processSearchMoreQueue(false);
+    }, [debouncedQuery, processSearchMoreQueue]);
 
     return {
         query,
@@ -105,6 +167,7 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
         results,
         isLoading: isLoading || isFetching,
         isLoadingMore,
+        searchMoreQueueSize,
         hasMoreLocations: results?.hasMoreLocations ?? false,
         isOpen,
         setIsOpen,

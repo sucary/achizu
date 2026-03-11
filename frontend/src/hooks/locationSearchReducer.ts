@@ -10,6 +10,8 @@ export interface LocationSearchState {
     source: 'local' | 'nominatim' | 'cache';
     hasMore: boolean;
     clickedCoords: { lat: number; lng: number } | null;
+    queueSize: number;
+    retryFn: (() => void) | null;
 }
 
 export type LocationSearchAction =
@@ -17,12 +19,14 @@ export type LocationSearchAction =
     | { type: 'SEARCH_START'; isMore: boolean }
     | { type: 'SEARCH_SUCCESS'; results: SearchResult[]; source: 'local' | 'nominatim' | 'cache'; hasMore: boolean }
     | { type: 'SEARCH_ERROR'; error: string }
+    | { type: 'RATE_LIMITED'; retryFn: () => void }
     | { type: 'SEARCH_CANCEL' }
     | { type: 'SET_CLICKED_COORDS'; coords: { lat: number; lng: number } | null }
     | { type: 'OPEN_DROPDOWN' }
     | { type: 'CLOSE_DROPDOWN' }
     | { type: 'CLEAR_RESULTS' }
-    | { type: 'RESET_QUERY' };
+    | { type: 'RESET_QUERY' }
+    | { type: 'UPDATE_QUEUE_SIZE'; queueSize: number };
 
 export const initialState: LocationSearchState = {
     query: null,
@@ -34,6 +38,8 @@ export const initialState: LocationSearchState = {
     source: 'local',
     hasMore: false,
     clickedCoords: null,
+    queueSize: 0,
+    retryFn: null,
 };
 
 export function locationSearchReducer(
@@ -50,6 +56,7 @@ export function locationSearchReducer(
                 isLoading: !action.isMore,
                 isLoadingMore: action.isMore,
                 error: null,
+                retryFn: null,
             };
 
         case 'SEARCH_SUCCESS':
@@ -61,6 +68,7 @@ export function locationSearchReducer(
                 isOpen: true,
                 isLoading: false,
                 isLoadingMore: false,
+                retryFn: null,
             };
 
         case 'SEARCH_ERROR':
@@ -69,6 +77,16 @@ export function locationSearchReducer(
                 error: action.error,
                 isLoading: false,
                 isLoadingMore: false,
+                retryFn: null,
+            };
+
+        case 'RATE_LIMITED':
+            return {
+                ...state,
+                error: 'Rate limited. Please try again.',
+                isLoading: false,
+                isLoadingMore: false,
+                retryFn: action.retryFn,
             };
 
         case 'SEARCH_CANCEL':
@@ -92,6 +110,9 @@ export function locationSearchReducer(
 
         case 'RESET_QUERY':
             return { ...state, query: null, isOpen: false, clickedCoords: null };
+
+        case 'UPDATE_QUEUE_SIZE':
+            return { ...state, queueSize: action.queueSize };
 
         default:
             return state;

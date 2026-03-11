@@ -28,6 +28,8 @@ export function useLocationSearch({
             hasMore: response.hasMore,
         }),
         onError: (error) => dispatch({ type: 'SEARCH_ERROR', error }),
+        onQueueUpdate: (queueSize) => dispatch({ type: 'UPDATE_QUEUE_SIZE', queueSize }),
+        onRateLimited: (retryFn) => dispatch({ type: 'RATE_LIMITED', retryFn }),
     }), []);
 
     // Cleanup service on unmount
@@ -68,11 +70,10 @@ export function useLocationSearch({
     }, [service, state.clickedCoords, state.query]);
 
     const handleRetry = useCallback(() => {
-        const queryToRetry = state.query ?? '';
-        if (queryToRetry.trim().length >= 2) {
-            service.search(queryToRetry.trim());
+        if (state.retryFn) {
+            state.retryFn();
         }
-    }, [service, state.query]);
+    }, [state.retryFn]);
 
     const setQuery = useCallback((query: string | null) => {
         dispatch({ type: 'SET_QUERY', query });
@@ -148,6 +149,8 @@ export function useLocationSearch({
         isLoadingMore: state.isLoadingMore,
         error: state.error,
         hasMore: state.hasMore,
+        queueSize: state.queueSize,
+        retryFn: state.retryFn,
 
         setQuery,
         handleSearch,

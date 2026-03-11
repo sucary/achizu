@@ -20,6 +20,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
         results,
         isLoading,
         isLoadingMore,
+        searchMoreQueueSize,
         hasMoreLocations,
         isOpen,
         setIsOpen,
@@ -163,9 +164,19 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                                     onClick={handleSearchMore}
                                     disabled={isLoadingMore}
                                     variant="ghost"
-                                    className="w-full border-t border-border rounded-none"
+                                    className="w-full border-t border-border rounded-none flex items-center justify-center gap-2"
                                 >
-                                    {isLoadingMore ? 'Searching...' : 'Search for more locations'}
+                                    {isLoadingMore && (
+                                        <div className="relative inline-flex items-center justify-center">
+                                            <Spinner size="sm" />
+                                            {searchMoreQueueSize > 0 && (
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <span className="text-[10px] font-bold text-text-muted">{searchMoreQueueSize}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    <span>{isLoadingMore ? 'Searching...' : 'Search for more locations'}</span>
                                 </Button>
                             )}
                         </>
