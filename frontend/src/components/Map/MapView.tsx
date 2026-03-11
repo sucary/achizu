@@ -9,6 +9,7 @@ import MapControls from './buttons/MapControls';
 import ArtistCluster, { type ArtistClusterHandle } from './ArtistCluster';
 import MapClickHandler from './MapClickHandler';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../context/AuthContext';
 
 const ZoomLogger = () => {
     useMapEvents({
@@ -131,6 +132,8 @@ const TILE_LAYERS: Record<TileLayerType, { url: string; attribution: string; sub
 };
 
 const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick, focusedArtist, onFocusedArtistHandled, focusedLocation, onFocusedLocationHandled, focusedCityId, isAuthenticated = true }: MapViewProps) => {
+    const { profile } = useAuth();
+    const isAdmin = profile?.isAdmin ?? false;
     const defaultCenter: LatLngExpression = [35.6762, 139.6503]; // Tokyo
     const defaultZoom = 4;
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
@@ -244,14 +247,14 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
                     key={selectedCity.id}
                     data={selectedCity.boundary}
                     style={{
-                        color: '#ff0000',
+                        color: '#FA233B',
                         weight: 2,
                         opacity: 0.8,
                         fillOpacity: 0.1
                     }}
                 />
             )}
-            {selectedCity && selectedCity.rawBoundary && (
+            {isAdmin && selectedCity && selectedCity.rawBoundary && (
                 <GeoJSON
                     key={`${selectedCity.id}-raw`}
                     data={selectedCity.rawBoundary}

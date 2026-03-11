@@ -31,6 +31,11 @@ export const setupMarkerPopupEvents = ({
 }: SetupPopupOptions): void => {
   let currentClickHandler: ((event: Event) => void) | null = null;
 
+  // Prevent double-click zoom in
+  marker.on('dblclick', (e) => {
+    L.DomEvent.stopPropagation(e);
+  });
+
   marker.on('popupopen', (e) => {
     const markerElement = marker.getElement();
     if (markerElement) {

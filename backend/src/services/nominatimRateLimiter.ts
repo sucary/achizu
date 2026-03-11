@@ -1,6 +1,6 @@
 /**
- * Global rate limiter for Nominatim API calls
- * Nominatim usage policy: Max 1 request per second across the entire application
+ * Global rate limiter for geocoding API calls (LocationIQ)
+ * LocationIQ allows 2 requests per second - we use 500ms intervals
  * This ensures we don't exceed their rate limit even with multiple concurrent users
  */
 
@@ -10,14 +10,14 @@ interface QueuedRequest {
     reject: (error: any) => void;
 }
 
-class NominatimRateLimiter {
+class GeocodingRateLimiter {
     private queue: QueuedRequest[] = [];
     private processing = false;
     private lastRequestTime = 0;
-    private readonly MIN_INTERVAL_MS = 1000; // 1 second between requests
+    private readonly MIN_INTERVAL_MS = 500; // 500ms between requests (2 req/sec)
 
     /**
-     * Add a Nominatim API call to the global queue
+     * Add a geocoding API call to the global queue
      * Returns a promise that resolves when the request completes
      */
     async enqueue<T>(requestFn: () => Promise<T>): Promise<T> {
@@ -28,7 +28,7 @@ class NominatimRateLimiter {
                 reject
             });
 
-            console.log(`[NOMINATIM-LIMITER] Request queued (queue size: ${this.queue.length})`);
+            console.log(`[GEOCODING-LIMITER] Request queued (queue size: ${this.queue.length})`);
 
             // Start processing if not already running
             if (!this.processing) {
@@ -51,7 +51,7 @@ class NominatimRateLimiter {
 
             if (timeSinceLastRequest < this.MIN_INTERVAL_MS) {
                 const waitTime = this.MIN_INTERVAL_MS - timeSinceLastRequest;
-                console.log(`[NOMINATIM-LIMITER] Rate limiting: waiting ${waitTime}ms before next request`);
+                console.log(`[GEOCODING-LIMITER] Rate limiting: waiting ${waitTime}ms before next request`);
                 await this.sleep(waitTime);
             }
 
@@ -66,7 +66,7 @@ class NominatimRateLimiter {
         }
 
         this.processing = false;
-        console.log('[NOMINATIM-LIMITER] Queue empty, stopping');
+        console.log('[GEOCODING-LIMITER] Queue empty, stopping');
     }
 
     private sleep(ms: number): Promise<void> {
@@ -90,4 +90,4 @@ class NominatimRateLimiter {
 }
 
 // Export singleton instance
-export const nominatimLimiter = new NominatimRateLimiter();
+export const nominatimLimiter = new GeocodingRateLimiter();
