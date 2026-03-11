@@ -424,12 +424,19 @@ export const ArtistStore = {
                 return [];
             }
 
-            // Greedy selection: pick artists maintaining minimum distance
+            // Greedy selection: pick artists maintaining minimum distance and unique names
             const selected: typeof candidatesResult.rows = [];
+            const selectedNames = new Set<string>();
             const minDistanceMeters = minDistanceKm * 1000;
 
             for (const candidate of candidatesResult.rows) {
                 if (selected.length >= limit) break;
+
+                // Check for duplicate name (case-insensitive)
+                const normalizedName = candidate.name.toLowerCase().trim();
+                if (selectedNames.has(normalizedName)) {
+                    continue;
+                }
 
                 const candidateLat = parseFloat(candidate.sort_lat);
                 const candidateLng = parseFloat(candidate.sort_lng);
@@ -457,6 +464,7 @@ export const ArtistStore = {
 
                 if (!tooClose) {
                     selected.push(candidate);
+                    selectedNames.add(normalizedName);
                 }
             }
 
