@@ -193,6 +193,11 @@ export const deleteArtist = asyncHandler(async (req: AuthenticatedRequest, res: 
     res.status(204).send();
 });
 
+export const getFeaturedArtistsEndpoint = asyncHandler(async (_req: AuthenticatedRequest, res: Response) => {
+    const featuredArtists = await getFeaturedArtists();
+    res.json(featuredArtists);
+});
+
 export const getArtistCountByCity = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const view = (req.query.view as LocationView) || 'active';
     if (view !== 'original' && view !== 'active') {

@@ -2,7 +2,7 @@
  * Artist-related constants
  */
 
-export const MAX_NAME_LENGTH = 22;
+export const MAX_NAME_LENGTH = 28;
 
 export const ASPECT_RATIOS = {
     avatar: 1,

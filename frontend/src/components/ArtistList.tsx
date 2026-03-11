@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getArtists, getArtistsByUsername } from '../services/api';
+import { getArtists, getArtistsByUsername, getFeaturedArtists } from '../services/api';
 import { SearchIcon, EditIcon, TrashIcon } from './icons/GeneralIcons';
 import { MapPinIcon } from './icons/MapIcons';
 import { getAvatarUrl } from '../utils/cloudinaryUrl';
@@ -11,6 +11,7 @@ import type { Artist } from '../types/artist';
 
 interface ArtistListProps {
     username?: string;
+    viewingFeatured?: boolean;
     onClose: () => void;
     onNavigateToArtist?: (artist: Artist) => void;
     onEditArtist?: (artist: Artist) => void;
@@ -20,15 +21,19 @@ interface ArtistListProps {
 const getPlaceholderUrl = (name: string) =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=150&background=e5e7eb&color=9ca3af`;
 
-const ArtistList = ({ username, onClose, onNavigateToArtist, onEditArtist, onDeleteArtist }: ArtistListProps) => {
+const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, onEditArtist, onDeleteArtist }: ArtistListProps) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
     const [cardPosition, setCardPosition] = useState<number>(0);
     const listRef = useRef<HTMLDivElement>(null);
 
     const { data: artists = [], isLoading } = useQuery({
-        queryKey: ['artists', username],
-        queryFn: () => username ? getArtistsByUsername(username) : getArtists(),
+        queryKey: ['artists', username, viewingFeatured],
+        queryFn: () => {
+            if (viewingFeatured) return getFeaturedArtists();
+            if (username) return getArtistsByUsername(username);
+            return getArtists();
+        },
     });
 
     const filteredArtists = artists.filter((artist) =>
@@ -65,7 +70,7 @@ const ArtistList = ({ username, onClose, onNavigateToArtist, onEditArtist, onDel
             <div className="w-80 bg-surface rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-8rem)]">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <h2 className="text-lg font-semibold text-text">Artists ({artists.length})</h2>
+                <h2 className="text-lg font-semibold text-text">{viewingFeatured ? 'Featured Artists' : 'Artists'} ({artists.length})</h2>
                 <CloseButton onClick={onClose} size="md" />
             </div>
 
@@ -108,19 +113,19 @@ const ArtistList = ({ username, onClose, onNavigateToArtist, onEditArtist, onDel
                                     <div className="flex-1 min-w-0">
                                         <p
                                             onClick={(e) => e.stopPropagation()}
-                                            className="text-sm font-medium text-text truncate select-text cursor-text w-fit"
+                                            className="text-sm font-medium text-text select-text cursor-text whitespace-nowrap group-hover:truncate"
                                         >
                                             {artist.name}
                                         </p>
                                         <p
                                             onClick={(e) => e.stopPropagation()}
-                                            className="text-xs text-text-secondary truncate select-text cursor-text w-fit"
+                                            className="text-xs text-text-secondary select-text cursor-text whitespace-nowrap group-hover:truncate"
                                         >
                                             {formatLocation(artist.activeLocation)}
                                         </p>
                                     </div>
                                     {/* Actions */}
-                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="hidden group-hover:flex gap-1 shrink-0">
                                         {onNavigateToArtist && (
                                             <IconButton
                                                 onClick={(e) => { e.stopPropagation(); onNavigateToArtist(artist); }}

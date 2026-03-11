@@ -2,7 +2,7 @@ import { useEffect, useMemo, useCallback, useState, useRef } from 'react';
 import { MapContainer, TileLayer, GeoJSON, ScaleControl, AttributionControl, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression } from 'leaflet';
-import { getArtists, getArtistsByUsername, getCityById } from '../../services/api';
+import { getArtists, getArtistsByUsername, getFeaturedArtists, getCityById } from '../../services/api';
 import type { Artist, LocationView, SelectionMode } from '../../types/artist';
 import { getDisplayArtists } from '../../utils/mapUtils';
 import MapControls from './buttons/MapControls';
@@ -104,6 +104,7 @@ interface Coordinates {
 
 interface MapViewProps {
     username?: string;
+    viewingFeatured?: boolean;
     selectionMode?: SelectionMode | null;
     onLocationPick?: ((coordinates: Coordinates | null) => void) | null;
     onEditArtist?: (artist: Artist) => void;
@@ -131,7 +132,7 @@ const TILE_LAYERS: Record<TileLayerType, { url: string; attribution: string; sub
     },
 };
 
-const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick, focusedArtist, onFocusedArtistHandled, focusedLocation, onFocusedLocationHandled, focusedCityId, isAuthenticated = true }: MapViewProps) => {
+const MapView = ({ username, viewingFeatured, selectionMode, onLocationPick, onEditArtist, onDeleteArtist, onEmptyClick, focusedArtist, onFocusedArtistHandled, focusedLocation, onFocusedLocationHandled, focusedCityId, isAuthenticated = true }: MapViewProps) => {
     const { profile } = useAuth();
     const isAdmin = profile?.isAdmin ?? false;
     const defaultCenter: LatLngExpression = [35.6762, 139.6503]; // Tokyo
@@ -143,8 +144,12 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
     const clusterRef = useRef<ArtistClusterHandle>(null);
 
     const {data: artists} = useQuery({
-        queryKey: ['artists', username],
-        queryFn: () => username ? getArtistsByUsername(username) : getArtists(),
+        queryKey: ['artists', username, viewingFeatured],
+        queryFn: () => {
+            if (viewingFeatured) return getFeaturedArtists();
+            if (username) return getArtistsByUsername(username);
+            return getArtists();
+        },
     });
 
     const { data: selectedCity } = useQuery({
@@ -208,7 +213,7 @@ const MapView = ({ username, selectionMode, onLocationPick, onEditArtist, onDele
                 onToggleClusters={() => hasExpandedClusters
                     ? clusterRef.current?.collapseAll()
                     : clusterRef.current?.expandAll()}
-                showViewToggle={isAuthenticated}
+                showViewToggle={isAuthenticated && !viewingFeatured}
             />
             <ScaleControl position="bottomleft" imperial={false} />
             <AttributionControl position="bottomright" />

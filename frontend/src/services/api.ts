@@ -52,6 +52,16 @@ export const getArtistsByUsername = async (username: string, params?: ArtistQuer
     }
 };
 
+export const getFeaturedArtists = async (): Promise<Artist[]> => {
+    try {
+        const response = await api.get<Artist[]>('/artists/featured');
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch featured artists:', error);
+        throw error;
+    }
+};
+
 export const getCityById = async (id: string): Promise<City> => {
     try {
         const response = await api.get<City>(`/cities/${id}`);

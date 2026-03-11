@@ -7,7 +7,8 @@ import {
     updateArtist,
     deleteArtist,
     getArtistCountByCity,
-    getArtistCountByUsername
+    getArtistCountByUsername,
+    getFeaturedArtistsEndpoint
 } from '../controllers/artistController';
 import { requireAuth, requireApproval, optionalAuth } from '../middleware/authMiddleware';
 
@@ -15,6 +16,7 @@ const router = Router();
 
 // Public routes
 router.get('/', optionalAuth, getAllArtists);
+router.get('/featured', getFeaturedArtistsEndpoint);
 router.get('/stats/by-city', optionalAuth, getArtistCountByCity);
 
 // View other user's map (public profiles visible to all, private to self/admin)
