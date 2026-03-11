@@ -31,19 +31,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         queryKey: ['profile', user?.id],
         queryFn: async () => {
             if (!session) return null;
+
+            // Try to refresh session first if token might be stale
+            const { data: { session: freshSession } } = await supabase.auth.getSession();
+            const tokenToUse = freshSession?.access_token || session.access_token;
+
             const response = await fetch(`${API_URL}/auth/profile`, {
                 headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
+                    'Authorization': `Bearer ${tokenToUse}`,
                 },
             });
             if (response.status === 401) {
-                await supabase.auth.signOut();
+                // Only sign out if refresh also fails
+                const { error } = await supabase.auth.refreshSession();
+                if (error) {
+                    await supabase.auth.signOut();
+                }
                 return null;
             }
             if (!response.ok) return null;
             return response.json() as Promise<Profile>;
         },
         enabled: !!user,
+        retry: 1,
+        staleTime: 1000 * 60 * 5, // 5 minutes
     });
 
     useEffect(() => {
