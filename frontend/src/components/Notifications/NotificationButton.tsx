@@ -54,17 +54,21 @@ export function NotificationButton() {
     return (
         <div className="relative">
             <button
+                aria-label={`Notifications (${notifications.length})`}
+                aria-expanded={isOpen}
                 onClick={() => setIsOpen(!isOpen)}
                 // w h - 13, its 12 + 1 for exceed badge padding
                 className="w-13 h-13 flex items-center justify-center bg-surface rounded-lg shadow-md hover:bg-surface-muted transition-colors text-text relative"
             >
                 {/* Bell Icon */}
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg aria-hidden="true" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
 
                 {/* Badge */}
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                <span
+                    aria-hidden="true"
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
                     {notifications.length}
                 </span>
             </button>
@@ -73,10 +77,11 @@ export function NotificationButton() {
             {isOpen && (
                 <>
                     <div
-                        className="fixed inset-0 z-[1099]"
+                        aria-hidden="true"
+                        className="fixed inset-0 z-1099"
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-72 bg-surface rounded-lg shadow-lg border border-border z-[1100]">
+                    <div className="absolute right-0 mt-2 w-72 bg-surface rounded-lg shadow-lg border border-border z-1100">
                         <div className="p-3 border-b border-border flex items-center justify-between">
                             <h3 className="text-sm font-semibold text-text">Notifications</h3>
                             <CloseButton onClick={() => setIsOpen(false)} size="sm" />
@@ -89,12 +94,12 @@ export function NotificationButton() {
                                 >
                                     <div className="flex items-start gap-2">
                                         {notification.type === 'warning' && (
-                                            <svg className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <svg className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                             </svg>
                                         )}
                                         {notification.type === 'info' && (
-                                            <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                             </svg>
                                         )}

@@ -3,7 +3,9 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
 const closeButtonVariants = cva(
-    'rounded text-text-muted hover:text-primary hover:bg-surface-muted transition-colors',
+    `rounded text-text-muted hover:text-primary
+    hover:bg-surface-muted transition-colors
+    focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary`,
     {
         variants: {
             size: {
@@ -32,10 +34,12 @@ export function CloseButton({ size = 'md', className, ...props }: CloseButtonPro
     return (
         <button
             type="button"
+            aria-label="close"
             className={cn(closeButtonVariants({ size }), className)}
             {...props}
         >
             <svg
+                aria-hidden="true"
                 className={iconSizes[size || 'md']}
                 fill="none"
                 viewBox="0 0 24 24"

@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
-import type { CropArea } from '../types/artist';
-import { ASPECT_RATIOS } from '../constants/artist';
+import type { CropArea } from '../../types/artist';
+import { ASPECT_RATIOS } from '../../constants/artist';
+import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 
 export interface CropResult {
     avatarCrop: CropArea;
@@ -50,6 +51,7 @@ const ImageCropper = ({
     onCancel,
     onReupload
 }: ImageCropperProps) => {
+    const dialogRef = useDialogAccessibility(onCancel);
     const [mode, setMode] = useState<CropMode>(initialMode);
 
     // Single crop state - resets when switching tabs
@@ -125,11 +127,18 @@ const ImageCropper = ({
     const hasChanges = avatarCroppedArea !== null || profileCroppedArea !== null;
 
     return (
-        <div className="fixed inset-0 z-cropper flex items-center justify-center bg-black/70">
+        <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Image Cropper"
+            tabIndex={-1}
+            className="fixed inset-0 z-cropper flex items-center justify-center bg-black/70 focus:outline-none">
             <div className="bg-surface rounded-lg shadow-xl w-[90vw] max-w-md overflow-hidden">
                 {/* Tabs */}
                 <div className="flex border-b border-border">
                     <button
+                        aria-selected={mode === 'avatar'}
                         type="button"
                         onClick={() => switchMode('avatar')}
                         className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
@@ -141,6 +150,7 @@ const ImageCropper = ({
                         Avatar
                     </button>
                     <button
+                        aria-selected={mode === 'profile'}
                         type="button"
                         onClick={() => switchMode('profile')}
                         className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
@@ -158,12 +168,14 @@ const ImageCropper = ({
                     {/* Re-upload button */}
                     {onReupload && (
                         <button
+                            aria-label="Re-upload image"
                             onClick={onReupload}
                             className="absolute left-3 top-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-white/80 bg-black/40 hover:bg-black/60 hover:text-white transition-colors"
                             type="button"
                             title="Upload a different image"
                         >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg 
+                            aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                             </svg>
                             Re-upload
@@ -189,10 +201,12 @@ const ImageCropper = ({
 
                     {/* Right side controls */}
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 pointer-events-auto">
-                        <svg className="w-3.5 h-3.5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg 
+                        aria-hidden="true" className="w-3.5 h-3.5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
                         <input
+                            aria-label="Zoom"
                             type="range"
                             min={1}
                             max={3}
@@ -207,7 +221,7 @@ const ImageCropper = ({
                                 height: '100px',
                             }}
                         />
-                        <svg className="w-3.5 h-3.5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg aria-hidden="true" className="w-3.5 h-3.5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                         </svg>
                         <button
@@ -215,6 +229,7 @@ const ImageCropper = ({
                             className="mt-1 px-2 py-0.5 rounded text-[10px] font-medium text-white/60 hover:text-white/90 hover:bg-surface/10 transition-colors"
                             type="button"
                             title="Reset to default"
+                            aria-label="Reset to default"
                         >
                             Reset
                         </button>

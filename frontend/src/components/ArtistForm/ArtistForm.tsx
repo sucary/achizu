@@ -2,9 +2,9 @@ import { useState, useRef } from 'react';
 import { ArrowDownIcon, MusicNoteIcon, SleepIcon } from '../icons/FormIcons';
 import { ChevronDownIcon } from '../icons/GeneralIcons';
 import { HomeIcon, MusicIcon, YoutubeIcon, InstagramIcon, XIcon } from '../icons/SocialIcons';
-import { LocationSearch } from '../LocationSearch';
+import { LocationSearch } from './LocationSearch';
 import SocialLinkInput, { type SocialLinkField } from './SocialLinkInput';
-import ImageCropper, { type CropResult } from '../ImageCropper';
+import ImageCropper, { type CropResult } from './ImageCropper';
 import ArtistFormHeader from './ArtistFormHeader';
 import YearSelect from './YearSelect';
 import { useArtistForm } from '../../hooks/useArtistForm';
@@ -144,6 +144,7 @@ const ArtistForm = ({
         <>
         {/* Hidden file input */}
         <input
+            aria-label="upload image"
             ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -197,6 +198,7 @@ const ArtistForm = ({
 
                         <div className="flex justify-center -my-2 relative z-10">
                             <IconButton
+                                aria-label="Copy original location to active location"
                                 onClick={copyOriginalToActive}
                                 size="sm"
                                 className="bg-surface-muted border border-border text-text-secondary rounded-full hover:bg-primary hover:text-white hover:border-primary"
@@ -219,7 +221,7 @@ const ArtistForm = ({
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-text mb-1">Career Years</label>
+                        <span className="block text-sm font-bold text-text mb-1">Career Years</span>
                         <div className="flex items-center gap-2">
                             <div className="flex-1">
                                 <YearSelect value={formData.debutYear} onChange={updateDebutYear} placeholder="Debut" />
@@ -234,6 +236,7 @@ const ArtistForm = ({
                                 )}
                             </div>
                             <IconButton
+                                aria-label={showInactive ? 'Artist is inactive' : 'Mark as inactive'}
                                 onClick={() => { setShowInactive(!showInactive); if (showInactive) updateInactiveYear(undefined); }}
                                 title={showInactive ? 'Artist is inactive' : 'Mark as inactive'}
                             >
@@ -245,12 +248,14 @@ const ArtistForm = ({
                     {/* Social Media section */}
                     <div>
                         <button
+                            aria-expanded={isSocialExpanded}  
                             onClick={() => setIsSocialExpanded(!isSocialExpanded)}
                             className={`flex items-center justify-between w-full px-3 py-2 text-sm font-bold text-text bg-surface-secondary hover:bg-surface-muted rounded-md transition-colors ${isSocialExpanded ? 'rounded-b-none' : ''}`}
                             type="button"
+
                         >
                             <span>Social Media</span>
-                            <ChevronDownIcon className={`w-4 h-4 text-text-muted transition-transform duration-200 ${isSocialExpanded ? 'rotate-180' : ''}`} />
+                            <ChevronDownIcon aria-hidden="true" className={`w-4 h-4 text-text-muted transition-transform duration-200 ${isSocialExpanded ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isSocialExpanded && (

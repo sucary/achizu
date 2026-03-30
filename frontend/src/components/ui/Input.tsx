@@ -1,7 +1,8 @@
-import type { InputHTMLAttributes, ReactNode } from 'react';
-import { forwardRef } from 'react';
+import type { InputHTMLAttributes, ReactNode, } from 'react';
+import { forwardRef, useId } from 'react';
 import { cva } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
+
 
 const inputVariants = cva(
     'w-full px-3 py-2 bg-surface border rounded-md text-sm focus:outline-none transition-colors',
@@ -34,21 +35,28 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
     ({ label, error, helperText, leftIcon, rightIcon, className, ...props }, ref) => {
+        const generatedId = useId();
+        const inputId = props.id || generatedId;
+        const errorId = `${inputId}-error`;
+        const helperId = `${inputId}-helper`;
         return (
             <div className="w-full">
                 {label && (
-                    <label className="block text-sm font-medium text-text mb-1">
+                    <label htmlFor={inputId} className="block text-sm font-medium text-text mb-1">
                         {label}
                     </label>
                 )}
                 <div className="relative">
                     {leftIcon && (
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
+                        <div aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
                             {leftIcon}
                         </div>
                     )}
                     <input
                         ref={ref}
+                        id={inputId}
+                        aria-describedby={error ? errorId : helperText ? helperId : undefined}
+                        aria-invalid={!!error}
                         className={cn(
                             inputVariants({
                                 state: error ? 'error' : 'default',
@@ -60,16 +68,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         {...props}
                     />
                     {rightIcon && (
-                        <div className="absolute right-3 inset-y-0 flex items-center text-text-muted">
+                        <div aria-hidden="true" className="absolute right-3 inset-y-0 flex items-center text-text-muted">
                             {rightIcon}
                         </div>
                     )}
                 </div>
                 {error && (
-                    <p className="text-xs text-error mt-1">{error}</p>
+                    <p id={errorId} role="alert" className="text-xs text-error mt-1">{error}</p>
                 )}
                 {helperText && !error && (
-                    <p className="text-xs text-text-secondary mt-1">{helperText}</p>
+                    <p id={helperId} className="text-xs text-text-secondary mt-1">{helperText}</p>
                 )}
             </div>
         );

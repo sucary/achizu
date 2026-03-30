@@ -3,7 +3,9 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
 const iconButtonVariants = cva(
-    'text-text-muted hover:text-primary transition-colors',
+    `text-text-muted hover:text-primary 
+    transition-colors rounded-md 
+    focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary`,
     {
         variants: {
             size: {
@@ -21,7 +23,8 @@ const iconButtonVariants = cva(
 export interface IconButtonProps
     extends ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof iconButtonVariants> {
-    children: ReactNode;
+            'aria-label': string;
+            children: ReactNode;
 }
 
 export function IconButton({

@@ -43,8 +43,13 @@ const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedCluste
             <div className="flex flex-col gap-2">
                 {/* View Toggle - only shown when authenticated */}
                 {showViewToggle && (
-                    <div className="flex bg-surface rounded-md overflow-hidden shadow-md">
+                    <div 
+                        role="group"
+                        aria-label="Toggle Location View"
+                        className="flex bg-surface rounded-md overflow-hidden shadow-md"
+                    >
                         <button
+                            aria-pressed={view === 'original'}
                             onClick={() => setView('original')}
                             className={`w-16 py-2 text-sm font-medium transition-colors ${
                                 view === 'original' ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'
@@ -53,6 +58,7 @@ const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedCluste
                             Origin
                         </button>
                         <button
+                            aria-pressed={view === 'active'}
                             onClick={() => setView('active')}
                             className={`w-16 py-2 text-sm font-medium transition-colors ${
                                 view === 'active' ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'
@@ -64,8 +70,13 @@ const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedCluste
                 )}
 
                 {/* Tile Layer Toggle */}
-                <div className="flex bg-surface rounded-md overflow-hidden shadow-md">
+                <div 
+                    role="group"
+                    aria-label="Toggle Map Tile Layer"
+                    className="flex bg-surface rounded-md overflow-hidden shadow-md"
+                >
                     <button
+                        aria-pressed={tileLayer === 'osm'}
                         onClick={() => setTileLayer('osm')}
                         className={`w-16 py-2 text-sm font-medium transition-colors ${
                             tileLayer === 'osm' ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'
@@ -74,6 +85,7 @@ const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedCluste
                         OSM
                     </button>
                     <button
+                        aria-pressed={tileLayer === 'voyager'}
                         onClick={() => setTileLayer('voyager')}
                         className={`w-16 py-2 text-sm font-medium transition-colors ${
                             tileLayer === 'voyager' ? 'bg-primary text-white' : 'text-text hover:bg-surface-muted'
@@ -88,6 +100,7 @@ const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedCluste
             <div className="flex flex-col gap-2 items-end">
                 {/* Cluster Toggle */}
                 <button
+                    aria-label={hasExpandedClusters ? "Collapse All Clusters" : "Expand All Clusters"}
                     onClick={onToggleClusters}
                     className={`${mapButtonClass} rounded-md shadow-md`}
                     title={hasExpandedClusters ? "Collapse All Clusters" : "Expand All Clusters"}
@@ -97,6 +110,7 @@ const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedCluste
 
                 {/* Locate */}
                 <button
+                    aria-label="Locate Me"
                     onClick={handleLocate}
                     className={`${mapButtonClass} rounded-md shadow-md`}
                     title="Locate Me"
@@ -107,6 +121,7 @@ const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedCluste
                 {/* Zoom */}
                 <div className="flex flex-col rounded-md shadow-md overflow-hidden">
                     <button
+                        aria-label="Zoom In"
                         onClick={handleZoomIn}
                         className={`${mapButtonClass} border-b border-border`}
                         title="Zoom In"
@@ -114,6 +129,7 @@ const MapControls = ({ view, setView, tileLayer, setTileLayer, hasExpandedCluste
                         <span className="text-lg font-medium">+</span>
                     </button>
                     <button
+                        aria-label="Zoom Out"
                         onClick={handleZoomOut}
                         className={mapButtonClass}
                         title="Zoom Out"

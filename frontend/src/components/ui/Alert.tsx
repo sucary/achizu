@@ -27,7 +27,7 @@ export interface AlertProps extends VariantProps<typeof alertVariants> {
 
 export function Alert({ variant, children, className, onClose }: AlertProps) {
     return (
-        <div className={cn(alertVariants({ variant }), 'flex items-center justify-between gap-2', className)}>
+        <div role="alert" className={cn(alertVariants({ variant }), 'flex items-center justify-between gap-2', className)}>
             <span>{children}</span>
             {onClose && (
                 <button

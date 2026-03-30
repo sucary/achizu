@@ -16,9 +16,10 @@ function ArtistRow({ result, onSelect }: { result: ArtistSearchResult; onSelect:
     const avatarUrl = getAvatarUrl(result.sourceImage, result.avatarCrop) || getPlaceholderUrl(result.name);
 
     return (
-        <div
+        <button
+            role="option"
             onClick={onSelect}
-            className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer"
+            className="flex w-full text-left items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer"
         >
             <img
                 src={avatarUrl}
@@ -36,16 +37,17 @@ function ArtistRow({ result, onSelect }: { result: ArtistSearchResult; onSelect:
                     </span>
                 </div>
             </div>
-        </div>
+        </button>
     );
 }
 
 function LocationRow({ result, onSelect }: { result: LocationSearchResult; onSelect: () => void }) {
     const { profile } = useAuth();
     return (
-        <div
+        <button            
+            role="option"
             onClick={onSelect}
-            className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer"
+            className="flex w-full text-left items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer"
         >
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-text truncate">{result.displayName}</p>
@@ -60,15 +62,16 @@ function LocationRow({ result, onSelect }: { result: LocationSearchResult; onSel
                     )}
                 </div>
             </div>
-        </div>
+        </button>
     );
 }
 
 function UserRow({ result, onSelect }: { result: UserSearchResult; onSelect: () => void }) {
     return (
-        <div
+        <button
+            role="option"
             onClick={onSelect}
-            className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer"
+            className="flex w-full text-left items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer"
         >
             <div className="w-8 h-10 flex items-center justify-center">
                 <UserIcon className="w-5 h-5 text-text-secondary" />
@@ -77,7 +80,7 @@ function UserRow({ result, onSelect }: { result: UserSearchResult; onSelect: () 
                 <p className="text-sm font-medium text-text truncate">{result.username}</p>
                 <span className="text-xs text-text-secondary">View map</span>
             </div>
-        </div>
+        </button>
     );
 }
 

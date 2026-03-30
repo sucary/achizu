@@ -1,11 +1,11 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useId } from 'react';
 import { createPortal } from 'react-dom';
-import { SearchIcon, CloseIcon } from './icons/GeneralIcons';
-import { MapPinIcon } from './icons/MapIcons';
-import { useLocationSearch } from '../hooks/useLocationSearch';
-import { Spinner, Button } from './ui';
-import { useAuth } from '../context/AuthContext';
-import type { SearchResult } from '../services/api';
+import { SearchIcon, CloseIcon } from '../icons/GeneralIcons';
+import { MapPinIcon } from '../icons/MapIcons';
+import { useLocationSearch } from '../../hooks/useLocationSearch';
+import { Spinner, Button } from '../ui';
+import { useAuth } from '../../context/AuthContext';
+import type { SearchResult } from '../../services/api';
 
 interface LocationSearchProps {
     displayValue?: string;
@@ -52,6 +52,7 @@ export const LocationSearch = ({
     });
 
     const { profile } = useAuth();
+    const inputId = useId();
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, maxHeight: 320 });
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLDivElement>(null);
@@ -118,7 +119,10 @@ export const LocationSearch = ({
     return (
         <div>
             {label && (
-                <label className="block text-sm font-bold text-text mb-1">
+                <label 
+                    htmlFor={inputId}
+                    className="block text-sm font-bold text-text mb-1"
+                >
                     {label}
                 </label>
             )}
@@ -126,6 +130,7 @@ export const LocationSearch = ({
                 <div className="flex items-center gap-2" ref={inputRef}>
                     <div className="relative flex-1">
                         <input
+                            id={inputId}
                             type="text"
                             placeholder={placeholder || "Search location..."}
                             className={`w-full pl-3 py-2 border border-border-strong rounded-md text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary ${isLoading ? 'pr-14' : 'pr-9'}`}
@@ -146,6 +151,7 @@ export const LocationSearch = ({
                                 </div>
                             )}
                             <button
+                                aria-label="Search location"
                                 onClick={(isLoading || queueSize > 0) ? handleCancel : handleSearch}
                                 type="button"
                                 disabled={!isLoading && queueSize === 0 && !canSearch}
@@ -157,6 +163,7 @@ export const LocationSearch = ({
                         </div>
                     </div>
                     <button
+                        aria-label="Manually select on map"
                         onClick={onManualPin}
                         type="button"
                         className="p-2 rounded text-text-secondary hover:bg-primary hover:text-white transition-colors"
@@ -192,9 +199,10 @@ export const LocationSearch = ({
                         maxHeight: `${dropdownPosition.maxHeight}px`
                     }}
                 >
-                    <div className="overflow-y-auto" style={{ maxHeight: `${dropdownPosition.maxHeight - 2}px` }}>
+                    <div role="listbox" className="overflow-y-auto" style={{ maxHeight: `${dropdownPosition.maxHeight - 2}px` }}>
                         {results.map((result, index) => (
                             <button
+                                role="option"
                                 key={`${result.osmId}-${index}`}
                                 onClick={() => handleSelect(result)}
                                 type="button"

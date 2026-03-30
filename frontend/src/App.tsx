@@ -11,16 +11,13 @@ import ViewArtistListButton from './components/Map/buttons/ViewArtistListButton'
 import { AccountButton } from './components/Auth/AccountButton';
 import { NotificationButton } from './components/Notifications/NotificationButton';
 import { AdminDashboard } from './components/Admin/AdminDashboard';
-import { BackendStatus } from './components/BackendStatus';
 import { MainSearch } from './components/MainSearch';
 import { useAuth } from './context/AuthContext';
 import type { Artist, SelectionMode } from './types/artist';
 import type { ArtistSearchResult, LocationSearchResult } from './types/search';
 import { UsernamePrompt } from './components/Auth/UsernamePrompt';
 import { ResetPasswordModal } from './components/Auth/ResetPasswordModal';
-import { ViewingUserBanner } from './components/ViewingUserBanner';
-import { AnonymousUserBanner } from './components/AnonymousUserBanner';
-import { FeaturedArtistsBanner } from './components/FeaturedArtistsBanner';
+import { ViewingUserBanner, AnonymousUserBanner, FeaturedArtistsBanner } from './components/Banner';
 import { UserNotFound } from './components/UserNotFound';
 import { supabase } from './lib/supabase';
 
@@ -207,9 +204,7 @@ function App() {
     }
 
     return (
-        <div className="h-screen w-screen flex flex-col">
-            {profile?.isAdmin && <BackendStatus />}
-
+        <main className="h-screen w-screen flex flex-col">
             {/* Top bar */}
             <div className="absolute top-2 left-2 z-[1100] flex items-center gap-2">
                 {user && (
@@ -220,22 +215,24 @@ function App() {
                         />
                         {viewingFeatured ? (
                             <button
+                                aria-label="Back to my map"
                                 onClick={() => setViewingFeatured(false)}
                                 className="h-12 w-12 flex items-center justify-center bg-surface border border-border rounded-md shadow-md hover:bg-surface-muted transition-colors"
                                 title="Back to my map"
                             >
-                                <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-text-secondary" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-text-secondary" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                                     <polyline points="9 22 9 12 15 12 15 22" />
                                 </svg>
                             </button>
                         ) : (
                             <button
+                                aria-label="View featured artists"
                                 onClick={() => setViewingFeatured(true)}
                                 className="h-12 w-12 flex items-center justify-center bg-surface border border-border rounded-md shadow-md hover:bg-surface-muted transition-colors"
                                 title="View featured artists"
                             >
-                                <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-text-secondary" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-text-secondary" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                     <polygon points="7.5,1.5 9,6 13.5,7.5 9,9 7.5,13.5 6,9 1.5,7.5 6,6" />
                                     <polygon points="18.5,6.5 19.5,9.5 22.5,10.5 19.5,11.5 18.5,14.5 17.5,11.5 14.5,10.5 17.5,9.5" />
                                     <polygon points="11.5,15.5 12.2,18 14.5,19 12.2,20 11.5,22.5 10.8,20 8.5,19 10.8,18" />
@@ -347,7 +344,7 @@ function App() {
                 focusedCityId={focusedCityId}
                 isAuthenticated={!!user}
             />
-        </div>
+        </main>
     );
 };
 

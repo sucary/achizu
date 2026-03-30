@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Spinner, Alert, Button, CloseButton } from '../ui';
 import { CheckCircleIcon } from '../icons/GeneralIcons';
 import { API_URL } from '../../services/api';
+import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 import type { PendingUser } from '../../types/profile';
 
 interface AdminDashboardProps {
@@ -15,9 +16,22 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const dialogRef = useDialogAccessibility(onClose);
+
     useEffect(() => {
         fetchPendingUsers();
     }, []);
+
+    // Close modal on esc pressed
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        }
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+        }, [onClose]);
 
     const fetchPendingUsers = async () => {
         setLoading(true);
@@ -115,13 +129,20 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
     return (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center">
             {/* Backdrop */}
-            <div className="absolute inset-0" onClick={onClose} />
+            <div aria-hidden="true" className="absolute inset-0" onClick={onClose} />
 
             {/* Dashboard Window */}
-            <div className="relative bg-surface rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="admin-title"
+                tabIndex={-1}
+                className="relative bg-surface rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[80vh] overflow-hidden flex flex-col focus:outline-none"
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-                    <h1 className="text-lg font-bold text-text">Admin Dashboard</h1>
+                    <h1 id="admin-title" className="text-lg font-bold text-text">Admin Dashboard</h1>
                     <CloseButton onClick={onClose} size="md" />
                 </div>
 

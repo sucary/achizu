@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDownIcon } from '../icons/GeneralIcons';
 
@@ -19,6 +19,7 @@ const YearSelect = ({
     minYear = 1900,
     maxYear = new Date().getFullYear()
 }: YearSelectProps) => {
+    const inputId = useId();
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState(value?.toString() || '');
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -136,12 +137,16 @@ const YearSelect = ({
     return (
         <div>
             {label && (
-                <label className="block text-sm font-bold text-text mb-1">
+                <label 
+                    htmlFor={inputId}
+                    className="block text-sm font-bold text-text mb-1"
+                >
                     {label}
                 </label>
             )}
             <div ref={containerRef} className="relative">
                 <input
+                    id={inputId}
                     ref={inputRef}
                     type="text"
                     inputMode="numeric"
@@ -157,6 +162,7 @@ const YearSelect = ({
                     className="w-full px-3 py-2 pr-8 text-sm border border-border-strong rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
                 />
                 <button
+                    aria-label="Toggle year dropdown"
                     type="button"
                     onMouseDown={(e) => {
                         e.preventDefault();
@@ -170,8 +176,9 @@ const YearSelect = ({
 
             {isOpen && years.length > 0 && createPortal(
                 <div
+                    role="listbox"
                     ref={dropdownRef}
-                    className="fixed z-[9999] bg-surface border border-border-strong rounded-md shadow-lg max-h-48 overflow-y-auto"
+                    className="fixed z-9999 bg-surface border border-border-strong rounded-md shadow-lg max-h-48 overflow-y-auto"
                     style={{
                         top: `${dropdownPosition.top + 4}px`,
                         left: `${dropdownPosition.left}px`,
@@ -187,6 +194,7 @@ const YearSelect = ({
                                 key={year}
                                 data-year={year}
                                 type="button"
+                                role="option"
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => handleSelect(year)}
                                 className={`w-full px-3 py-2 text-left text-sm hover:bg-surface-secondary ${

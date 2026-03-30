@@ -24,6 +24,8 @@ export interface SpinnerProps extends VariantProps<typeof spinnerVariants> {
 export function Spinner({ size, className }: SpinnerProps) {
     return (
         <svg
+            role="status"
+            aria-label="Loading"
             className={cn(spinnerVariants({ size }), className)}
             fill="none"
             viewBox="0 0 24 24"

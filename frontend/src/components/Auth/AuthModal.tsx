@@ -5,6 +5,7 @@ import { Input, Button, Spinner, Alert, IconButton, CloseButton } from '../ui';
 import { EyeIcon, EyeOffIcon, GoogleIcon, GitHubIcon } from '../icons/FormIcons';
 import { CheckIcon } from '../icons/GeneralIcons';
 import { API_URL } from '../../services/api';
+import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -44,6 +45,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         clearMessages();
         onClose();
     };
+
+    const dialogRef = useDialogAccessibility(handleClose);
 
     if (!isOpen) return null;
 
@@ -183,9 +186,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     return (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
+            <div aria-hidden="true" className="absolute inset-0 bg-black/50" onClick={handleClose} />
 
-            <div className="relative bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="auth-title"
+                tabIndex={-1}
+                className="relative bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 p-6 focus:outline-none"
+            >
                 {!message && (
                     <CloseButton onClick={handleClose} size="lg" className="absolute top-4 right-4" />
                 )}
@@ -199,7 +209,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                 <div className="w-2 h-2 rounded-full bg-text-muted" />
                             </div>
                         </div>
-                        <h2 className="text-xl font-bold text-text mb-2">Check your email</h2>
+                        <h2 id="auth-title" className="text-xl font-bold text-text mb-2">Check your email</h2>
                         <p className="text-sm text-text-secondary mb-6">We've sent a confirmation link to <span className="font-medium text-text">{email || forgotPasswordEmail}</span></p>
                         <div className="flex gap-3">
                             <Button onClick={handleClose} variant="secondary" className="flex-1">Resend</Button>
@@ -208,7 +218,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     </div>
                 ) : (
                 <>
-                <h2 className="text-2xl font-bold text-text mb-6">
+                <h2 id="auth-title" className="text-2xl font-bold text-text mb-6">
                     {isForgotPassword ? 'Reset Password' : isSignUp ? 'Create Account' : 'Sign In'}
                 </h2>
 
@@ -257,7 +267,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         </Button>
                     </div>
 
-                    <div className="flex items-center gap-3 mb-6 text-sm text-text-secondary">
+                    <div 
+                    aria-hidden="true" className="flex items-center gap-3 mb-6 text-sm text-text-secondary">
                         <div className="flex-1 border-t border-border-strong" />
                         <span>or</span>
                         <div className="flex-1 border-t border-border-strong" />
@@ -291,7 +302,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             required
                             minLength={6}
                             rightIcon={
-                                <IconButton type="button" size="sm" onClick={() => setShowPassword(!showPassword)}>
+                                <IconButton 
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                type="button" size="sm" onClick={() => setShowPassword(!showPassword)}>
                                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                                 </IconButton>
                             }
@@ -310,7 +323,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                 required
                                 minLength={6}
                                 rightIcon={
-                                    <IconButton type="button" size="sm" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                    <IconButton
+                                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                        type="button" size="sm" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                                         {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
                                     </IconButton>
                                 }
@@ -326,7 +341,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                         onChange={(e) => setRememberMe(e.target.checked)}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-4 h-4 border border-border-strong rounded peer-checked:bg-primary peer-checked:border-primary group-hover:border-primary flex items-center justify-center">
+                                    <div aria-hidden="true" className="w-4 h-4 border border-border-strong rounded peer-checked:bg-primary peer-checked:border-primary group-hover:border-primary flex items-center justify-center">
                                         {rememberMe && <CheckIcon className="w-3 h-3 text-white" />}
                                     </div>
                                     <span className="ml-2 text-sm text-text-secondary">Remember me</span>

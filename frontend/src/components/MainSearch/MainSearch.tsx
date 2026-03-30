@@ -72,6 +72,11 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
             <div className="relative">
                 <input
                     ref={inputRef}
+                    role="combobox"
+                    aria-label="Search artists, users, and locations"
+                    aria-expanded={showDropdown}
+                    aria-controls="search-results"
+                    aria-autocomplete="list"
                     type="text"
                     placeholder="Search artists, users, locations..."
                     value={query}
@@ -81,6 +86,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                 />
                 {query && (
                     <IconButton
+                        aria-label="Clear search"
                         onClick={handleClear}
                         size="sm"
                         className="absolute right-9 top-1/2 -translate-y-1/2 rounded hover:bg-surface-muted"
@@ -89,6 +95,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                     </IconButton>
                 )}
                 <button
+                    aria-label="Search!"
                     type="button"
                     onClick={() => inputRef.current?.focus()}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary hover:bg-primary hover:text-white transition-colors"
@@ -99,7 +106,12 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
 
             {/* Dropdown Results */}
             {showDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-80 bg-surface border border-border rounded-md shadow-md overflow-hidden max-h-96 overflow-y-auto">
+                <div 
+                    aria-live="polite"
+                    id="search-results" 
+                    role="listbox"
+                    className="absolute top-full left-0 mt-1 w-80 bg-surface border border-border rounded-md shadow-md overflow-hidden max-h-96 overflow-y-auto"
+                >
                     {isLoading ? (
                         <div className="flex items-center justify-center py-8">
                             <Spinner className="text-primary" />
@@ -113,7 +125,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                             {/* Artists */}
                             {results.artists.length > 0 && (
                                 <div>
-                                    <div className="px-4 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider bg-surface-muted">
+                                    <div role="group" aria-label="Artists" className="px-4 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider bg-surface-muted">
                                         Artists
                                     </div>
                                     {results.artists.map((artist) => (
@@ -129,7 +141,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                             {/* Users */}
                             {results.users.length > 0 && (
                                 <div>
-                                    <div className="px-4 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider bg-surface-muted">
+                                    <div role="group" aria-label="Users" className="px-4 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider bg-surface-muted">
                                         Users
                                     </div>
                                     {results.users.map((user) => (
@@ -145,7 +157,7 @@ export function MainSearch({ onFocusArtist, onFocusLocation }: MainSearchProps) 
                             {/* Locations */}
                             {results.locations.length > 0 && (
                                 <div>
-                                    <div className="px-4 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider bg-surface-muted">
+                                    <div role="group" aria-label="Locations" className="px-4 py-2 text-xs font-semibold text-text-secondary uppercase tracking-wider bg-surface-muted">
                                         Locations
                                     </div>
                                     {results.locations.map((location) => (

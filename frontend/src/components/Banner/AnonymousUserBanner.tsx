@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getArtists } from '../services/api';
+import { getArtists } from '../../services/api';
 import { Banner } from './Banner';
 
 interface AnonymousUserBannerProps {

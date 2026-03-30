@@ -42,7 +42,7 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
         artist.originalLocation.city.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleRowClick = (artist: Artist, e: React.MouseEvent<HTMLDivElement>) => {
+    const handleRowClick = (artist: Artist, e: React.MouseEvent<HTMLButtonElement>) => {
         // Get the row's position relative to the wrapper
         const rowRect = e.currentTarget.getBoundingClientRect();
         const wrapperRect = listRef.current?.getBoundingClientRect();
@@ -67,7 +67,10 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
             )}
 
             {/* Main list panel */}
-            <div className="w-80 bg-surface rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-8rem)]">
+            <div 
+                role="region" 
+                aria-label="artist list"
+                className="w-80 bg-surface rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-8rem)]">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <h2 className="text-lg font-semibold text-text">{viewingFeatured ? 'Featured Artists' : 'Artists'} ({artists.length})</h2>
@@ -77,6 +80,7 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
             {/* Search */}
             <div className="px-4 py-2">
                 <Input
+                    aria-label="Search artists or locations"
                     type="text"
                     placeholder="Search artists or locations..."
                     value={searchQuery}
@@ -86,7 +90,7 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
             </div>
 
             {/* Artist list - max 8 rows visible */}
-            <div className="overflow-y-auto flex-1 max-h-[32rem]">
+            <div className="overflow-y-auto flex-1 max-h-128">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-8">
                         <Spinner className="text-primary" />
@@ -99,7 +103,7 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
                     <ul className="divide-y divide-border">
                         {filteredArtists.map((artist) => (
                             <li key={artist.id} className="group">
-                                <div
+                                <button
                                     onClick={(e) => handleRowClick(artist, e)}
                                     className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer ${selectedArtist?.id === artist.id ? 'bg-surface-muted' : ''}`}
                                 >
@@ -125,9 +129,10 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
                                         </p>
                                     </div>
                                     {/* Actions */}
-                                    <div className="hidden group-hover:flex gap-1 shrink-0">
+                                    <div className="hidden group-hover:flex group-focus-within:flex gap-1 shrink-0">
                                         {onNavigateToArtist && (
                                             <IconButton
+                                                aria-label="Go to location"
                                                 onClick={(e) => { e.stopPropagation(); onNavigateToArtist(artist); }}
                                                 size="sm"
                                                 className="rounded hover:bg-primary hover:text-white text-text-secondary"
@@ -138,6 +143,7 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
                                         )}
                                         {onEditArtist && (
                                             <IconButton
+                                                aria-label="Edit artist"
                                                 onClick={(e) => { e.stopPropagation(); onEditArtist(artist); }}
                                                 size="sm"
                                                 className="rounded hover:bg-primary hover:text-white text-text-secondary"
@@ -148,6 +154,7 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
                                         )}
                                         {onDeleteArtist && (
                                             <IconButton
+                                                aria-label="Delete artist"
                                                 onClick={(e) => { e.stopPropagation(); onDeleteArtist(artist); }}
                                                 size="sm"
                                                 className="rounded hover:bg-error hover:text-white text-text-secondary"
@@ -157,7 +164,7 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
                                             </IconButton>
                                         )}
                                     </div>
-                                </div>
+                                </button>
                             </li>
                         ))}
                     </ul>

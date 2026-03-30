@@ -17,7 +17,7 @@ export function PageLayout({ title, children }: PageLayoutProps) {
                         onClick={() => navigate('/')}
                         className="flex items-center gap-1 text-sm text-text-secondary hover:text-text transition-colors cursor-pointer"
                     >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                         <span>Back to map</span>

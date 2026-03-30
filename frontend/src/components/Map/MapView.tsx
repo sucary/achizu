@@ -193,86 +193,92 @@ const MapView = ({ username, viewingFeatured, selectionMode, onLocationPick, onE
 
 
     return (
-        <MapContainer
-            center={defaultCenter}
-            zoom={defaultZoom}
+        <div 
+            role="application" 
+            aria-label="Achizu, Artist Map"
             className="h-full w-full"
-            zoomControl={false}
-            attributionControl={false}
-            worldCopyJump={true}
-            maxBounds={[[-90, -Infinity], [90, Infinity]]}
-            maxBoundsViscosity={1.0}
         >
-            <ZoomLogger />
-            <MapControls
-                view={view}
-                setView={setView}
-                tileLayer={tileLayer}
-                setTileLayer={setTileLayer}
-                hasExpandedClusters={hasExpandedClusters}
-                onToggleClusters={() => hasExpandedClusters
-                    ? clusterRef.current?.collapseAll()
-                    : clusterRef.current?.expandAll()}
-                showViewToggle={isAuthenticated && !viewingFeatured}
-            />
-            <ScaleControl position="bottomleft" imperial={false} />
-            <AttributionControl position="bottomright" />
-            <TileLayer
-                key={tileLayer}
-                attribution={TILE_LAYERS[tileLayer].attribution}
-                url={TILE_LAYERS[tileLayer].url}
-                subdomains={TILE_LAYERS[tileLayer].subdomains || 'abc'}
-            />
-            <ArtistCluster
-                ref={clusterRef}
-                artists={displayArtists}
-                view={view}
-                onArtistSelect={handleArtistSelect}
-                onArtistDeselect={handleArtistDeselect}
-                onEditArtist={onEditArtist}
-                onDeleteArtist={onDeleteArtist}
-                focusedArtist={focusedArtist}
-                onFocusedArtistHandled={onFocusedArtistHandled}
-                onExpansionChange={setHasExpandedClusters}
-            />
-            {selectionMode?.active && (
-                <MapClickHandler onLocationPick={onLocationPick ?? null} />
-            )}
-            {!selectionMode?.active && onEmptyClick && (
-                <MapEmptyClickHandler onClick={onEmptyClick} />
-            )}
-            {focusedLocation && (
-                <FocusedLocationHandler
-                    location={focusedLocation}
-                    onHandled={onFocusedLocationHandled}
+            <MapContainer
+                center={defaultCenter}
+                zoom={defaultZoom}
+                className="h-full w-full"
+                zoomControl={false}
+                attributionControl={false}
+                worldCopyJump={true}
+                maxBounds={[[-90, -Infinity], [90, Infinity]]}
+                maxBoundsViscosity={1.0}
+            >
+                <ZoomLogger />
+                <MapControls
+                    view={view}
+                    setView={setView}
+                    tileLayer={tileLayer}
+                    setTileLayer={setTileLayer}
+                    hasExpandedClusters={hasExpandedClusters}
+                    onToggleClusters={() => hasExpandedClusters
+                        ? clusterRef.current?.collapseAll()
+                        : clusterRef.current?.expandAll()}
+                    showViewToggle={isAuthenticated && !viewingFeatured}
                 />
-            )}
-            {selectedCity && selectedCity.boundary && (
-                <GeoJSON
-                    key={selectedCity.id}
-                    data={selectedCity.boundary}
-                    style={{
-                        color: '#FA233B',
-                        weight: 2,
-                        opacity: 0.8,
-                        fillOpacity: 0.1
-                    }}
+                <ScaleControl position="bottomleft" imperial={false} />
+                <AttributionControl position="bottomright" />
+                <TileLayer
+                    key={tileLayer}
+                    attribution={TILE_LAYERS[tileLayer].attribution}
+                    url={TILE_LAYERS[tileLayer].url}
+                    subdomains={TILE_LAYERS[tileLayer].subdomains || 'abc'}
                 />
-            )}
-            {isAdmin && selectedCity && selectedCity.rawBoundary && (
-                <GeoJSON
-                    key={`${selectedCity.id}-raw`}
-                    data={selectedCity.rawBoundary}
-                    style={{
-                        color: '#3b82f6',
-                        weight: 2,
-                        opacity: 0.8,
-                        fillOpacity: 0.1,
-                        dashArray: '5, 5'
-                    }}
+                <ArtistCluster
+                    ref={clusterRef}
+                    artists={displayArtists}
+                    view={view}
+                    onArtistSelect={handleArtistSelect}
+                    onArtistDeselect={handleArtistDeselect}
+                    onEditArtist={onEditArtist}
+                    onDeleteArtist={onDeleteArtist}
+                    focusedArtist={focusedArtist}
+                    onFocusedArtistHandled={onFocusedArtistHandled}
+                    onExpansionChange={setHasExpandedClusters}
                 />
-            )}
-        </MapContainer>
+                {selectionMode?.active && (
+                    <MapClickHandler onLocationPick={onLocationPick ?? null} />
+                )}
+                {!selectionMode?.active && onEmptyClick && (
+                    <MapEmptyClickHandler onClick={onEmptyClick} />
+                )}
+                {focusedLocation && (
+                    <FocusedLocationHandler
+                        location={focusedLocation}
+                        onHandled={onFocusedLocationHandled}
+                    />
+                )}
+                {selectedCity && selectedCity.boundary && (
+                    <GeoJSON
+                        key={selectedCity.id}
+                        data={selectedCity.boundary}
+                        style={{
+                            color: '#FA233B',
+                            weight: 2,
+                            opacity: 0.8,
+                            fillOpacity: 0.1
+                        }}
+                    />
+                )}
+                {isAdmin && selectedCity && selectedCity.rawBoundary && (
+                    <GeoJSON
+                        key={`${selectedCity.id}-raw`}
+                        data={selectedCity.rawBoundary}
+                        style={{
+                            color: '#3b82f6',
+                            weight: 2,
+                            opacity: 0.8,
+                            fillOpacity: 0.1,
+                            dashArray: '5, 5'
+                        }}
+                    />
+                )}
+            </MapContainer>
+        </div>
     );
 };
 

@@ -34,6 +34,8 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
     return (
         <div ref={menuRef} className="relative">
             <button
+                aria-expanded={isOpen}
+                aria-haspopup="true"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`flex items-center justify-between gap-2 px-4 py-2 bg-surface shadow-md hover:bg-surface-muted transition-colors w-48 ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
             >
@@ -46,6 +48,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
                     </span>
                 </div>
                 <svg
+                    aria-hidden="true"
                     className={`w-4 h-4 text-text-secondary transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -57,8 +60,12 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute top-full right-0 w-48 bg-surface rounded-b-lg shadow-lg border-t border-border z-[1001]">
+                <div 
+                    role="menu"
+                    onKeyDown={(e) => { if (e.key === 'Escape') setIsOpen(false); }}
+                    className="absolute top-full right-0 w-48 bg-surface rounded-b-lg shadow-lg border-t border-border z-[1001]">
                     <button
+                        role="menuitem"
                         onClick={() => {
                             navigate('/settings');
                             setIsOpen(false);
@@ -69,6 +76,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
                     </button>
                     {profile.isAdmin && onOpenAdminDashboard && (
                         <button
+                            role="menuitem"
                             onClick={() => {
                                 onOpenAdminDashboard();
                                 setIsOpen(false);
@@ -79,6 +87,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
                         </button>
                     )}
                     <button
+                        role="menuitem"
                         onClick={handleSignOut}
                         className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-muted transition-colors rounded-b-lg"
                     >

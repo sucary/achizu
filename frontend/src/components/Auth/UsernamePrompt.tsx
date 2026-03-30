@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Input, Button } from '../ui';
 import { API_URL } from '../../services/api';
+import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 
 interface UsernamePromptProps {
     onComplete: () => void;
 }
 
 export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
+    const noop = useCallback(() => {}, []);
+    const dialogRef = useDialogAccessibility(noop);
     const [username, setUsername] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -76,9 +79,16 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
 
     return (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/50" />
-            <div className="relative bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
-                <h2 className="text-xl font-bold text-text mb-2">Create your username</h2>
+            <div aria-hidden="true" className="absolute inset-0 bg-black/50" />
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="username-prompt-title"
+                tabIndex={-1}
+                className="relative bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 p-6 focus:outline-none"
+            >
+                <h2 id="username-prompt-title" className="text-xl font-bold text-text mb-2">Create your username</h2>
                 <p className="text-sm text-text-secondary mb-4">
                     Others can find you by your username.<br />
                     Username and visibility can be modified in settings later.
@@ -87,6 +97,7 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <Input
+                            label="Username"
                             type="text"
                             value={username}
                             onChange={(e) => {

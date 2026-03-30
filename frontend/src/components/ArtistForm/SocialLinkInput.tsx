@@ -39,6 +39,7 @@ const SocialLinkInput = ({ field, value, onChange }: SocialLinkInputProps) => {
     return (
         <div className="relative">
             <input
+                aria-label={placeholder}
                 type="text"
                 placeholder={placeholder}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
@@ -46,9 +47,9 @@ const SocialLinkInput = ({ field, value, onChange }: SocialLinkInputProps) => {
                 onChange={(e) => handleChange(e.target.value)}
                 onBlur={handleBlur}
             />
-            <Icon className={`absolute left-3 top-2.5 w-4 h-4 transition-colors ${isValid ? 'text-primary' : 'text-text-muted'}`} />
+            <Icon aria-hidden="true" className={`absolute left-3 top-2.5 w-4 h-4 transition-colors ${isValid ? 'text-primary' : 'text-text-muted'}`} />
             {touched && error && (
-                <p className="text-xs text-error mt-1">{error}</p>
+                <p role="alert" className="text-xs text-error mt-1">{error}</p>
             )}
         </div>
     );
