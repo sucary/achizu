@@ -1,4 +1,7 @@
 # Achizu
+
+<img width="1179" height="495" alt="image" src="https://github.com/user-attachments/assets/46fed266-456d-4d5a-82a4-f5f735a3ff1c" />
+
 A map that visualizes the geographic distribution of artists (musicians)—where they're from and where they're currently based.
 
 Inspired by [Anitabi](https://www.anitabi.cn/map), an interactive map website visualizing real-world locations of anime scenes.
@@ -8,17 +11,17 @@ Click [here](https://achizu.com/) to enter the website.
 ## Features
 
 1. Create your own artist world map by add artists
-    - avatar, locations, career year and social media links.
+    - Add avatar, locations, career year and social media links.
 
 2. Interact with the map
     - A cluster view keeping your artist layout intact at any zoom level.
-    - Click an artist marker to see the profile
-    - Toggle two map layers and location views
+    - Click an artist marker to see the profile.
+    - Toggle two map layers and location views.
 
 3. Interact with others
-    - Search artists, locations, or users
-    - Sneak peek on other user's map
-    - Featured artists: randomly selected artists across the world, from users
+    - Search artists, locations, or users.
+    - Sneak peek on other user's map.
+    - Featured artists: randomly selected artists across the world, from different users.
 
 4. Accessibility: Create your artist location set, even if you are unable to use a map.
 
