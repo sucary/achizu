@@ -30,7 +30,7 @@ describe('ArtistStore', () => {
     const createCity = async (name: string, province: string, lat: number, lng: number, osmId: number) => {
         const pool = await getPool();
         const result = await pool.query(`
-            INSERT INTO city_boundaries (name, province, boundary, center, osm_id, osm_type)
+            INSERT INTO locations (name, province, boundary, center, osm_id, osm_type)
             VALUES (
                 $1,
                 $2,

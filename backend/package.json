@@ -13,7 +13,7 @@
     "db:init": "ts-node src/db/init.ts",
     "db:seed": "ts-node src/db/seed.ts",
     "db:seed-priority": "ts-node src/scripts/seed-priority-locations.ts",
-    "db:refresh-cities": "ts-node src/scripts/refresh-city-boundaries.ts",
+    "db:refresh-locations": "ts-node src/scripts/refresh-locations.ts",
     "db:import-ocean": "ts-node src/scripts/import-ocean.ts",
     "db:setup": "npm run db:init && npm run db:import-ocean && npm run db:seed",
     "inspect:db": "ts-node src/tests/inspect-db.ts",

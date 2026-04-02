@@ -127,7 +127,7 @@ async function seedDatabase() {
 
         await pool.query('DELETE FROM artists');
         console.log('Cleared existing artists');
-        await pool.query('DELETE FROM city_boundaries');
+        await pool.query('DELETE FROM locations');
         console.log('Cleared existing cities\n');
 
         for (const artist of sampleArtists) {

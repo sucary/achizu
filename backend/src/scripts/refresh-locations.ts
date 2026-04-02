@@ -3,15 +3,15 @@ import pool from '../config/database';
 import { CityService } from '../services/cityService';
 
 /**
- * Re-fetches city_boundaries data from Nominatim to fix display_names
+ * Re-fetches locations data from Nominatim to fix display_names
  * that may have been corrupted or lost their romanized text.
  */
-async function refreshCityBoundaries() {
-    console.log('Fetching city_boundaries entries to refresh...\n');
+async function refreshLocations() {
+    console.log('Fetching locations entries to refresh...\n');
 
     const result = await pool.query(`
         SELECT id, name, osm_id, osm_type, display_name
-        FROM city_boundaries
+        FROM locations
         ORDER BY name
     `);
 
@@ -38,7 +38,7 @@ async function refreshCityBoundaries() {
 
             // Update the entry with fresh data
             await pool.query(`
-                UPDATE city_boundaries
+                UPDATE locations
                 SET display_name = $1
                 WHERE id = $2
             `, [nominatimData.display_name, row.id]);
@@ -59,7 +59,7 @@ async function refreshCityBoundaries() {
     await pool.end();
 }
 
-refreshCityBoundaries().catch(err => {
+refreshLocations().catch(err => {
     console.error('Fatal error:', err);
     pool.end();
     process.exit(1);

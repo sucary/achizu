@@ -35,7 +35,7 @@ async function listCities() {
                 country,
                 ST_AsText(center) as center,
                 last_updated
-            FROM city_boundaries
+            FROM locations
             ORDER BY name ASC
         `);
 

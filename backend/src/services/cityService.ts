@@ -8,9 +8,50 @@ const GEOCODING_API_KEY = process.env.LOCATIONIQ_API_KEY;
 
 /**
  * Get display type for a location
+ * LocationIQ doesn't return addresstype, so we infer from the address object
  */
-function getDisplayType(type: string, addresstype?: string): string {
-    return type === 'administrative' && addresstype ? addresstype : type;
+function getDisplayType(type: string, addresstype?: string, address?: Record<string, string>, name?: string): string {
+    // If addresstype is provided (standard Nominatim), use it
+    if (type === 'administrative' && addresstype) {
+        return addresstype;
+    }
+
+    // Infer type from address object (for LocationIQ)
+    if (type === 'administrative' && address && name) {
+        const nameLower = name.toLowerCase();
+
+        // Check which address field matches the location name
+        // Order matters: more specific types first
+        const typeMapping: [string, string][] = [
+            ['village', 'village'],
+            ['town', 'town'],
+            ['city', 'city'],
+            ['municipality', 'municipality'],
+            ['county', 'county'],
+            ['state_district', 'district'],
+            ['state', 'state'],
+            ['province', 'province'],
+            ['region', 'region'],
+            ['country', 'country'],
+        ];
+
+        for (const [addressKey, displayType] of typeMapping) {
+            const addressValue = address[addressKey];
+            if (addressValue && addressValue.toLowerCase().includes(nameLower)) {
+                return displayType;
+            }
+        }
+
+        // If name not found in address, check if any key exists as a hint
+        for (const [addressKey, displayType] of typeMapping) {
+            if (address[addressKey]) {
+                // The first existing key above the location in hierarchy might indicate its type
+                // e.g., if we have city but name doesn't match, location might be a district within that city
+            }
+        }
+    }
+
+    return type;
 }
 
 export const CityService = {
@@ -25,7 +66,7 @@ export const CityService = {
                 osm_id, osm_type, type, class, importance,
                 ST_Y(center::geometry) as lat,
                 ST_X(center::geometry) as lng
-            FROM city_boundaries
+            FROM locations
             WHERE
                 name IS NOT NULL AND name != ''
                 AND center IS NOT NULL
@@ -89,7 +130,7 @@ export const CityService = {
                 ST_Y(cb.center::geometry) as cb_lat,
                 ST_X(cb.center::geometry) as cb_lng
             FROM priority_locations pl
-            LEFT JOIN city_boundaries cb ON cb.osm_id = pl.osm_id AND cb.osm_type = pl.osm_type
+            LEFT JOIN locations cb ON cb.osm_id = pl.osm_id AND cb.osm_type = pl.osm_type
             WHERE pl.search_query = LOWER($1)
             ORDER BY pl.rank ASC
         `, [query]);
@@ -100,7 +141,7 @@ export const CityService = {
             province: row.province,
             country: row.country,
             displayName: row.display_name,
-            // Use city_boundaries center if available, otherwise fall back to priority_locations coords
+            // Use locations center if available, otherwise fall back to priority_locations coords
             center: row.cb_lat != null
                 ? { lat: parseFloat(row.cb_lat), lng: parseFloat(row.cb_lng) }
                 : { lat: parseFloat(row.lat), lng: parseFloat(row.lng) },
@@ -153,7 +194,15 @@ export const CityService = {
 
             console.log(`[GEOCODING] Received ${data.length} results for: "${query}"`);
 
-            // Save all results to city_boundaries in background instantly
+            // Debug: Check type inference
+            if (data.length > 0) {
+                const firstItem = data[0];
+                const name = firstItem.name || firstItem.display_name.split(',')[0].trim();
+                const inferredType = getDisplayType(firstItem.type, firstItem.addresstype, firstItem.address as Record<string, string>, name);
+                console.log(`[GEOCODING] First result - raw type: "${firstItem.type}", inferred: "${inferredType}", name: "${name}"`);
+            }
+
+            // Save all results to locations in background instantly
             for (const item of data) {
                 if (item.geojson) {
                     CityService.saveFromNominatim(item).catch(() => {
@@ -161,18 +210,22 @@ export const CityService = {
                 }
             }
 
-            return data.map(item => ({
-                displayName: item.display_name,
-                osmId: item.osm_id,
-                osmType: item.osm_type,
-                lat: parseFloat(item.lat),
-                lng: parseFloat(item.lon),
-                type: getDisplayType(item.type, item.addresstype),
-                class: item.class,
-                importance: item.importance,
-                address: item.address as Record<string, string>,
-                boundingBox: item.boundingbox.map(parseFloat)
-            }));
+            return data.map(item => {
+                // Extract name from display_name (first part before comma) or use name field
+                const name = item.name || item.display_name.split(',')[0].trim();
+                return {
+                    displayName: item.display_name,
+                    osmId: item.osm_id,
+                    osmType: item.osm_type,
+                    lat: parseFloat(item.lat),
+                    lng: parseFloat(item.lon),
+                    type: getDisplayType(item.type, item.addresstype, item.address as Record<string, string>, name),
+                    class: item.class,
+                    importance: item.importance,
+                    address: item.address as Record<string, string>,
+                    boundingBox: item.boundingbox.map(parseFloat)
+                };
+            });
         } catch (error) {
             console.error('Error searching Nominatim:', error);
             throw error;
@@ -192,7 +245,7 @@ export const CityService = {
                 ST_Y(center::geometry) as lat,
                 ST_X(center::geometry) as lng,
                 last_updated, needs_refresh
-            FROM city_boundaries
+            FROM locations
             WHERE osm_id = $1 AND osm_type = $2
         `, [osmId, osmType]);
 
@@ -228,7 +281,7 @@ export const CityService = {
         const params = osmPairs.flatMap(p => [String(p.osmId), p.osmType]);
 
         const result = await pool.query(`
-            SELECT osm_id, osm_type, id FROM city_boundaries WHERE ${conditions}
+            SELECT osm_id, osm_type, id FROM locations WHERE ${conditions}
         `, params);
 
         const map = new Map<string, string>();
@@ -378,7 +431,7 @@ export const CityService = {
             SELECT id, name, province, country, osm_id, osm_type,
                    ST_Y(center::geometry) as lat,
                    ST_X(center::geometry) as lng
-            FROM city_boundaries
+            FROM locations
             WHERE name = $1 AND province = $2
             LIMIT 1
         `, [city, province]);
@@ -457,7 +510,7 @@ export const CityService = {
             console.log('Processed geojson:', JSON.stringify(geojson).substring(0, 200));
 
             const result = await client.query(`
-                INSERT INTO city_boundaries (
+                INSERT INTO locations (
                     name, province, country,
                     display_name, osm_id, osm_type, type, class, importance,
                     bounding_box, address_components,
@@ -482,7 +535,7 @@ export const CityService = {
                 data.display_name,
                 data.osm_id,
                 data.osm_type,
-                getDisplayType(data.type, data.addresstype),
+                getDisplayType(data.type, data.addresstype, data.address as Record<string, string>, city),
                 data.class,
                 data.importance,
                 data.boundingbox,
@@ -496,7 +549,7 @@ export const CityService = {
 
             // Remove ocean areas (existing logic)
             await client.query(`
-                UPDATE city_boundaries
+                UPDATE locations
                 SET
                     boundary = COALESCE(
                         ST_Multi(
@@ -505,7 +558,7 @@ export const CityService = {
                                 (
                                     SELECT ST_Union(geom::geometry)
                                     FROM water_polygons
-                                    WHERE ST_Intersects(city_boundaries.boundary::geometry, water_polygons.geom::geometry)
+                                    WHERE ST_Intersects(locations.boundary::geometry, water_polygons.geom::geometry)
                                 )
                             )
                         )::geography,
@@ -515,7 +568,7 @@ export const CityService = {
                         WHEN (
                             SELECT COUNT(*)
                             FROM water_polygons
-                            WHERE ST_Intersects(city_boundaries.boundary::geometry, water_polygons.geom::geometry)
+                            WHERE ST_Intersects(locations.boundary::geometry, water_polygons.geom::geometry)
                         ) > 0
                         THEN ST_PointOnSurface(
                             COALESCE(
@@ -525,7 +578,7 @@ export const CityService = {
                                         (
                                             SELECT ST_Union(geom::geometry)
                                             FROM water_polygons
-                                            WHERE ST_Intersects(city_boundaries.boundary::geometry, water_polygons.geom::geometry)
+                                            WHERE ST_Intersects(locations.boundary::geometry, water_polygons.geom::geometry)
                                         )
                                     )
                                 ),
@@ -550,13 +603,13 @@ export const CityService = {
 
             // Handle duplicate key error (race condition) - return existing city
             const pgError = error as { code?: string; constraint?: string };
-            if (pgError.code === '23505' && pgError.constraint === 'uq_city_province') {
+            if (pgError.code === '23505' && pgError.constraint === 'uq_location_province') {
                 console.log('Race condition: city already exists, fetching existing');
                 const existing = await pool.query(`
                     SELECT id, name, province, country, osm_id, osm_type,
                            ST_Y(center::geometry) as lat,
                            ST_X(center::geometry) as lng
-                    FROM city_boundaries
+                    FROM locations
                     WHERE name = $1 AND province = $2
                     LIMIT 1
                 `, [city, province]);
@@ -596,7 +649,7 @@ export const CityService = {
                 osm_id, osm_type, type, class, importance,
                 ST_Y(center::geometry) as lat,
                 ST_X(center::geometry) as lng
-            FROM city_boundaries
+            FROM locations
             WHERE ST_Contains(boundary::geometry, ST_SetSRID(ST_MakePoint($1, $2), 4326))
             ORDER BY ST_Area(boundary::geometry) ASC
             LIMIT $3
@@ -625,7 +678,7 @@ export const CityService = {
                 osm_id, osm_type, type, class, importance,
                 ST_Y(center::geometry) as lat,
                 ST_X(center::geometry) as lng
-            FROM city_boundaries
+            FROM locations
             WHERE ST_Contains(boundary::geometry, ST_SetSRID(ST_MakePoint($1, $2), 4326))
             ORDER BY ST_Area(boundary::geometry) ASC
             LIMIT 1
@@ -796,7 +849,7 @@ export const CityService = {
                 ST_X(ST_GeometryN(point, 1)) as lng
             FROM (
                 SELECT ST_GeneratePoints(boundary::geometry, 1) as point
-                FROM city_boundaries
+                FROM locations
                 WHERE id = $1
             ) as generated
         `, [cityId]);
@@ -819,7 +872,7 @@ export const CityService = {
                 ST_Y(center::geometry) as lat,
                 ST_X(center::geometry) as lng,
                 last_updated, needs_refresh
-            FROM city_boundaries
+            FROM locations
             WHERE id = $1
         `, [id]);
 

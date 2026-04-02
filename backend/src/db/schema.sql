@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Drop tables if they exist
 DROP TABLE IF EXISTS artists;
-DROP TABLE IF EXISTS city_boundaries;
+DROP TABLE IF EXISTS locations;
 DROP TABLE IF EXISTS priority_locations;
 DROP TABLE IF EXISTS water_polygons;
 
@@ -17,8 +17,8 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- City table
-CREATE TABLE IF NOT EXISTS city_boundaries (
+-- Locations table (cities, regions, countries, etc.)
+CREATE TABLE IF NOT EXISTS locations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(100) NOT NULL,
   province VARCHAR(100) NOT NULL,
@@ -41,8 +41,8 @@ CREATE TABLE IF NOT EXISTS city_boundaries (
   last_updated TIMESTAMP DEFAULT NOW(),
   needs_refresh BOOLEAN DEFAULT FALSE,
 
-  CONSTRAINT uq_city_province UNIQUE (name, province),
-  CONSTRAINT uq_city_osm UNIQUE (osm_id, osm_type)
+  CONSTRAINT uq_location_province UNIQUE (name, province),
+  CONSTRAINT uq_location_osm UNIQUE (osm_id, osm_type)
 );
 
 -- Priority locations for search boosting (self-contained with all needed data)
@@ -84,14 +84,14 @@ CREATE TABLE IF NOT EXISTS artists (
   original_country VARCHAR(100),
   original_display_name TEXT,
   original_coordinates GEOGRAPHY(POINT, 4326) NOT NULL,
-  original_city_id UUID REFERENCES city_boundaries(id),
+  original_city_id UUID REFERENCES locations(id),
 
   active_city VARCHAR(100) NOT NULL,
   active_province VARCHAR(100) NOT NULL,
   active_country VARCHAR(100),
   active_display_name TEXT,
   active_coordinates GEOGRAPHY(POINT, 4326) NOT NULL,
-  active_city_id UUID REFERENCES city_boundaries(id),
+  active_city_id UUID REFERENCES locations(id),
 
   original_display_coordinates GEOGRAPHY(POINT, 4326),
   active_display_coordinates GEOGRAPHY(POINT, 4326),
@@ -110,12 +110,12 @@ CREATE TABLE IF NOT EXISTS artists (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Indexes for city_boundaries
-CREATE INDEX IF NOT EXISTS idx_city_boundaries_boundary ON city_boundaries USING GIST(boundary);
-CREATE INDEX IF NOT EXISTS idx_city_boundaries_raw_boundary ON city_boundaries USING GIST(raw_boundary);
-CREATE INDEX IF NOT EXISTS idx_city_name_trgm ON city_boundaries USING gin(name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_city_display_name_trgm ON city_boundaries USING gin(display_name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_city_importance ON city_boundaries(importance DESC);
+-- Indexes for locations
+CREATE INDEX IF NOT EXISTS idx_locations_boundary ON locations USING GIST(boundary);
+CREATE INDEX IF NOT EXISTS idx_locations_raw_boundary ON locations USING GIST(raw_boundary);
+CREATE INDEX IF NOT EXISTS idx_locations_name_trgm ON locations USING gin(name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_locations_display_name_trgm ON locations USING gin(display_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_locations_importance ON locations(importance DESC);
 
 CREATE INDEX IF NOT EXISTS idx_priority_search_query ON priority_locations(search_query);
 CREATE INDEX IF NOT EXISTS idx_water_polygons_geom ON water_polygons USING GIST(geom);

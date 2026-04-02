@@ -59,7 +59,7 @@ export const ArtistService = {
         const isCopiedFromOriginal = data.originalLocation.coordinates && data.activeLocation.coordinates &&
             coordsMatch(data.originalLocation.coordinates, data.activeLocation.coordinates);
 
-        // 5. Set coordinates and display coordinates based on selection method
+        // 3. Set coordinates and display coordinates based on selection method
         let originalDisplayCoordinates, activeDisplayCoordinates;
 
         if (originalManual) {
@@ -81,7 +81,7 @@ export const ArtistService = {
             activeDisplayCoordinates = randomPoint || activeCity.center;
         }
 
-        // 5. Prepare data for Store
+        // 4. Prepare data for Store
         const storeData: StoreArtistDTO = {
             ...data,
             userId,
@@ -91,7 +91,6 @@ export const ArtistService = {
             activeLocationDisplayCoordinates: activeDisplayCoordinates
         };
 
-        // 6. Create artist
         return await ArtistStore.create(storeData);
     },
 

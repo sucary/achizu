@@ -6,16 +6,16 @@ import pool from '../config/database';
 async function addRawBoundaryColumn() {
     const client = await pool.connect();
     try {
-        console.log('Adding raw_boundary column to city_boundaries table...');
+        console.log('Adding raw_boundary column to locations table...');
         
         await client.query(`
-            ALTER TABLE city_boundaries 
+            ALTER TABLE locations 
             ADD COLUMN IF NOT EXISTS raw_boundary GEOGRAPHY(MULTIPOLYGON, 4326);
         `);
 
         await client.query(`
-            CREATE INDEX IF NOT EXISTS idx_city_boundaries_raw_boundary 
-            ON city_boundaries USING GIST(raw_boundary);
+            CREATE INDEX IF NOT EXISTS idx_locations_raw_boundary 
+            ON locations USING GIST(raw_boundary);
         `);
 
         console.log('Successfully added raw_boundary column.');
