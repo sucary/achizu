@@ -44,6 +44,8 @@ function getDisplayType(type: string, addresstype?: string, address?: Record<str
         // If name not found in address, check if any key exists as a hint
         for (const [addressKey, displayType] of typeMapping) {
             if (address[addressKey]) {
+                return displayType;
+            }
         }
     }
 
