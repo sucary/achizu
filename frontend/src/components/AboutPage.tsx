@@ -25,7 +25,7 @@ export function AboutPage() {
                     An open-source project for mapping your favorite artists around the world.
                 </p>
                 <a
-                    href="https://github.com/sucary/artist-location-map"
+                    href="https://github.com/sucary/achizu"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary-hover"
