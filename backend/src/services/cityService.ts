@@ -8,7 +8,6 @@ const GEOCODING_API_KEY = process.env.LOCATIONIQ_API_KEY;
 
 /**
  * Get display type for a location
- * LocationIQ doesn't return addresstype, so we infer from the address object
  */
 function getDisplayType(type: string, addresstype?: string, address?: Record<string, string>, name?: string): string {
     // If addresstype is provided (standard Nominatim), use it
@@ -45,9 +44,6 @@ function getDisplayType(type: string, addresstype?: string, address?: Record<str
         // If name not found in address, check if any key exists as a hint
         for (const [addressKey, displayType] of typeMapping) {
             if (address[addressKey]) {
-                // The first existing key above the location in hierarchy might indicate its type
-                // e.g., if we have city but name doesn't match, location might be a district within that city
-            }
         }
     }
 
@@ -842,24 +838,72 @@ export const CityService = {
     /**
      * Generate a random point within the city boundary
      */
-    generateRandomPoint: async (cityId: string): Promise<{lat: number, lng: number} | null> => {
-        const result = await pool.query(`
-            SELECT
-                ST_Y(ST_GeometryN(point, 1)) as lat,
-                ST_X(ST_GeometryN(point, 1)) as lng
-            FROM (
-                SELECT ST_GeneratePoints(boundary::geometry, 1) as point
-                FROM locations
-                WHERE id = $1
-            ) as generated
-        `, [cityId]);
+    generateRandomPoint: async (cityId: string, minDistanceMeters: number = 150): Promise<{lat: number, lng: number} | null> => {
+        const maxRetries = 5;
+        let bestCandidate: { lat: number; lng: number } | null = null;
+        let bestMinDist = -1;
 
-        if (result.rows.length === 0) return null;
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            const result = await pool.query(`
+                SELECT
+                    ST_Y(ST_GeometryN(point, 1)) as lat,
+                    ST_X(ST_GeometryN(point, 1)) as lng
+                FROM (
+                    SELECT ST_GeneratePoints(boundary::geometry, 1) as point
+                    FROM locations
+                    WHERE id = $1
+                ) as generated
+            `, [cityId]);
 
-        return {
-            lat: result.rows[0].lat,
-            lng: result.rows[0].lng
-        };
+            if (result.rows.length === 0) return null;
+
+            const candidate = {
+                lat: parseFloat(result.rows[0].lat),
+                lng: parseFloat(result.rows[0].lng)
+            };
+
+            // Check distance to nearest existing marker within radius
+            const nearbyResult = await pool.query(`
+                SELECT MIN(nearest_dist) as min_dist FROM (
+                    SELECT ST_Distance(
+                        ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+                        original_display_coordinates
+                    ) as nearest_dist
+                    FROM artists
+                    WHERE original_display_coordinates IS NOT NULL
+                        AND ST_DWithin(
+                            original_display_coordinates,
+                            ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+                            $3
+                        )
+                    UNION ALL
+                    SELECT ST_Distance(
+                        ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+                        active_display_coordinates
+                    ) as nearest_dist
+                    FROM artists
+                    WHERE active_display_coordinates IS NOT NULL
+                        AND ST_DWithin(
+                            active_display_coordinates,
+                            ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+                            $3
+                        )
+                ) as distances
+            `, [candidate.lng, candidate.lat, minDistanceMeters]);
+
+            const minDist = nearbyResult.rows[0].min_dist;
+
+            if (minDist === null) return candidate;
+
+            if (parseFloat(minDist) >= minDistanceMeters) return candidate;
+
+            if (parseFloat(minDist) > bestMinDist) {
+                bestMinDist = parseFloat(minDist);
+                bestCandidate = candidate;
+            }
+        }
+
+        return bestCandidate;
     },
 
     getById: async (id: string): Promise<City | null> => {
