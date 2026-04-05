@@ -48,30 +48,22 @@ const MapClickHandler = ({ onLocationPick }: MapClickHandlerProps) => {
 
     return (
         <>
-            {/* Top banner with instructions */}
-            <div role="alert" className="absolute top-0 left-0 right-0 z-modal bg-primary text-white px-4 py-3 shadow-lg">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <p className="text-sm font-medium">
-                            Click anywhere on the map to select a location
-                        </p>
-                    </div>
+            {/* Banner-style location selection prompt */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1100]">
+                <div role="alert" className="flex items-center h-10 bg-surface border border-border rounded-lg shadow-md font-sans">
+                    <span className="text-sm text-text px-4">
+                        Click on the map to select a location
+                    </span>
+                    <div aria-hidden="true" className="w-px h-6 bg-border" />
                     <button
                         onClick={() => onLocationPick?.(null)}
-                        className="px-4 py-1.5 text-sm bg-surface text-primary hover:bg-surface-muted rounded-md font-medium transition-colors"
+                        className="px-3 h-full text-sm text-text hover:bg-surface-muted transition-colors rounded-r-lg font-medium"
                         style={{ cursor: 'default' }}
                     >
                         Cancel
                     </button>
                 </div>
             </div>
-
-            {/* Subtle map overlay */}
-            <div className="absolute inset-0 bg-black/5 z-[998] pointer-events-none" />
 
             {/* CSS for crosshair cursor */}
             <style>{`

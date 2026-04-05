@@ -30,6 +30,7 @@ function App() {
 
     const [showForm, setShowForm] = useState(false);
     const [showArtistList, setShowArtistList] = useState(false);
+    const [showFeaturedList, setShowFeaturedList] = useState(true);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showAdminDashboard, setShowAdminDashboard] = useState(false);
     const [showResetPassword, setShowResetPassword] = useState(() => {
@@ -52,6 +53,7 @@ function App() {
     const setViewingFeatured = useCallback((featured: boolean) => {
         if (featured) {
             setSearchParams({ view: 'featured' });
+            setShowFeaturedList(true);
         } else {
             setSearchParams({});
         }
@@ -300,8 +302,14 @@ function App() {
             {!showForm && !showArtistList && user && profile?.isApproved && !isViewingOther && !viewingFeatured && (
                 <AddArtistButton onClick={handleAddArtistClick} />
             )}
-            {!showForm && !showArtistList && user && !viewingFeatured && (
-                <ViewArtistListButton onClick={handleViewArtistListClick} />
+            {!showForm && !showArtistList && user && (!viewingFeatured || !showFeaturedList) && (
+                <ViewArtistListButton onClick={() => {
+                    if (viewingFeatured) {
+                        setShowFeaturedList(true);
+                    } else {
+                        handleViewArtistListClick();
+                    }
+                }} />
             )}
             {showForm && (
                 <ArtistForm
@@ -313,11 +321,11 @@ function App() {
                     onConsumePendingCoordinates={handleConsumeCoordinates}
                 />
             )}
-            {(showArtistList || viewingFeatured) && (
+            {(showArtistList || (viewingFeatured && showFeaturedList)) && (
                 <ArtistList
                     username={username}
                     viewingFeatured={viewingFeatured}
-                    onClose={() => viewingFeatured ? setViewingFeatured(false) : setShowArtistList(false)}
+                    onClose={() => viewingFeatured ? setShowFeaturedList(false) : setShowArtistList(false)}
                     onNavigateToArtist={handleNavigateToArtist}
                     onEditArtist={isViewingOther || viewingFeatured ? undefined : handleEditFromList}
                     onDeleteArtist={isViewingOther || viewingFeatured ? undefined : handleDeleteArtist}

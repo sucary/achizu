@@ -114,7 +114,7 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
                                         className="w-10 h-10 rounded-full object-cover border border-border"
                                     />
                                     {/* Info */}
-                                    <div className="flex-1 min-w-0">
+                                    <div className="flex-1 min-w-0 text-left">
                                         <p
                                             onClick={(e) => e.stopPropagation()}
                                             className="text-sm font-medium text-text select-text cursor-text whitespace-nowrap group-hover:truncate"
