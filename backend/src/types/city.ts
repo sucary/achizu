@@ -65,6 +65,7 @@ export interface NominatimResponse {
 }
 
 export interface NominatimSearchResult {
+    name: string;
     displayName: string;
     osmId: number;
     osmType: string;

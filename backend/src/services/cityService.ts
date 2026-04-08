@@ -213,8 +213,9 @@ export const CityService = {
                 // Extract name from display_name (first part before comma) or use name field
                 const name = item.name || item.display_name.split(',')[0].trim();
                 return {
+                    name,
                     displayName: item.display_name,
-                    osmId: item.osm_id,
+                    osmId: Number(item.osm_id),
                     osmType: item.osm_type,
                     lat: parseFloat(item.lat),
                     lng: parseFloat(item.lon),

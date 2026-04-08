@@ -85,6 +85,7 @@ export const TextSearch = {
 
             return {
                 ...r,
+                osmId: Number(r.osmId),
                 id: existingMap.get(key),
                 isLocal
             };
