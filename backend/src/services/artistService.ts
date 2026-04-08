@@ -1,5 +1,6 @@
 import { ArtistStore } from '../models/artistStore';
 import { CityService } from './cityService';
+import { LocationLocalizationService } from './locationLocalizationService';
 import { CreateArtistDTO, UpdateArtistDTO, Artist, StoreArtistDTO, UpdateStoreArtistDTO, ArtistQueryParams, Coordinates } from '../types/artist';
 import { City } from '../types/city';
 
@@ -24,6 +25,9 @@ async function resolveCity(osmId: number, osmType: string): Promise<City> {
         }
         city = await CityService.saveFromNominatim(nominatimData);
     }
+
+    await LocationLocalizationService.ensureLocalized(city.id);
+
     return city;
 }
 

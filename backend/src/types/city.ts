@@ -64,6 +64,55 @@ export interface NominatimResponse {
     };
 }
 
+/**
+ * Multilingual name set for a location row.
+ */
+export interface LocalizedNames {
+    en?: string;
+    zh?: string;
+    ja?: string;
+    native?: string;
+}
+
+/**
+ * One admin level parsed from a localization source 
+ */
+export interface LocalizedLevel {
+    osmId: number;
+    osmType: string;
+    adminLevel: number;
+    names: LocalizedNames;
+}
+
+/**
+ * Parsed result of a localization fetch — the target city plus its parent
+ * admin chain (province, country)
+ */
+export interface LocalizationData {
+    city?: LocalizedLevel;
+    province?: LocalizedLevel;
+    country?: LocalizedLevel;
+}
+
+/**
+ * One node in a localized location's parent chain. 
+ */
+export interface LocalizedLocationNode {
+    id: string;
+    adminLevel: number | null;
+    names: LocalizedNames | null;
+}
+
+/**
+ * A location row plus its walked parent chain. 
+ */
+export interface LocalizedLocation {
+    id: string;
+    city: LocalizedLocationNode;
+    province?: LocalizedLocationNode;
+    country?: LocalizedLocationNode;
+}
+
 export interface NominatimSearchResult {
     name: string;
     displayName: string;

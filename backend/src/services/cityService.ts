@@ -1,5 +1,5 @@
 import pool from '../config/database';
-import { City, NominatimResponse, NominatimSearchResult } from '../types/city';
+import { City, LocalizedLocation, LocalizedLocationNode, LocalizedNames, NominatimResponse, NominatimSearchResult } from '../types/city';
 import { nominatimLimiter } from './nominatimRateLimiter';
 
 // Geocoding API configuration (LocationIQ - Nominatim-compatible)
@@ -896,6 +896,57 @@ export const CityService = {
         }
 
         return bestCandidate;
+    },
+
+    /**
+     * Walk the parent_id chain for a location and  * return the row plus its province and country * ancestors.
+     */
+    getLocalizedById: async (id: string): Promise<LocalizedLocation | null> => {
+        const result = await pool.query(`
+            WITH RECURSIVE ancestors AS (
+                SELECT id, names, admin_level, parent_id, 0 AS depth
+                FROM locations
+                WHERE id = $1
+                UNION ALL
+                SELECT l.id, l.names, l.admin_level, l.parent_id, a.depth + 1
+                FROM locations l
+                INNER JOIN ancestors a ON l.id = a.parent_id
+                WHERE a.depth < 5
+            )
+            SELECT id, names, admin_level, depth FROM ancestors ORDER BY depth ASC
+        `, [id]);
+
+        if (result.rows.length === 0) return null;
+
+        const toNode = (row: { id: string; names: LocalizedNames | null; admin_level: number | null }): LocalizedLocationNode => ({
+            id: row.id,
+            adminLevel: row.admin_level,
+            names: row.names,
+        });
+
+        const cityRow = result.rows[0];
+        const cityNode = toNode(cityRow);
+
+        let provinceNode: LocalizedLocationNode | undefined;
+        let countryNode: LocalizedLocationNode | undefined;
+        for (let i = 1; i < result.rows.length; i++) {
+            const row = result.rows[i];
+            const level = row.admin_level;
+            if (level !== null && level <= 3) {
+                countryNode = toNode(row);
+            } else if (level !== null && level >= 4 && level <= 5 && !provinceNode) {
+                provinceNode = toNode(row);
+            } else if (!provinceNode && level !== null && level < 6) {
+                provinceNode = toNode(row);
+            }
+        }
+
+        return {
+            id: cityNode.id,
+            city: cityNode,
+            province: provinceNode,
+            country: countryNode,
+        };
     },
 
     getById: async (id: string): Promise<City | null> => {
