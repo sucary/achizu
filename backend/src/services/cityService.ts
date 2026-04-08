@@ -200,13 +200,14 @@ export const CityService = {
                 console.log(`[GEOCODING] First result - raw type: "${firstItem.type}", inferred: "${inferredType}", name: "${name}"`);
             }
 
-            // Save all results to locations in background instantly
-            for (const item of data) {
-                if (item.geojson) {
-                    CityService.saveFromNominatim(item).catch(() => {
-                    });
+            // Save all results to locations in the background one at a time
+            (async () => {
+                for (const item of data) {
+                    if (item.geojson) {
+                        await CityService.saveFromNominatim(item).catch(() => {});
+                    }
                 }
-            }
+            })();
 
             return data.map(item => {
                 // Extract name from display_name (first part before comma) or use name field
@@ -376,20 +377,20 @@ export const CityService = {
      * Save city from Nominatim data
      */
     saveFromNominatim: async (data: NominatimResponse): Promise<City> => {
-        const geoType = data.geojson?.type ?? null;
+        const geoType: string | null = data.geojson?.type ?? null;
 
-        // For Point geometries, try to fetch the parent city's actual boundary
-        if (geoType === 'Point') {
+        // For Point/LineString geometries, try to fetch the parent city's actual boundary.
+        if (geoType === 'Point' || geoType === 'LineString' || geoType === 'MultiLineString') {
             const parentCityName = data.address?.city || data.address?.town || data.address?.village;
             if (parentCityName) {
                 const parentProvince = data.address?.state || data.address?.province || data.address?.region || '';
                 const parentCountry = data.address?.country || '';
 
-                console.log(`Point geometry detected. Looking for parent city: ${parentCityName}, ${parentProvince}, ${parentCountry}`);
+                console.log(`${geoType} geometry detected. Looking for parent city: ${parentCityName}, ${parentProvince}, ${parentCountry}`);
 
                 const parentCityData = await CityService.fetchCityWithBoundary(parentCityName, parentProvince, parentCountry);
                 if (parentCityData) {
-                    console.log('Using parent city boundary instead of Point');
+                    console.log('Using parent city boundary instead of', geoType);
                     // Recursively save the parent city (which has a real boundary)
                     return await CityService.saveFromNominatim(parentCityData);
                 }
@@ -458,20 +459,8 @@ export const CityService = {
             const geometry = data.geojson;
             const geometryType = geometry.type as string;
 
-            // For LineString geometries (roads/rivers), try to find parent city
+            // LineString/MultiLineString are handled before pool.connect() above.
             if (geometryType === 'LineString' || geometryType === 'MultiLineString') {
-                const parentCityName = data.address?.city || data.address?.town || data.address?.village;
-                if (parentCityName) {
-                    const parentProvince = data.address?.state || data.address?.province || data.address?.region || '';
-                    const parentCountry = data.address?.country || '';
-                    console.log(`LineString geometry detected. Looking for parent city: ${parentCityName}`);
-                    const parentCityData = await CityService.fetchCityWithBoundary(parentCityName, parentProvince, parentCountry);
-                    if (parentCityData) {
-                        await client.query('ROLLBACK');
-                        client.release();
-                        return await CityService.saveFromNominatim(parentCityData);
-                    }
-                }
                 throw new Error(`Unsupported geometry type: ${geometryType}`);
             }
 
