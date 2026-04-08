@@ -43,9 +43,9 @@ CREATE TABLE IF NOT EXISTS locations (
     province VARCHAR(100) NOT NULL,
     country VARCHAR(100),
 
-    boundary GEOGRAPHY(MULTIPOLYGON, 4326) NOT NULL,
+    boundary GEOGRAPHY(MULTIPOLYGON, 4326),
     raw_boundary GEOGRAPHY(MULTIPOLYGON, 4326),
-    center GEOGRAPHY(POINT, 4326) NOT NULL,
+    center GEOGRAPHY(POINT, 4326),
 
     osm_id BIGINT NOT NULL,
     osm_type VARCHAR(20) NOT NULL,
@@ -55,6 +55,11 @@ CREATE TABLE IF NOT EXISTS locations (
     importance DECIMAL(5,4),
     bounding_box DECIMAL[4],
     address_components JSONB,
+
+    names JSONB,
+    admin_level INTEGER,
+    parent_id UUID REFERENCES locations(id),
+    localized_at TIMESTAMPTZ,
 
     last_updated TIMESTAMP DEFAULT NOW(),
     needs_refresh BOOLEAN DEFAULT FALSE,
@@ -121,6 +126,7 @@ CREATE TABLE IF NOT EXISTS artists (
     original_city VARCHAR(100) NOT NULL,
     original_province VARCHAR(100) NOT NULL,
     original_country VARCHAR(100),
+    original_display_name TEXT,
     original_coordinates GEOGRAPHY(POINT, 4326) NOT NULL,
     original_city_id UUID REFERENCES locations(id),
     original_display_coordinates GEOGRAPHY(POINT, 4326),
@@ -129,6 +135,7 @@ CREATE TABLE IF NOT EXISTS artists (
     active_city VARCHAR(100) NOT NULL,
     active_province VARCHAR(100) NOT NULL,
     active_country VARCHAR(100),
+    active_display_name TEXT,
     active_coordinates GEOGRAPHY(POINT, 4326) NOT NULL,
     active_city_id UUID REFERENCES locations(id),
     active_display_coordinates GEOGRAPHY(POINT, 4326),
@@ -159,6 +166,8 @@ CREATE INDEX IF NOT EXISTS idx_locations_raw_boundary ON locations USING GIST(ra
 CREATE INDEX IF NOT EXISTS idx_locations_name_trgm ON locations USING gin(name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_locations_display_name_trgm ON locations USING gin(display_name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_locations_importance ON locations(importance DESC);
+CREATE INDEX IF NOT EXISTS idx_locations_parent_id ON locations(parent_id);
+CREATE INDEX IF NOT EXISTS idx_locations_admin_level ON locations(admin_level);
 
 -- Priority locations indexes
 CREATE INDEX IF NOT EXISTS idx_priority_search_query ON priority_locations(search_query);
