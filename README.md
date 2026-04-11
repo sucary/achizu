@@ -23,18 +23,18 @@ Click [here](https://achizu.com/) to enter the website.
     - Sneak peek on other user's map.
     - Featured artists: randomly selected artists across the world, from different users.
 
-4. Accessibility: Create your artist location set, even if you are unable to use a map.
+4. Accessibility: The website is screen reader friendly. Create and manage your artist location set, even if you are unable to use a map. 
 
 
 ## Tech Stack
 
-- **Backend:** Node.js, Express.js, TypeScript
+- **Backend:** Node.js, Express.js
 - **Database:** PostgreSQL with PostGIS, Supabase
-- **Frontend:** React, TypeScript, Vite, Tailwind CSS
+- **Frontend:** React, Vite, Tailwind CSS
 - **Maps:** Leaflet, OSM
 - **Authentication:** Supabase Auth
 - **Image Storage:** Cloudinary
-- **Geocoding:** LocationIQ (Nominatim)
+- **Geocoding:** LocationIQ (Nominatim), Overpass
 
 ## API Endpoints
 
