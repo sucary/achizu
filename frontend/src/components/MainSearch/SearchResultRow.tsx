@@ -1,8 +1,9 @@
 import type { ArtistSearchResult, LocationSearchResult, UserSearchResult, SearchResult } from '../../types/search';
 import { getAvatarUrl } from '../../utils/cloudinaryUrl';
-import { formatLocation } from '../../utils/locationUtils';
+import { formatLocationLocalized } from '../../utils/locationUtils';
 import { UserIcon } from '../icons/GeneralIcons';
 import { useAuth } from '../../context/AuthContext';
+import { useLocationLanguage } from '../../context/LocationLanguageContext';
 
 interface SearchResultRowProps {
     result: SearchResult;
@@ -13,6 +14,7 @@ const getPlaceholderUrl = (name: string) =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=150&background=e5e7eb&color=9ca3af`;
 
 function ArtistRow({ result, onSelect }: { result: ArtistSearchResult; onSelect: () => void }) {
+    const { locationLanguage } = useLocationLanguage();
     const avatarUrl = getAvatarUrl(result.sourceImage, result.avatarCrop) || getPlaceholderUrl(result.name);
 
     return (
@@ -33,7 +35,7 @@ function ArtistRow({ result, onSelect }: { result: ArtistSearchResult; onSelect:
                         Active
                     </span>
                     <span className="text-xs text-text-secondary truncate">
-                        {formatLocation(result.activeLocation)}
+                        {formatLocationLocalized(result.activeLocation, locationLanguage)}
                     </span>
                 </div>
             </div>

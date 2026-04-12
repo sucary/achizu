@@ -4,10 +4,11 @@ import { getArtists, getArtistsByUsername, getFeaturedArtists } from '../service
 import { SearchIcon, EditIcon, TrashIcon } from './icons/GeneralIcons';
 import { MapPinIcon } from './icons/MapIcons';
 import { getAvatarUrl } from '../utils/cloudinaryUrl';
-import { formatLocation } from '../utils/locationUtils';
+import { formatLocationLocalized } from '../utils/locationUtils';
 import { Input, IconButton, Spinner, CloseButton } from './ui';
 import ArtistProfile from './ArtistProfile';
 import type { Artist } from '../types/artist';
+import { useLocationLanguage } from '../context/LocationLanguageContext';
 
 interface ArtistListProps {
     username?: string;
@@ -22,6 +23,7 @@ const getPlaceholderUrl = (name: string) =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=150&background=e5e7eb&color=9ca3af`;
 
 const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, onEditArtist, onDeleteArtist }: ArtistListProps) => {
+    const { locationLanguage } = useLocationLanguage();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
     const [cardPosition, setCardPosition] = useState<number>(0);
@@ -62,7 +64,7 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
                     className="absolute right-full mr-2"
                     style={{ top: cardPosition, transform: 'translateY(-50%)' }}
                 >
-                    <ArtistProfile artist={selectedArtist} showActions={!!(onEditArtist || onDeleteArtist)} />
+                    <ArtistProfile artist={selectedArtist} showActions={!!(onEditArtist || onDeleteArtist)} locationLanguage={locationLanguage} />
                 </div>
             )}
 
@@ -125,7 +127,7 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
                                             onClick={(e) => e.stopPropagation()}
                                             className="text-xs text-text-secondary select-text cursor-text whitespace-nowrap group-hover:truncate"
                                         >
-                                            {formatLocation(artist.activeLocation)}
+                                            {formatLocationLocalized(artist.activeLocation, locationLanguage)}
                                         </p>
                                     </div>
                                     {/* Actions */}

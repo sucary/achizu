@@ -1,12 +1,13 @@
-import type { Artist } from '../types/artist';
+import type { Artist, LocationLanguage } from '../types/artist';
 import { HomeIcon, MusicIcon, YoutubeIcon, InstagramIcon, XIcon } from './icons/SocialIcons';
 import { EditIcon, TrashIcon } from './icons/GeneralIcons';
 import { getProfileUrl } from '../utils/cloudinaryUrl';
-import { formatLocation } from '../utils/locationUtils';
+import { formatLocationLocalized } from '../utils/locationUtils';
 
 interface ArtistProfileProps {
     artist: Artist;
     showActions?: boolean;
+    locationLanguage?: LocationLanguage;
 }
 
 // URL sanitizer
@@ -26,7 +27,7 @@ const safeUrl = (url: string): string => {
 const getPlaceholderUrl = (name: string) =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=320&background=e5e7eb&color=9ca3af`;
 
-const ArtistProfile = ({ artist, showActions = true }: ArtistProfileProps) => {
+const ArtistProfile = ({ artist, showActions = true, locationLanguage = 'en' }: ArtistProfileProps) => {
     // Use Cloudinary transformation for profile banner
     const backgroundImageUrl = getProfileUrl(artist.sourceImage, artist.profileCrop) || getPlaceholderUrl(artist.name);
     
@@ -95,7 +96,7 @@ const ArtistProfile = ({ artist, showActions = true }: ArtistProfileProps) => {
                         Origin
                     </span>
                     <span className="text-sm text-text-secondary">
-                        {formatLocation(artist.originalLocation)}
+                        {formatLocationLocalized(artist.originalLocation, locationLanguage)}
                     </span>
                 </div>
 
@@ -105,7 +106,7 @@ const ArtistProfile = ({ artist, showActions = true }: ArtistProfileProps) => {
                         Active
                     </span>
                     <span className="text-sm text-text-secondary">
-                        {formatLocation(artist.activeLocation)}
+                        {formatLocationLocalized(artist.activeLocation, locationLanguage)}
                     </span>
                 </div>
 

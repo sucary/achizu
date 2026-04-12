@@ -7,6 +7,28 @@ export interface Coordinates {
 }
 
 /**
+ * Multilingual name set for a location
+ */
+export interface LocalizedNames {
+    en?: string;
+    zhHans?: string;
+    zhHant?: string;
+    ja?: string;
+    native?: string;
+}
+
+/**
+ * Full localized address chain for a location
+ */
+export interface LocalizedChain {
+    city: LocalizedNames;
+    province?: LocalizedNames;
+    country?: LocalizedNames;
+}
+
+export type LocationLanguage = 'en' | 'zhHans' | 'zhHant' | 'ja' | 'native';
+
+/**
  * Location information including city, province, and coordinates
  */
 export interface Location {
@@ -17,6 +39,7 @@ export interface Location {
     displayName?: string;
     osmId?: number;
     osmType?: string;
+    localizedChain?: LocalizedChain;
 }
 
 /**

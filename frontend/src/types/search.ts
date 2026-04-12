@@ -1,4 +1,4 @@
-import type { CropArea } from './artist';
+import type { CropArea, LocalizedChain } from './artist';
 
 export interface ArtistSearchResult {
     type: 'artist';
@@ -6,7 +6,7 @@ export interface ArtistSearchResult {
     name: string;
     sourceImage?: string;
     avatarCrop?: CropArea;
-    activeLocation: { city: string; province: string; country?: string };
+    activeLocation: { city: string; province: string; country?: string; localizedChain?: LocalizedChain };
     coordinates: { lat: number; lng: number };
 }
 

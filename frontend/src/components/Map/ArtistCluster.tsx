@@ -5,8 +5,9 @@ import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { Artist, LocationView } from '../../types/artist';
+import type { Artist, LocationView, LocationLanguage } from '../../types/artist';
 import ArtistProfile from '../ArtistProfile';
+import { useLocationLanguage } from '../../context/LocationLanguageContext';
 import { createArtistMarker, preloadArtistImages } from '../../utils/mapUtils';
 import {
   CLUSTER_CONFIG,
@@ -44,6 +45,7 @@ const ArtistCluster = forwardRef<ArtistClusterHandle, ArtistClusterProps>(({
   onExpansionChange,
 }, ref) => {
   const map = useMap();
+  const { locationLanguage } = useLocationLanguage();
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
 
@@ -84,7 +86,7 @@ const ArtistCluster = forwardRef<ArtistClusterHandle, ArtistClusterProps>(({
     (marker as L.Marker & { _artistData?: Artist })._artistData = artist;
 
     const showActions = !!(onEditArtist || onDeleteArtist);
-    const popupContent = renderToStaticMarkup(<ArtistProfile artist={artist} showActions={showActions} />);
+    const popupContent = renderToStaticMarkup(<ArtistProfile artist={artist} showActions={showActions} locationLanguage={locationLanguage} />);
     marker.bindPopup(popupContent, {
       className: 'artist-popup',
       closeButton: false,
@@ -102,7 +104,7 @@ const ArtistCluster = forwardRef<ArtistClusterHandle, ArtistClusterProps>(({
     });
 
     return marker;
-  }, [map, view, onArtistSelect, onArtistDeselect, onEditArtist, onDeleteArtist]);
+  }, [map, view, locationLanguage, onArtistSelect, onArtistDeselect, onEditArtist, onDeleteArtist]);
 
   // Main effect for cluster management
   useEffect(() => {
