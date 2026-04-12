@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
+import { useLocationLanguage } from '../../context/LocationLanguageContext';
 import { supabase } from '../../lib/supabase';
 import { API_URL } from '../../services/api';
 import { PageLayout, PageSection } from '../ui';
+import type { LocationLanguage } from '../../types/artist';
 
 export function SettingsPage() {
     const queryClient = useQueryClient();
@@ -28,6 +30,9 @@ export function SettingsPage() {
     const [isPrivate, setIsPrivate] = useState(profile?.isPrivate ?? false);
     const [privacySaving, setPrivacySaving] = useState(false);
     const [privacyError, setPrivacyError] = useState<string | null>(null);
+
+    // Location language
+    const { locationLanguage, setLocationLanguage } = useLocationLanguage();
 
     // Sync isPrivate with profile when it changes
     useEffect(() => {
@@ -177,6 +182,42 @@ export function SettingsPage() {
                     >
                         <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${isPrivate ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
+                </div>
+            </PageSection>
+
+            {/* Location Language */}
+            <PageSection title="Language">
+                <div>
+                    <p className="text-sm text-text-secondary mb-2">
+                        Location name
+                    </p>
+                    <div role="radiogroup" aria-label="Location name language" className="flex flex-wrap gap-2">
+                        {([
+                            { value: 'en', label: 'English' },
+                            { value: 'zhHans', label: '简体中文' },
+                            { value: 'zhHant', label: '繁體中文' },
+                            { value: 'ja', label: '日本語' },
+                            { value: 'native', label: 'Local' },
+                        ] as { value: LocationLanguage; label: string }[]).map(({ value, label }) => (
+                            <button
+                                key={value}
+                                type="button"
+                                role="radio"
+                                aria-checked={locationLanguage === value}
+                                onClick={() => setLocationLanguage(value)}
+                                className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                                    locationLanguage === value
+                                        ? 'bg-primary text-white border-primary'
+                                        : 'bg-surface border-border-strong text-text-secondary hover:bg-surface-muted'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                    <p className="text-xs text-text-muted mt-1">
+                        Some location may display in different language.
+                    </p>
                 </div>
             </PageSection>
 
