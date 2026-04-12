@@ -170,7 +170,7 @@ export const CityService = {
     /**
      * Search cities via Nominatim API
      */
-    searchNominatim: async (query: string, limit: number = 20): Promise<NominatimSearchResult[]> => {
+    searchNominatim: async (query: string, limit: number = 20, acceptLanguage?: string): Promise<NominatimSearchResult[]> => {
         const params = new URLSearchParams({
             q: query,
             format: 'json',
@@ -182,14 +182,17 @@ export const CityService = {
 
         const url = `${GEOCODING_API_BASE}/search?${params.toString()}&key=${GEOCODING_API_KEY}`;
 
-        console.log(`[GEOCODING] Calling API for: "${query}"`);
+        console.log(`[GEOCODING] Calling API for: "${query}"${acceptLanguage ? ` (lang: ${acceptLanguage})` : ''}`);
 
         try {
+            const headers: Record<string, string> = { 'User-Agent': 'ArtistLocationMap/1.0' };
+            if (acceptLanguage) {
+                headers['accept-language'] = acceptLanguage;
+            }
+
             // Use global rate limiter to ensure 1 req/sec across all users
             const response = await nominatimLimiter.enqueue(() =>
-                fetch(url, {
-                    headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
-                })
+                fetch(url, { headers })
             );
 
             // Handle rate limit - throw specific error
@@ -215,11 +218,22 @@ export const CityService = {
                 console.log(`[GEOCODING] First result - raw type: "${firstItem.type}", inferred: "${inferredType}", name: "${name}"`);
             }
 
-            // Save all results to locations in the background one at a time
+            // Save all results to locations in the background.
+            // ON CONFLICT (osm_id, osm_type) prevents overwriting existing native entries.
             (async () => {
                 for (const item of data) {
-                    if (item.geojson) {
-                        await CityService.saveFromNominatim(item).catch(() => {});
+                    try {
+                        if (item.geojson) {
+                            console.log(`[GEOCODING] Saving ${item.name} (${item.osm_type}/${item.osm_id}) - has geojson`);
+                            await CityService.saveFromNominatim(item);
+                        } else {
+                            console.log(`[GEOCODING] Fetching boundary for ${item.name} (${item.osm_type}/${item.osm_id}) via lookup`);
+                            const fullData = await CityService.fetchByOsmId(item.osm_id, item.osm_type);
+                            console.log(`[GEOCODING] Lookup result for ${item.name}: ${fullData ? 'found' : 'not found'}${fullData?.geojson ? ' (with geojson)' : ''}`);
+                            if (fullData) await CityService.saveFromNominatim(fullData);
+                        }
+                    } catch (err: any) {
+                        console.error(`[GEOCODING] Background save failed for ${item.name} (${item.osm_type}/${item.osm_id}):`, err.message);
                     }
                 }
             })();
@@ -416,11 +430,12 @@ export const CityService = {
             }
         }
 
-        const city = data.address?.city
+        const city = data.name
+                  || data.display_name?.split(',')[0]?.trim()
+                  || data.address?.city
                   || data.address?.administrative
                   || data.address?.town
                   || data.address?.village
-                  || data.name
                   || 'Unknown';
 
         // Extract province - try address fields first, then parse from displayName

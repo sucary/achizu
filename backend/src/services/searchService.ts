@@ -1,5 +1,5 @@
 import { ArtistStore } from '../models/artistStore';
-import { TextSearch } from './searchHelper';
+import { TextSearch, type LocationLanguage } from './searchHelper';
 import type { Artist, CropArea } from '../types/artist';
 import type { LocalizedChain } from '../types/city';
 import pool from '../config/database';
@@ -92,12 +92,13 @@ export const SearchService = {
         query: string,
         limit: number = 10,
         source: 'auto' | 'nominatim' = 'auto',
-        excludeUsername?: string
+        excludeUsername?: string,
+        lang?: LocationLanguage
     ): Promise<UnifiedSearchResponse> => {
         // Execute all searches in parallel
         const [artists, locationResponse, users] = await Promise.all([
             ArtistStore.getAll({ name: query }),
-            TextSearch.search(query, limit, source),
+            TextSearch.search(query, limit, source, lang),
             searchUsers(query, limit, excludeUsername),
         ]);
 

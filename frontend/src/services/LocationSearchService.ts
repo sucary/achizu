@@ -31,9 +31,14 @@ export class LocationSearchService {
     private callbacks: SearchCallbacks;
     private lastSearchStartTime = 0;
     private readonly RATE_LIMIT_MS = 1000; // 1 second between searches
+    private lang?: string;
 
     constructor(callbacks: SearchCallbacks) {
         this.callbacks = callbacks;
+    }
+
+    setLang(lang: string | undefined) {
+        this.lang = lang;
     }
 
     private clearTimeout() {
@@ -92,7 +97,7 @@ export class LocationSearchService {
         this.callbacks.onStart(source === 'nominatim');
 
         try {
-            const response = await searchCities(query, 50, source, this.abortController.signal);
+            const response = await searchCities(query, 50, source, this.abortController.signal, this.lang);
             this.clearTimeout();
             this.callbacks.onSuccess(response);
 

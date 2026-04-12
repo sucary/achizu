@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { CityService } from '../services/cityService';
-import { TextSearch, ReverseSearch } from '../services/searchHelper';
+import { TextSearch, ReverseSearch, type LocationLanguage } from '../services/searchHelper';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { CoordinatesSchema } from '../schemas/artistValidation';
+
+const VALID_LANGS = new Set<LocationLanguage>(['en', 'zhHans', 'zhHant', 'ja', 'native']);
 
 const router = Router();
 
@@ -20,14 +22,18 @@ router.get('/search', searchLimiter, asyncHandler(async (req, res) => {
     const query = req.query.q as string;
     const limit = parseInt(req.query.limit as string) || 50;
     const source = (req.query.source as string || 'auto') as 'auto' | 'local' | 'nominatim';
+    const langParam = req.query.lang as string | undefined;
+    const lang = langParam && VALID_LANGS.has(langParam as LocationLanguage)
+        ? langParam as LocationLanguage
+        : undefined;
 
     if (!query || query.trim().length < 2) {
         throw new AppError('Query must be at least 2 characters', 400);
     }
 
-    console.log(`[SEARCH] Text search: "${query.trim()}" (source: ${source}, limit: ${limit})`);
+    console.log(`[SEARCH] Text search: "${query.trim()}" (source: ${source}, limit: ${limit}, lang: ${lang || 'default'})`);
 
-    const result = await TextSearch.search(query.trim(), limit, source);
+    const result = await TextSearch.search(query.trim(), limit, source, lang);
 
     console.log(`[SEARCH] Results: ${result.results.length} from ${result.source}, hasMore: ${result.hasMore}`);
 

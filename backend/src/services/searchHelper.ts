@@ -1,5 +1,8 @@
 import { CityService } from './cityService';
 import { SearchCacheService } from './searchCacheService';
+import { LocationLocalizationService } from './locationLocalizationService';
+
+export type LocationLanguage = 'en' | 'zhHans' | 'zhHant' | 'ja' | 'native';
 
 export interface SearchResult {
     osmId: number;
@@ -9,6 +12,15 @@ export interface SearchResult {
     clickedCoordinates?: { lat: number; lng: number };
     [key: string]: unknown;
 }
+
+/** Map LocationLanguage to accept-language header value */
+const LANG_TO_ACCEPT_LANGUAGE: Record<LocationLanguage, string | null> = {
+    en: 'en',
+    ja: 'ja',
+    zhHans: 'zh-CN',
+    zhHant: 'zh-TW',
+    native: null,
+};
 
 export interface SearchResponse {
     results: SearchResult[];
@@ -55,21 +67,21 @@ export const TextSearch = {
         return deduplicateResults(combined);
     },
 
-    async getNominatimResults(query: string, limit: number): Promise<{ results: SearchResult[]; fromCache: boolean }> {
-        let results = await SearchCacheService.get(query);
-        let fromCache = true;
+    async getNominatimResults(query: string, limit: number, lang?: LocationLanguage): Promise<{ results: SearchResult[]; fromCache: boolean }> {
+        const acceptLang = lang ? LANG_TO_ACCEPT_LANGUAGE[lang] : null;
+
+        let results = await SearchCacheService.get(query, acceptLang ?? undefined);
+        let fromCache = results !== null;
 
         if (!results) {
-            console.log(`[SEARCH] Cache miss for: "${query}" - calling geocoding API`);
-            fromCache = false;
-            results = await CityService.searchNominatim(query, limit);
+            console.log(`[SEARCH] Cache miss for: "${query}"${acceptLang ? ` (lang: ${acceptLang})` : ''} - calling geocoding API`);
+            results = await CityService.searchNominatim(query, limit, acceptLang ?? undefined);
 
-            // Cache the results (fire-and-forget)
-            SearchCacheService.set(query, results).catch(err => {
+            SearchCacheService.set(query, results, acceptLang ?? undefined).catch(err => {
                 console.error('Failed to cache search results:', err);
             });
         } else {
-            console.log(`[SEARCH] Cache hit for: "${query}" (${results.length} results)`);
+            console.log(`[SEARCH] Cache hit for: "${query}"${acceptLang ? ` (lang: ${acceptLang})` : ''} (${results.length} results)`);
         }
 
         // Filter out uninformative "yes" types (from OSM boolean tags like bridge=yes)
@@ -92,10 +104,17 @@ export const TextSearch = {
             };
         });
 
+        // Fire-and-forget: localize DB entries that haven't been localized yet
+        for (const [, existing] of existingMap) {
+            if (existing.id && !existing.localizedNames) {
+                LocationLocalizationService.ensureLocalized(existing.id).catch(() => {});
+            }
+        }
+
         return { results: withFlags, fromCache };
     },
 
-    async search(query: string, limit: number, source: 'auto' | 'local' | 'nominatim'): Promise<SearchResponse> {
+    async search(query: string, limit: number, source: 'auto' | 'local' | 'nominatim', lang?: LocationLanguage): Promise<SearchResponse> {
         if (source === 'local') {
             const localResults = await this.getLocalResults(query, limit);
             return {
@@ -108,7 +127,7 @@ export const TextSearch = {
         if (source === 'nominatim') {
             const [localResults, nominatimData] = await Promise.all([
                 this.getLocalResults(query, limit),
-                this.getNominatimResults(query, limit)
+                this.getNominatimResults(query, limit, lang)
             ]);
 
             const combined = deduplicateResults([...localResults, ...nominatimData.results]);
@@ -120,7 +139,24 @@ export const TextSearch = {
             };
         }
 
-        // AUTO: Local first, Nominatim if empty
+        // For translated searches, local DB names are native so local search
+        // is inherently incomplete — always fetch both sources in parallel.
+        if (lang && lang !== 'native') {
+            const [localResults, nominatimData] = await Promise.all([
+                this.getLocalResults(query, limit),
+                this.getNominatimResults(query, limit, lang)
+            ]);
+
+            const combined = deduplicateResults([...localResults, ...nominatimData.results]);
+
+            return {
+                results: combined.slice(0, limit),
+                source: nominatimData.fromCache ? 'cache' : 'nominatim',
+                hasMore: false
+            };
+        }
+
+        // AUTO (native): Local first, Nominatim if empty
         const localResults = await this.getLocalResults(query, limit);
 
         if (localResults.length > 0) {
@@ -135,7 +171,7 @@ export const TextSearch = {
             };
         }
 
-        const nominatimData = await this.getNominatimResults(query, limit);
+        const nominatimData = await this.getNominatimResults(query, limit, lang);
         return {
             results: nominatimData.results.slice(0, limit),
             source: nominatimData.fromCache ? 'cache' : 'nominatim',

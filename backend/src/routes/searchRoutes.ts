@@ -2,6 +2,9 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { SearchService } from '../services/searchService';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
+import type { LocationLanguage } from '../services/searchHelper';
+
+const VALID_LANGS = new Set<LocationLanguage>(['en', 'zhHans', 'zhHant', 'ja', 'native']);
 
 const router = Router();
 
@@ -19,12 +22,16 @@ router.get('/', searchLimiter, asyncHandler(async (req, res) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const source = (req.query.source as 'auto' | 'nominatim') || 'auto';
     const excludeUsername = req.query.excludeUser as string | undefined;
+    const langParam = req.query.lang as string | undefined;
+    const lang = langParam && VALID_LANGS.has(langParam as LocationLanguage)
+        ? langParam as LocationLanguage
+        : undefined;
 
     if (!query || query.trim().length < 2) {
         throw new AppError('Query must be at least 2 characters', 400);
     }
 
-    const results = await SearchService.search(query.trim(), limit, source, excludeUsername);
+    const results = await SearchService.search(query.trim(), limit, source, excludeUsername, lang);
     res.json(results);
 }));
 

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { mainSearch } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useLocationLanguage } from '../../context/LocationLanguageContext';
 import type { MainSearchResponse, ArtistSearchResult, LocationSearchResult, UserSearchResult } from '../../types/search';
 
 interface UseMainSearchOptions {
@@ -15,6 +16,7 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const { profile } = useAuth();
+    const { locationLanguage } = useLocationLanguage();
 
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -51,8 +53,8 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
     }, [query]);
 
     const { data: results, isLoading, isFetching } = useQuery<MainSearchResponse>({
-        queryKey: ['mainSearch', debouncedQuery, profile?.username],
-        queryFn: () => mainSearch(debouncedQuery, 10, 'auto', profile?.username ?? undefined),
+        queryKey: ['mainSearch', debouncedQuery, profile?.username, locationLanguage],
+        queryFn: () => mainSearch(debouncedQuery, 10, 'auto', profile?.username ?? undefined, undefined, locationLanguage),
         enabled: debouncedQuery.length >= 2,
         staleTime: 1000 * 60 * 5, // 5 minutes
         gcTime: 1000 * 60 * 30, // 30 minutes
@@ -125,9 +127,9 @@ export function useMainSearch(options: UseMainSearchOptions = {}) {
         console.log('[MainSearch] Processing Search More:', nextQuery);
 
         try {
-            const moreResults = await mainSearch(nextQuery, 10, 'nominatim', profile?.username ?? undefined);
+            const moreResults = await mainSearch(nextQuery, 10, 'nominatim', profile?.username ?? undefined, undefined, locationLanguage);
             // Update the cache with the new results
-            queryClient.setQueryData(['mainSearch', nextQuery, profile?.username], moreResults);
+            queryClient.setQueryData(['mainSearch', nextQuery, profile?.username, locationLanguage], moreResults);
 
             processingSearchMore.current = false;
 

@@ -2,6 +2,7 @@ import { useReducer, useRef, useEffect, useCallback, useMemo } from 'react';
 import { reverseSearchCities, type SearchResult } from '../services/api';
 import { LocationSearchService } from '../services/LocationSearchService';
 import { locationSearchReducer, initialState } from './locationSearchReducer';
+import { useLocationLanguage } from '../context/LocationLanguageContext';
 
 interface UseLocationSearchProps {
     displayValue?: string;
@@ -17,6 +18,7 @@ export function useLocationSearch({
     onCoordinatesConsumed,
 }: UseLocationSearchProps) {
     const [state, dispatch] = useReducer(locationSearchReducer, initialState);
+    const { locationLanguage } = useLocationLanguage();
 
     // Create service with callbacks that dispatch to reducer
     const service = useMemo(() => new LocationSearchService({
@@ -31,6 +33,11 @@ export function useLocationSearch({
         onQueueUpdate: (queueSize) => dispatch({ type: 'UPDATE_QUEUE_SIZE', queueSize }),
         onRateLimited: (retryFn) => dispatch({ type: 'RATE_LIMITED', retryFn }),
     }), []);
+
+    // Sync language preference to service
+    useEffect(() => {
+        service.setLang(locationLanguage);
+    }, [service, locationLanguage]);
 
     // Cleanup service on unmount
     useEffect(() => {

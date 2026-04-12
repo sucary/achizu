@@ -10,16 +10,17 @@ export const SearchCacheService = {
      * - trim whitespace
      * - collapse multiple spaces
      */
-    normalizeKeyword(query: string): string {
-        return query.trim().toLowerCase().replace(/\s+/g, ' ');
+    normalizeKeyword(query: string, lang?: string): string {
+        const base = query.trim().toLowerCase().replace(/\s+/g, ' ');
+        return lang ? `${base}:${lang}` : base;
     },
 
     /**
      * Get cached search results for a keyword
      * Returns null if not found or expired
      */
-    async get(query: string): Promise<NominatimSearchResult[] | null> {
-        const keyword = this.normalizeKeyword(query);
+    async get(query: string, lang?: string): Promise<NominatimSearchResult[] | null> {
+        const keyword = this.normalizeKeyword(query, lang);
 
         try {
             // Update hit_count and return results in one query
@@ -48,8 +49,8 @@ export const SearchCacheService = {
     /**
      * Get cached result count (null if not cached)
      */
-    async getResultCount(query: string): Promise<number | null> {
-        const keyword = this.normalizeKeyword(query);
+    async getResultCount(query: string, lang?: string): Promise<number | null> {
+        const keyword = this.normalizeKeyword(query, lang);
 
         try {
             const result = await pool.query(`
@@ -67,8 +68,8 @@ export const SearchCacheService = {
     /**
      * Cache search results for a keyword
      */
-    async set(query: string, results: NominatimSearchResult[]): Promise<void> {
-        const keyword = this.normalizeKeyword(query);
+    async set(query: string, results: NominatimSearchResult[], lang?: string): Promise<void> {
+        const keyword = this.normalizeKeyword(query, lang);
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + CACHE_DURATION_DAYS);
 

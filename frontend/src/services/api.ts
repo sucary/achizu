@@ -98,11 +98,12 @@ export const searchCities = async (
     query: string,
     limit: number = 20,
     source: 'local' | 'nominatim' | 'auto' = 'auto',
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    lang?: string
 ): Promise<SearchResponse> => {
     try {
         const response = await api.get<SearchResponse>('/cities/search', {
-            params: { q: query, limit, source },
+            params: { q: query, limit, source, ...(lang && lang !== 'native' ? { lang } : {}) },
             signal
         });
         return response.data;
@@ -198,11 +199,12 @@ export const mainSearch = async (
     limit: number = 10,
     source: 'auto' | 'nominatim' = 'auto',
     excludeUser?: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    lang?: string
 ): Promise<MainSearchResponse> => {
     try {
         const response = await api.get<MainSearchResponse>('/search', {
-            params: { q: query, limit, source, excludeUser },
+            params: { q: query, limit, source, excludeUser, ...(lang && lang !== 'native' ? { lang } : {}) },
             signal
         });
         return response.data;
