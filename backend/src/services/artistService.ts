@@ -26,7 +26,10 @@ async function resolveCity(osmId: number, osmType: string): Promise<City> {
         city = await CityService.saveFromNominatim(nominatimData);
     }
 
-    await LocationLocalizationService.ensureLocalized(city.id);
+    // Fire-and-forget: don't block save on localization. Idempotent so safe to retry.
+    void LocationLocalizationService.ensureLocalized(city.id).catch((err) => {
+        console.error(`[artistService] background localization for ${city.id} crashed:`, err);
+    });
 
     return city;
 }

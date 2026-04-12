@@ -1,7 +1,6 @@
 import pool from '../config/database';
 import {
-    LocalizationData,
-    LocalizedLevel,
+    LocalizedChain,
     LocalizedLocation,
     LocalizedNames,
 } from '../types/city';
@@ -9,374 +8,428 @@ import { CityService } from './cityService';
 import { nominatimLimiter } from './nominatimRateLimiter';
 
 /**
- * LocationLocalizationService
+ * LocationLocalizationService — Wikidata-first multilingual lookup.
  *
- * Lazily populates multilingual name data for a `locations` row plus its
- * parent admin chain (province, country). Called from ArtistService.create
- * / update the first time an artist is saved with a given city, so that
- * downstream renders can show the location in the user's preferred language.
+ * Lazily populates `locations.localized_names` with a flat chain of
+ * {city, province?, country?}, each holding {en, zhHans, zhHant, ja, native}.
+ * Called from ArtistService.create / update the first time an artist is
+ * saved with a given city, so downstream renders can show the location
+ * in the user's preferred language.
  *
  * Strategy:
- *   1. Read the city row's center coordinate from the DB.
- *   2. Plan B Overpass query: `is_in(lat,lng)` -> all containing admin
- *      relations 2..8 with full tag set. Multi-endpoint with timeout.
- *   3. Parse `name`, `name:en`, `name:zh`, `name:ja` per relation, bucket
- *      by `admin_level` into city / province / country.
- *   4. Persist top-down in a transaction: upsert country, upsert province,
- *      then update the existing city row in place. Stamps `localized_at`.
- *   5. On Overpass failure, fall back to LocationIQ (3 lookups, one per
- *      accept-language). On total failure, return null - caller decides
- *      whether to block.
+ *   1. Read the row. Short-circuit if `localized_at` is set (idempotent).
+ *   2. ONE LocationIQ /lookup call with extratags=1 + namedetails=1 +
+ *      accept-language=en. This returns:
+ *        - extratags.wikidata (the OSM-tagged Wikidata Q-ID, if any)
+ *        - namedetails (full name:* tag set merged across linked OSM
+ *          entities, used as the city's name set in the fallback path)
+ *        - address (state/country in English, used as one of the four
+ *          per-language address responses in the fallback path)
+ *   3. If extratags.wikidata is present:
+ *        a. Fetch the Wikidata entity (labels + claims).
+ *        b. Walk one P131 hop ("located in administrative territorial
+ *           entity") to find the province QID.
+ *        c. Read P17 ("country") for the country QID.
+ *        d. Batch-fetch province + country in one Wikidata call.
+ *        e. Build the LocalizedChain. Persist.
+ *      → Total: 1 LocationIQ + 2 Wikidata = 3 calls.
+ *   4. Otherwise (no wikidata tag, or Wikidata returned nothing useful):
+ *      use the namedetails we already have for the city, then issue 3 more
+ *      LocationIQ /lookup calls (zh-CN, zh-TW, ja) for parents in those
+ *      languages. The English address from step 2 covers the en slot.
+ *      → Total: 4 LocationIQ calls.
+ *   5. If everything fails: return null. Caller (ArtistService) does not
+ *      block on localization failure.
  *
  * Idempotent: a row whose `localized_at` is non-null short-circuits.
+ *
+ * See plans/multilingual_locations_plan.md.
  */
-
-const OVERPASS_ENDPOINTS = [
-    'https://overpass.kumi.systems/api/interpreter',
-    'https://overpass-api.de/api/interpreter',
-];
-
-const OVERPASS_TIMEOUT_MS = 5_000;
 
 const LOCATIONIQ_BASE = 'https://us1.locationiq.com/v1';
 const LOCATIONIQ_KEY = process.env.LOCATIONIQ_API_KEY;
 
-/**
- * Bucket Overpass relations into our 3-rung model based on admin_level.
- *
- * OSM admin_level varies by country (Tokyo at 4, US cities at 8) so we
- * treat the level as ordinal. <=3 is country, 4-5 is province/state,
- * 6-8 is city. Per rung we keep the most specific candidate.
- */
-function bucketByAdminLevel(levels: LocalizedLevel[]): LocalizationData {
-    let city: LocalizedLevel | undefined;
-    let province: LocalizedLevel | undefined;
-    let country: LocalizedLevel | undefined;
+const WIKIDATA_API = 'https://www.wikidata.org/w/api.php';
+const WIKIDATA_BASE = 'https://www.wikidata.org/wiki/Special:EntityData';
+const WIKIDATA_TIMEOUT_MS = 8_000;
 
-    for (const level of levels) {
-        if (level.adminLevel <= 3) {
-            if (!country || level.adminLevel < country.adminLevel) country = level;
-        } else if (level.adminLevel <= 5) {
-            if (!province || level.adminLevel > province.adminLevel) province = level;
-        } else {
-            if (!city || level.adminLevel > city.adminLevel) city = level;
-        }
-    }
-
-    return { city, province, country };
+interface WikidataLabel {
+    language: string;
+    value: string;
+}
+interface WikidataClaimValue {
+    'entity-type'?: string;
+    id?: string;
+}
+interface WikidataClaim {
+    mainsnak?: {
+        snaktype?: string;
+        datavalue?: { value?: WikidataClaimValue };
+    };
+    rank?: 'preferred' | 'normal' | 'deprecated';
+}
+interface WikidataEntity {
+    id: string;
+    labels?: Record<string, WikidataLabel>;
+    claims?: Record<string, WikidataClaim[]>;
+}
+interface WikidataResponse {
+    entities?: Record<string, WikidataEntity>;
 }
 
-function parseOverpassTags(tags: Record<string, string> | undefined): LocalizedNames {
-    const t = tags ?? {};
-    const names: LocalizedNames = {};
-    if (t['name:en']) names.en = t['name:en'];
-    if (t['name:zh']) names.zh = t['name:zh'];
-    if (t['name:ja']) names.ja = t['name:ja'];
-    if (t.name) names.native = t.name;
-    return names;
+interface LocationIQAddress {
+    city?: string;
+    town?: string;
+    village?: string;
+    state?: string;
+    province?: string;
+    country?: string;
 }
-
-interface OverpassRelation {
-    type: string;
-    id: number;
-    tags?: Record<string, string>;
+interface LocationIQNamedetails {
+    [key: string]: string | undefined;
+    name?: string;
+    'name:en'?: string;
+    'name:ja'?: string;
+    'name:zh'?: string;
+    'name:zh-Hans'?: string;
+    'name:zh-Hant'?: string;
 }
-
-interface OverpassResponse {
-    elements?: OverpassRelation[];
+interface LocationIQExtratags {
+    [key: string]: string | undefined;
+    wikidata?: string;
+}
+interface LocationIQLookupResult {
+    name?: string;
+    address?: LocationIQAddress;
+    namedetails?: LocationIQNamedetails;
+    extratags?: LocationIQExtratags;
 }
 
 export const LocationLocalizationService = {
     /**
-     * Make sure the given location row has multilingual data populated.
-     * Idempotent. Returns the localized chain on success, null on total
-     * failure. Never throws.
+     * Idempotent multilingual localization. Short-circuits if already localized.
      */
     ensureLocalized: async (locationId: string): Promise<LocalizedLocation | null> => {
         try {
             const existing = await pool.query(
-                `SELECT localized_at,
-                        ST_Y(center::geometry) as lat,
-                        ST_X(center::geometry) as lng,
-                        osm_id, osm_type
+                `SELECT localized_at, osm_id, osm_type, name
                  FROM locations WHERE id = $1`,
                 [locationId]
             );
-
             if (existing.rows.length === 0) {
                 console.warn(`[localize] location ${locationId} not found`);
                 return null;
             }
-
             const row = existing.rows[0];
 
             if (row.localized_at) {
                 return CityService.getLocalizedById(locationId);
             }
 
-            if (row.lat === null || row.lng === null) {
-                console.warn(`[localize] location ${locationId} has no center; skipping`);
+            const osmId = Number(row.osm_id);
+            const osmType: string = row.osm_type;
+            const nativeName: string | null = row.name ?? null;
+
+            // 1. Initial LocationIQ lookup to get Wikidata ID (if any) and namedetails for fallback.
+            const initial = await fetchLocationIQLookup(osmId, osmType, 'en');
+            if (!initial) {
+                console.warn(`[localize] ${locationId} initial LocationIQ lookup failed`);
                 return null;
             }
 
-            const lat = parseFloat(row.lat);
-            const lng = parseFloat(row.lng);
+            const wikidataId = extractWikidataId(initial);
 
-            let data = await LocationLocalizationService.fetchFromOverpass(lat, lng);
-
-            if (!data || (!data.city && !data.province && !data.country)) {
-                console.warn(`[localize] Overpass returned nothing for ${locationId}; trying LocationIQ`);
-                data = await LocationLocalizationService.fetchFromLocationIQ(
-                    Number(row.osm_id),
-                    row.osm_type
-                );
+            // 2. Branch A: Wikidata path if we have a Wikidata ID. More efficient and richer data if it works, but more points of failure.
+            let chain: LocalizedChain | null = null;
+            if (wikidataId) {
+                chain = await fetchChainFromWikidata(wikidataId, nativeName);
             }
 
-            if (!data) {
-                console.warn(`[localize] both providers failed for ${locationId}`);
+            // 3. Branch B: LocationIQ-only fallback path. Uses the namedetails
+            // we already have plus 3 more per-language address lookups.
+            if (!chain) {
+                if (wikidataId) {
+                    console.warn(`[localize] ${locationId} Wikidata returned nothing for ${wikidataId}, falling back to LocationIQ-only`);
+                }
+                chain = await fetchChainFromLocationIQ(osmId, osmType, initial, nativeName);
+            }
+
+            if (!chain) {
+                console.warn(`[localize] ${locationId} all providers failed`);
                 return null;
             }
 
-            await LocationLocalizationService.persistLocalization(locationId, data);
-
-            return CityService.getLocalizedById(locationId);
+            await persistChain(locationId, chain);
+            return { id: locationId, chain };
         } catch (error) {
             console.error(`[localize] ensureLocalized failed for ${locationId}:`, error);
             return null;
         }
     },
-
-    /**
-     * Plan B: coordinate-based `is_in` Overpass query, the proven form
-     * already used in cityService.getContainingBoundaries. Returns the
-     * full tag set so we can read every name:* variant.
-     */
-    fetchFromOverpass: async (lat: number, lng: number): Promise<LocalizationData | null> => {
-        const query = `
-            [out:json][timeout:10];
-            is_in(${lat},${lng})->.a;
-            rel(pivot.a)[boundary=administrative][admin_level~"^[2-8]$"];
-            out tags;
-        `;
-
-        for (const url of OVERPASS_ENDPOINTS) {
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT_MS);
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `data=${encodeURIComponent(query)}`,
-                    signal: controller.signal,
-                });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    console.warn(`[localize] Overpass ${url} returned ${response.status}`);
-                    continue;
-                }
-
-                const json = (await response.json()) as OverpassResponse;
-                const levels: LocalizedLevel[] = [];
-
-                for (const element of json.elements ?? []) {
-                    if (element.type !== 'relation') continue;
-                    const tags = element.tags ?? {};
-                    const adminLevel = parseInt(tags.admin_level ?? '0', 10);
-                    if (!adminLevel) continue;
-
-                    const names = parseOverpassTags(tags);
-                    if (!names.native && !names.en) continue;
-
-                    levels.push({
-                        osmId: element.id,
-                        osmType: 'relation',
-                        adminLevel,
-                        names,
-                    });
-                }
-
-                if (levels.length === 0) continue;
-                return bucketByAdminLevel(levels);
-            } catch (error) {
-                console.warn(`[localize] Overpass ${url} failed:`, error);
-                continue;
-            }
-        }
-
-        return null;
-    },
-
-    /**
-     * Fallback: 3 LocationIQ lookups (en, zh, ja) on the city's OSM id.
-     * Reads `name`/`state`/`country` per language and folds them into the
-     * LocalizationData shape. Lower fidelity than Overpass — we only learn
-     * names for the city, province, country *as LocationIQ knows them*,
-     * not the parent OSM relation IDs. Parent rows are upserted by name
-     * with synthetic osm_id = 0 / osm_type = 'placeholder', which is fine
-     * because they exist solely as render nodes.
-     */
-    fetchFromLocationIQ: async (osmId: number, osmType: string): Promise<LocalizationData | null> => {
-        if (!LOCATIONIQ_KEY) return null;
-        const osmTypePrefix = osmType.charAt(0).toUpperCase();
-        const osmIds = `${osmTypePrefix}${osmId}`;
-
-        const langs: Array<'en' | 'zh' | 'ja'> = ['en', 'zh', 'ja'];
-
-        const cityNames: LocalizedNames = {};
-        const provinceNames: LocalizedNames = {};
-        const countryNames: LocalizedNames = {};
-
-        for (const lang of langs) {
-            try {
-                const params = new URLSearchParams({
-                    osm_ids: osmIds,
-                    format: 'json',
-                    addressdetails: '1',
-                    'accept-language': lang,
-                });
-                const url = `${LOCATIONIQ_BASE}/lookup?${params.toString()}&key=${LOCATIONIQ_KEY}`;
-                const response = await nominatimLimiter.enqueue(() =>
-                    fetch(url, { headers: { 'User-Agent': 'ArtistLocationMap/1.0' } })
-                );
-                if (!response.ok) continue;
-                const arr = (await response.json()) as Array<{
-                    name?: string;
-                    address?: { city?: string; town?: string; village?: string; state?: string; province?: string; country?: string };
-                }>;
-                if (!arr || arr.length === 0) continue;
-                const data = arr[0];
-
-                const cityName =
-                    data.address?.city ?? data.address?.town ?? data.address?.village ?? data.name;
-                const provinceName = data.address?.state ?? data.address?.province;
-                const countryName = data.address?.country;
-
-                if (cityName) cityNames[lang] = cityName;
-                if (provinceName) provinceNames[lang] = provinceName;
-                if (countryName) countryNames[lang] = countryName;
-            } catch (error) {
-                console.warn(`[localize] LocationIQ ${lang} lookup failed:`, error);
-            }
-        }
-
-        if (Object.keys(cityNames).length === 0) return null;
-
-        return {
-            city: { osmId, osmType, adminLevel: 8, names: cityNames },
-            province: Object.keys(provinceNames).length
-                ? { osmId: 0, osmType: 'placeholder', adminLevel: 4, names: provinceNames }
-                : undefined,
-            country: Object.keys(countryNames).length
-                ? { osmId: 0, osmType: 'placeholder', adminLevel: 2, names: countryNames }
-                : undefined,
-        };
-    },
-
-    /**
-     * Upsert country -> province in `locations`, then update the existing
-     * city row in place. Single transaction so partial localization never
-     * leaks. Idempotent via the `uq_location_osm` constraint (or by native
-     * name + admin level for LocationIQ-fallback placeholders).
-     */
-    persistLocalization: async (cityLocationId: string, data: LocalizationData): Promise<void> => {
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
-
-            let countryId: string | null = null;
-            if (data.country) {
-                countryId = await upsertParent(client, data.country, null);
-            }
-
-            let provinceId: string | null = null;
-            if (data.province) {
-                provinceId = await upsertParent(client, data.province, countryId);
-            }
-
-            // Update city row in place. Prefer parent_id = province, falling
-            // back to country when there's no province (city-states).
-            const parentForCity = provinceId ?? countryId;
-            const cityNames = data.city?.names ?? null;
-            const cityAdminLevel = data.city?.adminLevel ?? null;
-
-            await client.query(
-                `UPDATE locations
-                 SET names = COALESCE($2, names),
-                     admin_level = COALESCE($3, admin_level),
-                     parent_id = COALESCE($4, parent_id),
-                     localized_at = NOW()
-                 WHERE id = $1`,
-                [cityLocationId, cityNames, cityAdminLevel, parentForCity]
-            );
-
-            await client.query('COMMIT');
-        } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
-        } finally {
-            client.release();
-        }
-    },
 };
 
+// ─── LocationIQ ─────────────────────────────────────────────────────────
+
+function osmIdsParam(osmId: number, osmType: string): string | null {
+    const prefix =
+        osmType === 'relation' ? 'R' :
+        osmType === 'way'      ? 'W' :
+        osmType === 'node'     ? 'N' : null;
+    if (!prefix) return null;
+    return `${prefix}${osmId}`;
+}
+
 /**
- * Upsert a parent admin row (country or province) into `locations`.
+ * One LocationIQ /lookup call with the maximal field set.
  */
-async function upsertParent(
-    client: import('pg').PoolClient,
-    level: LocalizedLevel,
-    parentId: string | null
-): Promise<string> {
-    const nativeName = level.names.native ?? level.names.en ?? 'Unknown';
+async function fetchLocationIQLookup(
+    osmId: number,
+    osmType: string,
+    acceptLanguage: string
+): Promise<LocationIQLookupResult | null> {
+    if (!LOCATIONIQ_KEY) {
+        console.warn('[localize] LOCATIONIQ_API_KEY not set; skipping LocationIQ lookup');
+        return null;
+    }
+    const osmIds = osmIdsParam(osmId, osmType);
+    if (!osmIds) return null;
 
-    const legacyProvince = '';
-    const legacyCountry = '';
+    const params = new URLSearchParams({
+        osm_ids: osmIds,
+        format: 'json',
+        addressdetails: '1',
+        extratags: '1',
+        namedetails: '1',
+        'accept-language': acceptLanguage,
+    });
+    const url = `${LOCATIONIQ_BASE}/lookup?${params.toString()}&key=${LOCATIONIQ_KEY}`;
 
-    if (level.osmType === 'placeholder') {
-        const found = await client.query(
-            `SELECT id FROM locations
-             WHERE osm_type = 'placeholder'
-               AND admin_level = $1
-               AND names->>'native' IS NOT DISTINCT FROM $2
-             LIMIT 1`,
-            [level.adminLevel, level.names.native ?? null]
+    try {
+        const response = await nominatimLimiter.enqueue(() =>
+            fetch(url, { headers: { 'User-Agent': 'ArtistLocationMap/1.0 (localization)' } })
         );
-        if (found.rows.length > 0) {
-            await client.query(
-                `UPDATE locations
-                 SET names = $2,
-                     parent_id = COALESCE($3, parent_id),
-                     localized_at = NOW()
-                 WHERE id = $1`,
-                [found.rows[0].id, level.names, parentId]
-            );
-            return found.rows[0].id;
+        if (!response.ok) {
+            console.warn(`[localize] LocationIQ lookup → ${response.status}`);
+            return null;
         }
+        const arr = (await response.json()) as LocationIQLookupResult[];
+        return arr?.[0] ?? null;
+    } catch (error) {
+        console.warn(`[localize] LocationIQ lookup failed (${acceptLanguage}):`, error);
+        return null;
+    }
+}
 
-        const inserted = await client.query(
-            `INSERT INTO locations
-                (name, province, country, osm_id, osm_type, admin_level, names, parent_id, localized_at)
-             VALUES ($1, $2, $3, 0, 'placeholder', $4, $5, $6, NOW())
-             RETURNING id`,
-            [nativeName, legacyProvince, legacyCountry, level.adminLevel, level.names, parentId]
-        );
-        return inserted.rows[0].id;
+function extractWikidataId(result: LocationIQLookupResult): string | null {
+    const tag = result.extratags?.wikidata;
+    if (tag && /^Q\d+$/.test(tag)) return tag;
+    return null;
+}
+
+function namesFromNamedetails(nd: LocationIQNamedetails | undefined, nativeName: string | null): LocalizedNames | null {
+    if (!nd) return null;
+    const names: LocalizedNames = {};
+    if (nd['name:en'])      names.en     = nd['name:en'];
+    if (nd['name:ja'])      names.ja     = nd['name:ja'];
+    if (nd['name:zh-Hans']) names.zhHans = nd['name:zh-Hans'];
+    if (nd['name:zh-Hant']) names.zhHant = nd['name:zh-Hant'];
+    if (nd['name:zh']) {
+        if (!names.zhHans) names.zhHans = nd['name:zh'];
+        if (!names.zhHant) names.zhHant = nd['name:zh'];
+    }
+    if (nativeName) names.native = nativeName;
+    else if (nd.name) names.native = nd.name;
+    return Object.keys(names).length > 0 ? names : null;
+}
+
+/**
+ * LocationIQ-only fallback chain builder. Called if no Wikidata ID is present or if the Wikidata path fails.
+ */
+async function fetchChainFromLocationIQ(
+    osmId: number,
+    osmType: string,
+    initial: LocationIQLookupResult,
+    nativeName: string | null
+): Promise<LocalizedChain | null> {
+    const cityNames = namesFromNamedetails(initial.namedetails, nativeName);
+    if (!cityNames) return null;
+
+    const provinceNames: LocalizedNames = {};
+    const countryNames: LocalizedNames = {};
+
+    // Fold the initial English-language address into the en slot.
+    foldAddressInto(initial.address, 'en', provinceNames, countryNames);
+
+    // Three more calls for the other languages.
+    const langs: Array<{ accept: string; key: keyof LocalizedNames }> = [
+        { accept: 'zh-CN', key: 'zhHans' },
+        { accept: 'zh-TW', key: 'zhHant' },
+        { accept: 'ja',    key: 'ja'     },
+    ];
+    for (const { accept, key } of langs) {
+        const result = await fetchLocationIQLookup(osmId, osmType, accept);
+        foldAddressInto(result?.address, key, provinceNames, countryNames);
     }
 
-    const result = await client.query(
-        `INSERT INTO locations
-            (name, province, country, osm_id, osm_type, admin_level, names, parent_id, localized_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-         ON CONFLICT (osm_id, osm_type) DO UPDATE
-         SET names = EXCLUDED.names,
-             admin_level = EXCLUDED.admin_level,
-             parent_id = COALESCE(EXCLUDED.parent_id, locations.parent_id),
+    const chain: LocalizedChain = { city: cityNames };
+    if (Object.keys(provinceNames).length > 0) chain.province = provinceNames;
+    if (Object.keys(countryNames).length > 0)  chain.country  = countryNames;
+    return chain;
+}
+
+function foldAddressInto(
+    address: LocationIQAddress | undefined,
+    key: keyof LocalizedNames,
+    provinceNames: LocalizedNames,
+    countryNames: LocalizedNames
+) {
+    if (!address) return;
+    const province = address.state ?? address.province;
+    const country  = address.country;
+    if (province) provinceNames[key] = province;
+    if (country)  countryNames[key]  = country;
+}
+
+// ─── Wikidata ───────────────────────────────────────────────────────────
+
+async function fetchWikidataEntities(qids: string[]): Promise<Record<string, WikidataEntity>> {
+    if (qids.length === 0) return {};
+    const params = new URLSearchParams({
+        action: 'wbgetentities',
+        ids: qids.join('|'),
+        props: 'labels|claims',
+        languages: 'en|ja|zh|zh-hans|zh-hant',
+        format: 'json',
+        origin: '*',
+    });
+    const url = `${WIKIDATA_API}?${params.toString()}`;
+    try {
+        const controller = new AbortController();
+        const t = setTimeout(() => controller.abort(), WIKIDATA_TIMEOUT_MS);
+        const response = await fetch(url, {
+            headers: { 'User-Agent': 'ArtistLocationMap/1.0 (localization)' },
+            signal: controller.signal,
+        });
+        clearTimeout(t);
+        if (!response.ok) {
+            console.warn(`[localize] Wikidata wbgetentities → ${response.status}`);
+            return await fetchEntityDataPerId(qids);
+        }
+        const json = (await response.json()) as WikidataResponse;
+        return json.entities ?? {};
+    } catch (error) {
+        console.warn('[localize] Wikidata wbgetentities failed:', error);
+        return await fetchEntityDataPerId(qids);
+    }
+}
+
+async function fetchEntityDataPerId(qids: string[]): Promise<Record<string, WikidataEntity>> {
+    const out: Record<string, WikidataEntity> = {};
+    for (const qid of qids) {
+        try {
+            const url = `${WIKIDATA_BASE}/${qid}.json`;
+            const controller = new AbortController();
+            const t = setTimeout(() => controller.abort(), WIKIDATA_TIMEOUT_MS);
+            const response = await fetch(url, {
+                headers: { 'User-Agent': 'ArtistLocationMap/1.0 (localization)' },
+                signal: controller.signal,
+            });
+            clearTimeout(t);
+            if (!response.ok) continue;
+            const json = (await response.json()) as WikidataResponse;
+            const entity = json.entities?.[qid];
+            if (entity) out[qid] = entity;
+        } catch (error) {
+            console.warn(`[localize] Wikidata EntityData ${qid} failed:`, error);
+        }
+    }
+    return out;
+}
+
+function extractLabels(entity: WikidataEntity | undefined, native?: string | null): LocalizedNames | null {
+    if (!entity?.labels) return null;
+    const labels = entity.labels;
+    const names: LocalizedNames = {};
+    if (labels.en?.value)         names.en     = labels.en.value;
+    if (labels.ja?.value)         names.ja     = labels.ja.value;
+    if (labels['zh-hans']?.value) names.zhHans = labels['zh-hans'].value;
+    if (labels['zh-hant']?.value) names.zhHant = labels['zh-hant'].value;
+    if (labels.zh?.value) {
+        if (!names.zhHans) names.zhHans = labels.zh.value;
+        if (!names.zhHant) names.zhHant = labels.zh.value;
+    }
+    if (native) names.native = native;
+    return Object.keys(names).length > 0 ? names : null;
+}
+
+function firstActiveP131(entity: WikidataEntity): string | null {
+    const claims = entity.claims?.P131 ?? [];
+    for (const claim of claims) {
+        if (claim.rank === 'deprecated') continue;
+        const id = claim.mainsnak?.datavalue?.value?.id;
+        if (id) return id;
+    }
+    return null;
+}
+
+function firstActiveP17(entity: WikidataEntity): string | null {
+    const claims = entity.claims?.P17 ?? [];
+    for (const claim of claims) {
+        if (claim.rank === 'deprecated') continue;
+        const id = claim.mainsnak?.datavalue?.value?.id;
+        if (id) return id;
+    }
+    return null;
+}
+
+async function fetchChainFromWikidata(rootQid: string, nativeName: string | null): Promise<LocalizedChain | null> {
+    const initial = await fetchWikidataEntities([rootQid]);
+    const city = initial[rootQid];
+    if (!city) return null;
+
+    const cityNames = extractLabels(city, nativeName);
+    if (!cityNames) return null;
+
+    const provinceQid = firstActiveP131(city);
+    const countryQidFromCity = firstActiveP17(city);
+
+    const toFetch: string[] = [];
+    if (provinceQid && provinceQid !== rootQid) toFetch.push(provinceQid);
+    if (countryQidFromCity && countryQidFromCity !== rootQid) toFetch.push(countryQidFromCity);
+
+    let parents = toFetch.length > 0 ? await fetchWikidataEntities(toFetch) : {};
+
+    let countryQid = countryQidFromCity;
+    if (!countryQid && provinceQid && parents[provinceQid]) {
+        countryQid = firstActiveP17(parents[provinceQid]);
+        if (countryQid && !parents[countryQid]) {
+            const more = await fetchWikidataEntities([countryQid]);
+            parents = { ...parents, ...more };
+        }
+    }
+
+    const provinceNames = provinceQid ? extractLabels(parents[provinceQid]) : null;
+    const countryNames  = countryQid  ? extractLabels(parents[countryQid])  : null;
+
+    const chain: LocalizedChain = { city: cityNames };
+    if (provinceNames) chain.province = provinceNames;
+    if (countryNames)  chain.country  = countryNames;
+
+    if (provinceQid && countryQid && provinceQid === countryQid) {
+        delete chain.province;
+    }
+
+    return chain;
+}
+
+// ─── Persist ────────────────────────────────────────────────────────────
+
+async function persistChain(locationId: string, chain: LocalizedChain): Promise<void> {
+    await pool.query(
+        `UPDATE locations
+         SET localized_names = $2,
              localized_at = NOW()
-         RETURNING id`,
-        [nativeName, legacyProvince, legacyCountry, level.osmId, level.osmType, level.adminLevel, level.names, parentId]
+         WHERE id = $1`,
+        [locationId, chain]
     );
-    return result.rows[0].id;
 }

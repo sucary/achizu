@@ -56,10 +56,13 @@ CREATE TABLE IF NOT EXISTS locations (
     bounding_box DECIMAL[4],
     address_components JSONB,
 
+    -- Multilingual columns: old shape (migrations 001, 003) — kept until PR 5 cleanup
     names JSONB,
     admin_level INTEGER,
     parent_id UUID REFERENCES locations(id),
     localized_at TIMESTAMPTZ,
+    -- New shape (migration 004): flat jsonb chain on each row
+    localized_names JSONB,
 
     last_updated TIMESTAMP DEFAULT NOW(),
     needs_refresh BOOLEAN DEFAULT FALSE,
