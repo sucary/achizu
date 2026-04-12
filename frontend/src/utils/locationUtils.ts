@@ -1,10 +1,12 @@
 import type { SearchResult } from '../services/api';
+import type { LocalizedNames, LocalizedChain, LocationLanguage } from '../types/artist';
 
 type LocationLike = {
     city?: string;
     province?: string;
     country?: string;
     displayName?: string;
+    localizedChain?: LocalizedChain;
 };
 
 /**
@@ -133,6 +135,39 @@ const extractProvinceFromDisplayName = (displayName: string): string => {
 
     // Fallback to second-to-last segment
     return parts[parts.length - 2];
+};
+
+/**
+ * Resolves a single localized name with fallback: preferred → en → native → ''.
+ */
+export const getLocalizedName = (
+    names: LocalizedNames | undefined,
+    preference: LocationLanguage
+): string => {
+    if (!names) return '';
+    return names[preference] || names.en || names.native || '';
+};
+
+/**
+ * Formats a full localized location string from a chain using the user's preference.
+ * Falls back to the single-language formatLocation when no chain is available.
+ */
+export const formatLocationLocalized = (
+    location: LocationLike,
+    preference: LocationLanguage
+): string => {
+    const chain = location.localizedChain;
+    if (!chain) return formatLocation(location);
+
+    const parts = [
+        getLocalizedName(chain.city, preference),
+        getLocalizedName(chain.province, preference),
+        getLocalizedName(chain.country, preference),
+    ].filter(Boolean);
+
+    // Dedupe adjacent identical parts (e.g. city-state where province == country)
+    const deduped = parts.filter((p, i) => i === 0 || p !== parts[i - 1]);
+    return deduped.join(', ');
 };
 
 /**
