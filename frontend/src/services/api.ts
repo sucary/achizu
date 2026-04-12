@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Artist, ArtistQueryParams } from '../types/artist';
+import type { Artist, ArtistQueryParams, LocalizedChain } from '../types/artist';
 import type { City } from '../types/city';
 import type { MainSearchResponse } from '../types/search';
 import { supabase } from '../lib/supabase';
@@ -85,6 +85,7 @@ export interface SearchResult {
     importance?: number;
     isPriority?: boolean;
     isLocal?: boolean;
+    localizedChain?: LocalizedChain;
 }
 
 export interface SearchResponse {

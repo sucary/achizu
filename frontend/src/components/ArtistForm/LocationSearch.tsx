@@ -5,6 +5,8 @@ import { MapPinIcon } from '../icons/MapIcons';
 import { useLocationSearch } from '../../hooks/useLocationSearch';
 import { Spinner, Button } from '../ui';
 import { useAuth } from '../../context/AuthContext';
+import { useLocationLanguage } from '../../context/LocationLanguageContext';
+import { formatLocationLocalized } from '../../utils/locationUtils';
 import type { SearchResult } from '../../services/api';
 
 interface LocationSearchProps {
@@ -52,6 +54,7 @@ export const LocationSearch = ({
     });
 
     const { profile } = useAuth();
+    const { locationLanguage } = useLocationLanguage();
     const inputId = useId();
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, maxHeight: 320 });
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -212,7 +215,9 @@ export const LocationSearch = ({
                                     {profile?.isAdmin && result.isPriority && (
                                         <span className="inline-block w-2 h-2 bg-primary rounded-full mr-2 mt-1.5" />
                                     )}
-                                    {result.displayName}
+                                    {result.localizedChain
+                                        ? formatLocationLocalized({ localizedChain: result.localizedChain }, locationLanguage)
+                                        : result.displayName}
                                 </div>
                                 <div className="flex items-center justify-between mt-0.5">
                                     {result.type && (

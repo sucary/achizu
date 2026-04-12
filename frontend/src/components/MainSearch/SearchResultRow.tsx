@@ -45,6 +45,10 @@ function ArtistRow({ result, onSelect }: { result: ArtistSearchResult; onSelect:
 
 function LocationRow({ result, onSelect }: { result: LocationSearchResult; onSelect: () => void }) {
     const { profile } = useAuth();
+    const { locationLanguage } = useLocationLanguage();
+    const displayText = result.localizedChain
+        ? formatLocationLocalized({ localizedChain: result.localizedChain }, locationLanguage)
+        : result.displayName;
     return (
         <button            
             role="option"
@@ -52,7 +56,7 @@ function LocationRow({ result, onSelect }: { result: LocationSearchResult; onSel
             className="flex w-full text-left items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer"
         >
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-text truncate">{result.displayName}</p>
+                <p className="text-sm font-medium text-text truncate">{displayText}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                     {result.locationType && (
                         <span className="text-xs text-text-secondary capitalize">{result.locationType}</span>

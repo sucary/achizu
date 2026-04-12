@@ -19,6 +19,7 @@ export interface LocationSearchResult {
     isLocal?: boolean;
     osmId: number;
     osmType: string;
+    localizedChain?: LocalizedChain;
 }
 
 export interface UserSearchResult {

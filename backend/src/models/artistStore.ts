@@ -48,8 +48,12 @@ const ARTIST_RETURNING_COLUMNS = `
  * Helper function to convert database row to Artist object
  */
 function rowToArtist(row: Record<string, unknown>): Artist {
-    const originalChain = row.original_localized_names as LocalizedChain | null;
-    const activeChain = row.active_localized_names as LocalizedChain | null;
+    const parseChain = (v: unknown): LocalizedChain | null => {
+        if (!v) return null;
+        return typeof v === 'string' ? JSON.parse(v) : v as LocalizedChain;
+    };
+    const originalChain = parseChain(row.original_localized_names);
+    const activeChain = parseChain(row.active_localized_names);
 
     return {
         id: row.id as string,

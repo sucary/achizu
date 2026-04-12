@@ -63,7 +63,8 @@ export const CityService = {
                 id, name, province, country, display_name,
                 osm_id, osm_type, type, class, importance,
                 ST_Y(center::geometry) as lat,
-                ST_X(center::geometry) as lng
+                ST_X(center::geometry) as lng,
+                localized_names
             FROM locations
             WHERE
                 name IS NOT NULL AND name != ''
@@ -72,6 +73,7 @@ export const CityService = {
                     name ILIKE $1
                     OR province ILIKE $1
                     OR display_name ILIKE $1
+                    OR localized_names::text ILIKE $1
                 )
             ORDER BY
                 -- Prioritize exact name matches first
@@ -91,19 +93,25 @@ export const CityService = {
             LIMIT $3
         `, [`%${query}%`, query, limit]);
 
-        return result.rows.map((row: any) => ({
-            id: row.id,
-            name: row.name,
-            province: row.province,
-            country: row.country,
-            displayName: row.display_name,
-            center: { lat: row.lat, lng: row.lng },
-            osmId: parseInt(row.osm_id),
-            osmType: row.osm_type,
-            type: row.type,
-            class: row.class,
-            importance: row.importance
-        }));
+        return result.rows.map((row: any) => {
+            const ln = typeof row.localized_names === 'string'
+                ? JSON.parse(row.localized_names)
+                : row.localized_names;
+            return {
+                id: row.id,
+                name: row.name,
+                province: row.province,
+                country: row.country,
+                displayName: row.display_name,
+                center: { lat: row.lat, lng: row.lng },
+                osmId: parseInt(row.osm_id),
+                osmType: row.osm_type,
+                type: row.type,
+                class: row.class,
+                importance: row.importance,
+                ...(ln?.city ? { localizedChain: ln } : {}),
+            };
+        });
     },
 
     /**
@@ -125,6 +133,7 @@ export const CityService = {
                 cb.type,
                 cb.class,
                 cb.importance,
+                cb.localized_names,
                 ST_Y(cb.center::geometry) as cb_lat,
                 ST_X(cb.center::geometry) as cb_lng
             FROM priority_locations pl
@@ -133,23 +142,29 @@ export const CityService = {
             ORDER BY pl.rank ASC
         `, [query]);
 
-        return result.rows.map((row: any) => ({
-            id: row.id,
-            name: row.name,
-            province: row.province,
-            country: row.country,
-            displayName: row.display_name,
-            // Use locations center if available, otherwise fall back to priority_locations coords
-            center: row.cb_lat != null
-                ? { lat: parseFloat(row.cb_lat), lng: parseFloat(row.cb_lng) }
-                : { lat: parseFloat(row.lat), lng: parseFloat(row.lng) },
-            osmId: parseInt(row.osm_id),
-            osmType: row.osm_type,
-            type: row.type,
-            class: row.class,
-            importance: row.importance,
-            isPriority: true
-        }));
+        return result.rows.map((row: any) => {
+            const ln = typeof row.localized_names === 'string'
+                ? JSON.parse(row.localized_names)
+                : row.localized_names;
+            return {
+                id: row.id,
+                name: row.name,
+                province: row.province,
+                country: row.country,
+                displayName: row.display_name,
+                // Use locations center if available, otherwise fall back to priority_locations coords
+                center: row.cb_lat != null
+                    ? { lat: parseFloat(row.cb_lat), lng: parseFloat(row.cb_lng) }
+                    : { lat: parseFloat(row.lat), lng: parseFloat(row.lng) },
+                osmId: parseInt(row.osm_id),
+                osmType: row.osm_type,
+                type: row.type,
+                class: row.class,
+                importance: row.importance,
+                isPriority: true,
+                ...(ln?.city ? { localizedChain: ln } : {}),
+            };
+        });
     },
 
     /**
@@ -274,19 +289,22 @@ export const CityService = {
     /**
      * Check which OSM IDs already exist in local DB (for cross-referencing Nominatim results)
      */
-    getExistingOsmIds: async (osmPairs: Array<{ osmId: number; osmType: string }>): Promise<Map<string, string>> => {
+    getExistingOsmIds: async (osmPairs: Array<{ osmId: number; osmType: string }>): Promise<Map<string, { id: string; localizedNames: any }>> => {
         if (osmPairs.length === 0) return new Map();
 
         const conditions = osmPairs.map((_, i) => `(osm_id = $${i * 2 + 1} AND osm_type = $${i * 2 + 2})`).join(' OR ');
         const params = osmPairs.flatMap(p => [String(p.osmId), p.osmType]);
 
         const result = await pool.query(`
-            SELECT osm_id, osm_type, id FROM locations WHERE ${conditions}
+            SELECT osm_id, osm_type, id, localized_names FROM locations WHERE ${conditions}
         `, params);
 
-        const map = new Map<string, string>();
+        const map = new Map<string, { id: string; localizedNames: any }>();
         for (const row of result.rows) {
-            map.set(`${String(row.osm_id)}:${row.osm_type}`, row.id);
+            const ln = typeof row.localized_names === 'string'
+                ? JSON.parse(row.localized_names)
+                : row.localized_names;
+            map.set(`${String(row.osm_id)}:${row.osm_type}`, { id: row.id, localizedNames: ln });
         }
         return map;
     },

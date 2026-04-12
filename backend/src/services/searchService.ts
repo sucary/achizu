@@ -23,6 +23,7 @@ export interface LocationSearchResult {
     isLocal?: boolean;
     osmId: number;
     osmType: string;
+    localizedChain?: LocalizedChain;
 }
 
 export interface UserSearchResult {
@@ -110,6 +111,7 @@ export const SearchService = {
                 const r = loc as Record<string, unknown>;
                 const center = r.center as { lat: number; lng: number } | undefined;
 
+                const chain = r.localizedChain as LocalizedChain | undefined;
                 return {
                     type: 'location' as const,
                     id: loc.id,
@@ -122,6 +124,7 @@ export const SearchService = {
                     isLocal: loc.isLocal,
                     osmId: loc.osmId,
                     osmType: loc.osmType,
+                    ...(chain?.city ? { localizedChain: chain } : {}),
                 };
             });
 

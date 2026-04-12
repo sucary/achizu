@@ -33,6 +33,7 @@ export interface City {
     lastUpdated?: Date | string;
     needsRefresh?: boolean;
     isPriority?: boolean;
+    localizedChain?: LocalizedChain;
 }
 
 export interface NominatimResponse {

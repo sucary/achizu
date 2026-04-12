@@ -81,13 +81,14 @@ export const TextSearch = {
 
         const withFlags = filtered.map(r => {
             const key = `${String(r.osmId)}:${r.osmType}`;
-            const isLocal = existingMap.has(key);
+            const existing = existingMap.get(key);
 
             return {
                 ...r,
                 osmId: Number(r.osmId),
-                id: existingMap.get(key),
-                isLocal
+                id: existing?.id,
+                isLocal: !!existing,
+                ...(existing?.localizedNames?.city ? { localizedChain: existing.localizedNames } : {}),
             };
         });
 
