@@ -5,7 +5,7 @@ import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { Artist, LocationView, LocationLanguage } from '../../types/artist';
+import type { Artist, LocationView } from '../../types/artist';
 import ArtistProfile from '../ArtistProfile';
 import { useLocationLanguage } from '../../context/LocationLanguageContext';
 import { createArtistMarker, preloadArtistImages } from '../../utils/mapUtils';

@@ -171,6 +171,27 @@ export const formatLocationLocalized = (
 };
 
 /**
+ * Collects all name values from a localized chain for search matching.
+ * Returns a single lowercase string containing every language variant.
+ */
+export const getSearchableLocationText = (location: LocationLike): string => {
+    const parts: string[] = [];
+    if (location.city) parts.push(location.city);
+    if (location.province) parts.push(location.province);
+    if (location.country) parts.push(location.country);
+    const chain = location.localizedChain;
+    if (chain) {
+        for (const level of [chain.city, chain.province, chain.country]) {
+            if (!level) continue;
+            for (const val of Object.values(level)) {
+                if (val) parts.push(val);
+            }
+        }
+    }
+    return parts.join(' ').toLowerCase();
+};
+
+/**
  * Creates an empty location object with zeroed coordinates.
  */
 export const createEmptyLocation = () => ({

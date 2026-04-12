@@ -4,7 +4,7 @@ import { getArtists, getArtistsByUsername, getFeaturedArtists } from '../service
 import { SearchIcon, EditIcon, TrashIcon } from './icons/GeneralIcons';
 import { MapPinIcon } from './icons/MapIcons';
 import { getAvatarUrl } from '../utils/cloudinaryUrl';
-import { formatLocationLocalized } from '../utils/locationUtils';
+import { formatLocationLocalized, getSearchableLocationText } from '../utils/locationUtils';
 import { Input, IconButton, Spinner, CloseButton } from './ui';
 import ArtistProfile from './ArtistProfile';
 import type { Artist } from '../types/artist';
@@ -38,11 +38,12 @@ const ArtistList = ({ username, viewingFeatured, onClose, onNavigateToArtist, on
         },
     });
 
-    const filteredArtists = artists.filter((artist) =>
-        artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        artist.activeLocation.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        artist.originalLocation.city.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredArtists = artists.filter((artist) => {
+        const q = searchQuery.toLowerCase();
+        return artist.name.toLowerCase().includes(q) ||
+            getSearchableLocationText(artist.activeLocation).includes(q) ||
+            getSearchableLocationText(artist.originalLocation).includes(q);
+    });
 
     const handleRowClick = (artist: Artist, e: React.MouseEvent<HTMLButtonElement>) => {
         // Get the row's position relative to the wrapper
