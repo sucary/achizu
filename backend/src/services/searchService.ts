@@ -1,6 +1,7 @@
 import { ArtistStore } from '../models/artistStore';
 import { TextSearch } from './searchHelper';
 import type { Artist, CropArea } from '../types/artist';
+import type { LocalizedChain } from '../types/city';
 import pool from '../config/database';
 
 export interface ArtistSearchResult {
@@ -9,7 +10,7 @@ export interface ArtistSearchResult {
     name: string;
     sourceImage?: string;
     avatarCrop?: CropArea;
-    activeLocation: { city: string; province: string; country?: string };
+    activeLocation: { city: string; province: string; country?: string; localizedChain?: LocalizedChain };
     coordinates: { lat: number; lng: number };
 }
 
@@ -50,6 +51,7 @@ function mapArtistToSearchResult(artist: Artist): ArtistSearchResult {
             city: artist.activeLocation.city,
             province: artist.activeLocation.province,
             country: artist.activeLocation.country,
+            ...(artist.activeLocation.localizedChain?.city ? { localizedChain: artist.activeLocation.localizedChain } : {}),
         },
         coordinates: {
             lat: artist.activeLocation.coordinates.lat,

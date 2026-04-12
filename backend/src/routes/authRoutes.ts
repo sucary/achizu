@@ -52,7 +52,7 @@ router.post('/set-username', requireAuth, asyncHandler(async (req: Authenticated
 // PUT /api/auth/profile - Update profile settings
 router.put('/profile', requireAuth, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user!.id;
-    const { username, isPrivate } = req.body;
+    const { username, isPrivate, locationLanguage } = req.body;
 
     // Validate username if provided
     if (username !== undefined) {
@@ -72,8 +72,15 @@ router.put('/profile', requireAuth, asyncHandler(async (req: AuthenticatedReques
         }
     }
 
+    // Validate locationLanguage if provided
+    const validLanguages = ['en', 'zhHans', 'zhHant', 'ja', 'native'];
+    if (locationLanguage !== undefined && !validLanguages.includes(locationLanguage)) {
+        res.status(400).json({ error: `locationLanguage must be one of: ${validLanguages.join(', ')}` });
+        return;
+    }
+
     // Update profile
-    await ProfileStore.updateProfile(userId, { username, isPrivate });
+    await ProfileStore.updateProfile(userId, { username, isPrivate, locationLanguage });
 
     // Return updated profile
     const updatedProfile = await ProfileStore.getByUserId(userId);

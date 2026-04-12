@@ -1,3 +1,5 @@
+import type { LocalizedChain } from './city';
+
 /**
  * Geographic coordinates for a location
  */
@@ -17,6 +19,7 @@ export interface Location {
     displayName?: string;       // Full Nominatim display name for point locations
     osmId?: number;
     osmType?: string;
+    localizedChain?: LocalizedChain;
 }
 
 /**

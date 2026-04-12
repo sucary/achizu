@@ -5,6 +5,7 @@ export interface Profile {
     isAdmin: boolean;
     isApproved: boolean;
     isPrivate: boolean;
+    locationLanguage: string;
 }
 
 export interface PendingUser {

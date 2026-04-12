@@ -1,7 +1,33 @@
 import { Artist, StoreArtistDTO, UpdateStoreArtistDTO, LocationCount, LocationView, ArtistQueryParams, CropArea } from '../types/artist';
+import type { LocalizedChain } from '../types/city';
 import pool from '../config/database';
 
-const ARTIST_SELECT_COLUMNS = `
+// Base columns for artist reads (used with table alias 'a')
+const ARTIST_BASE_COLUMNS = `
+    a.id, a.user_id, a.name, a.source_image, a.avatar_crop, a.profile_crop,
+    a.original_city, a.original_province, a.original_country, a.original_city_id, a.original_display_name,
+    ST_Y(a.original_coordinates::geometry) as original_lat,
+    ST_X(a.original_coordinates::geometry) as original_lng,
+    a.active_city, a.active_province, a.active_country, a.active_city_id, a.active_display_name,
+    ST_Y(a.active_coordinates::geometry) as active_lat,
+    ST_X(a.active_coordinates::geometry) as active_lng,
+    ST_Y(a.original_display_coordinates::geometry) as original_display_lat,
+    ST_X(a.original_display_coordinates::geometry) as original_display_lng,
+    ST_Y(a.active_display_coordinates::geometry) as active_display_lat,
+    ST_X(a.active_display_coordinates::geometry) as active_display_lng,
+    a.instagram_url, a.twitter_url, a.apple_music_url, a.website_url, a.youtube_url,
+    a.debut_year, a.inactive_year,
+    a.created_at, a.updated_at
+`;
+
+// Full SELECT with localized names from joined locations
+const ARTIST_SELECT_COLUMNS = `${ARTIST_BASE_COLUMNS},
+    ol.localized_names as original_localized_names,
+    al.localized_names as active_localized_names
+`;
+
+// For INSERT/UPDATE RETURNING (no JOIN available)
+const ARTIST_RETURNING_COLUMNS = `
     id, user_id, name, source_image, avatar_crop, profile_crop,
     original_city, original_province, original_country, original_city_id, original_display_name,
     ST_Y(original_coordinates::geometry) as original_lat,
@@ -22,6 +48,9 @@ const ARTIST_SELECT_COLUMNS = `
  * Helper function to convert database row to Artist object
  */
 function rowToArtist(row: Record<string, unknown>): Artist {
+    const originalChain = row.original_localized_names as LocalizedChain | null;
+    const activeChain = row.active_localized_names as LocalizedChain | null;
+
     return {
         id: row.id as string,
         userId: row.user_id as string | undefined,
@@ -37,7 +66,8 @@ function rowToArtist(row: Record<string, unknown>): Artist {
             coordinates: {
                 lat: parseFloat(row.original_lat as string),
                 lng: parseFloat(row.original_lng as string)
-            }
+            },
+            ...(originalChain?.city ? { localizedChain: originalChain } : {}),
         },
         activeLocation: {
             city: row.active_city as string,
@@ -47,7 +77,8 @@ function rowToArtist(row: Record<string, unknown>): Artist {
             coordinates: {
                 lat: parseFloat(row.active_lat as string),
                 lng: parseFloat(row.active_lng as string)
-            }
+            },
+            ...(activeChain?.city ? { localizedChain: activeChain } : {}),
         },
         socialLinks: {
             instagram: (row.instagram_url as string) || undefined,
@@ -96,23 +127,23 @@ export const ArtistStore = {
 
             // Filter by user if userId provided (non-admin users)
             if (userId) {
-                conditions.push(`user_id = $${paramIndex++}`);
+                conditions.push(`a.user_id = $${paramIndex++}`);
                 values.push(userId);
             }
 
             if (name) {
-                conditions.push(`name ILIKE $${paramIndex++}`);
+                conditions.push(`a.name ILIKE $${paramIndex++}`);
                 values.push(`%${name}%`);
             }
 
             if (city) {
-                const column = view === 'active' ? 'active_city' : 'original_city';
+                const column = view === 'active' ? 'a.active_city' : 'a.original_city';
                 conditions.push(`${column} ILIKE $${paramIndex++}`);
                 values.push(`%${city}%`);
             }
 
             if (province) {
-                const column = view === 'active' ? 'active_province' : 'original_province';
+                const column = view === 'active' ? 'a.active_province' : 'a.original_province';
                 conditions.push(`${column} ILIKE $${paramIndex++}`);
                 values.push(`%${province}%`);
             }
@@ -121,9 +152,11 @@ export const ArtistStore = {
 
             const result = await pool.query(`
                 SELECT ${ARTIST_SELECT_COLUMNS}
-                FROM artists
+                FROM artists a
+                LEFT JOIN locations ol ON a.original_city_id = ol.id
+                LEFT JOIN locations al ON a.active_city_id = al.id
                 ${whereClause}
-                ORDER BY created_at DESC
+                ORDER BY a.created_at DESC
             `, values);
 
             return result.rows.map(rowToArtist);
@@ -137,8 +170,10 @@ export const ArtistStore = {
         try {
             const result = await pool.query(`
                 SELECT ${ARTIST_SELECT_COLUMNS}
-                FROM artists
-                WHERE id = $1
+                FROM artists a
+                LEFT JOIN locations ol ON a.original_city_id = ol.id
+                LEFT JOIN locations al ON a.active_city_id = al.id
+                WHERE a.id = $1
             `, [id]);
 
             if (result.rows.length === 0) {
@@ -172,7 +207,7 @@ export const ArtistStore = {
                     $16, $17, $18, $19, $20,
                     $27, $28
                 )
-                RETURNING ${ARTIST_SELECT_COLUMNS}
+                RETURNING ${ARTIST_RETURNING_COLUMNS}
             `, [
                 data.userId,
                 data.name,
@@ -337,7 +372,7 @@ export const ArtistStore = {
                 UPDATE artists
                 SET ${updates.join(', ')}
                 WHERE id = $${paramIndex}
-                RETURNING ${ARTIST_SELECT_COLUMNS}
+                RETURNING ${ARTIST_RETURNING_COLUMNS}
             `, values);
 
             if (result.rows.length === 0) {
@@ -395,24 +430,12 @@ export const ArtistStore = {
         try {
             // Get all eligible artists (non-private users, has avatar)
             const candidatesResult = await pool.query(`
-                SELECT
-                    a.id, a.user_id, a.name, a.source_image, a.avatar_crop, a.profile_crop,
-                    a.original_city, a.original_province, a.original_country, a.original_city_id, a.original_display_name,
-                    ST_Y(a.original_coordinates::geometry) as original_lat,
-                    ST_X(a.original_coordinates::geometry) as original_lng,
-                    a.active_city, a.active_province, a.active_country, a.active_city_id, a.active_display_name,
-                    ST_Y(a.active_coordinates::geometry) as active_lat,
-                    ST_X(a.active_coordinates::geometry) as active_lng,
-                    ST_Y(a.original_display_coordinates::geometry) as original_display_lat,
-                    ST_X(a.original_display_coordinates::geometry) as original_display_lng,
-                    ST_Y(a.active_display_coordinates::geometry) as active_display_lat,
-                    ST_X(a.active_display_coordinates::geometry) as active_display_lng,
-                    a.instagram_url, a.twitter_url, a.apple_music_url, a.website_url, a.youtube_url,
-                    a.debut_year, a.inactive_year,
-                    a.created_at, a.updated_at,
+                SELECT ${ARTIST_SELECT_COLUMNS},
                     ST_Y(a.active_display_coordinates::geometry) as sort_lat,
                     ST_X(a.active_display_coordinates::geometry) as sort_lng
                 FROM artists a
+                LEFT JOIN locations ol ON a.original_city_id = ol.id
+                LEFT JOIN locations al ON a.active_city_id = al.id
                 JOIN profiles p ON a.user_id = p.id
                 WHERE p.is_private = false
                   AND a.source_image IS NOT NULL

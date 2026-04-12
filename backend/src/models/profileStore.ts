@@ -7,6 +7,7 @@ export interface Profile {
   isAdmin: boolean;
   isApproved: boolean;
   isPrivate: boolean;
+  locationLanguage: string;
 }
 
 export interface PendingUser {
@@ -19,14 +20,14 @@ export interface PendingUser {
 export const ProfileStore = {
     getByUserId: async (userId: string): Promise<Profile | null> => {
         const result = await pool.query(
-            `SELECT id, email, username, is_admin as "isAdmin", is_approved as "isApproved", is_private as "isPrivate"
+            `SELECT id, email, username, is_admin as "isAdmin", is_approved as "isApproved", is_private as "isPrivate", location_language as "locationLanguage"
               FROM profiles WHERE id = $1`,
             [userId]
         );
         return result.rows[0] || null;
     },
 
-    updateProfile: async (userId: string, updates: { username?: string; isPrivate?: boolean }): Promise<void> => {
+    updateProfile: async (userId: string, updates: { username?: string; isPrivate?: boolean; locationLanguage?: string }): Promise<void> => {
         const setClauses: string[] = [];
         const values: (string | boolean)[] = [];
         let paramIndex = 1;
@@ -38,6 +39,10 @@ export const ProfileStore = {
         if (updates.isPrivate !== undefined) {
             setClauses.push(`is_private = $${paramIndex++}`);
             values.push(updates.isPrivate);
+        }
+        if (updates.locationLanguage !== undefined) {
+            setClauses.push(`location_language = $${paramIndex++}`);
+            values.push(updates.locationLanguage);
         }
 
         if (setClauses.length === 0) return;
