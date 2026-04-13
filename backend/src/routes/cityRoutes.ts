@@ -4,6 +4,8 @@ import { CityService } from '../services/cityService';
 import { TextSearch, ReverseSearch, type LocationLanguage } from '../services/searchHelper';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { CoordinatesSchema } from '../schemas/artistValidation';
+import { requireAuth, requireAdmin } from '../middleware/authMiddleware';
+import { LocalizedChain, LocalizedNames } from '../types/city';
 
 const VALID_LANGS = new Set<LocationLanguage>(['en', 'zhHans', 'zhHant', 'ja', 'native']);
 
@@ -94,6 +96,53 @@ router.get('/:id', asyncHandler(async (req, res) => {
         throw new AppError('City not found', 404);
     }
     res.json(city);
+}));
+
+const VALID_CHAIN_KEYS = new Set(['city', 'province', 'country']);
+const VALID_NAME_KEYS = new Set(['en', 'zhHans', 'zhHant', 'ja', 'native']);
+
+function validateLocalizedChain(chain: unknown): chain is LocalizedChain {
+    if (!chain || typeof chain !== 'object') return false;
+    const obj = chain as Record<string, unknown>;
+    if (!obj.city || typeof obj.city !== 'object') return false;
+    for (const key of Object.keys(obj)) {
+        if (!VALID_CHAIN_KEYS.has(key)) return false;
+        const names = obj[key];
+        if (typeof names !== 'object' || names === null) return false;
+        for (const nameKey of Object.keys(names as Record<string, unknown>)) {
+            if (!VALID_NAME_KEYS.has(nameKey)) return false;
+            if (typeof (names as Record<string, unknown>)[nameKey] !== 'string') return false;
+        }
+    }
+    return true;
+}
+
+// PATCH /api/cities/:id/localized-names - Manually update localized names (admin only)
+router.patch('/:id/localized-names', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { localizedNames, reset } = req.body;
+
+    const city = await CityService.getById(id);
+    if (!city) {
+        throw new AppError('City not found', 404);
+    }
+
+    // Reset: clear manual flag so ensureLocalized will re-fetch
+    if (reset === true) {
+        await CityService.resetLocalizedNames(id);
+        res.json({ message: 'Localized names reset to auto-fetch', id });
+        return;
+    }
+
+    if (!validateLocalizedChain(localizedNames)) {
+        throw new AppError(
+            'Invalid localizedNames. Expected {city: {en?, zhHans?, zhHant?, ja?, native?}, province?: {...}, country?: {...}}',
+            400
+        );
+    }
+
+    await CityService.updateLocalizedNames(id, localizedNames);
+    res.json({ message: 'Localized names updated', id, localizedNames });
 }));
 
 export default router;

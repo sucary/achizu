@@ -986,5 +986,43 @@ export const CityService = {
             lastUpdated: row.last_updated,
             needsRefresh: row.needs_refresh
         };
-    }
+    },
+
+    updateLocalizedNames: async (id: string, patch: LocalizedChain): Promise<void> => {
+        // Deep-merge into existing localized_names, preserving all
+        // keys not present in the patch.
+        const existing = await pool.query(
+            `SELECT localized_names FROM locations WHERE id = $1`,
+            [id]
+        );
+        const current: LocalizedChain = existing.rows[0]?.localized_names ?? {};
+        const merged: LocalizedChain = {
+            city: { ...current.city, ...patch.city },
+        };
+        if (current.province || patch.province) {
+            merged.province = { ...current.province, ...patch.province };
+        }
+        if (current.country || patch.country) {
+            merged.country = { ...current.country, ...patch.country };
+        }
+        await pool.query(
+            `UPDATE locations
+             SET localized_names = $2,
+                 localized_manual = TRUE,
+                 localized_at = NOW()
+             WHERE id = $1`,
+            [id, merged]
+        );
+    },
+
+    resetLocalizedNames: async (id: string): Promise<void> => {
+        await pool.query(
+            `UPDATE locations
+             SET localized_manual = FALSE,
+                 localized_names = NULL,
+                 localized_at = NULL
+             WHERE id = $1`,
+            [id]
+        );
+    },
 };

@@ -112,7 +112,7 @@ export const LocationLocalizationService = {
     ensureLocalized: async (locationId: string): Promise<LocalizedLocation | null> => {
         try {
             const existing = await pool.query(
-                `SELECT localized_at, osm_id, osm_type, name
+                `SELECT localized_at, localized_manual, osm_id, osm_type, name
                  FROM locations WHERE id = $1`,
                 [locationId]
             );
@@ -122,7 +122,7 @@ export const LocationLocalizationService = {
             }
             const row = existing.rows[0];
 
-            if (row.localized_at) {
+            if (row.localized_manual || row.localized_at) {
                 return CityService.getLocalizedById(locationId);
             }
 
