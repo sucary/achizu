@@ -29,7 +29,7 @@ export const generateGeoPositions = (
 
   // Find the max distance from center and scale to target radius
   const maxDist = Math.max(...rawOffsets.map((p) => Math.sqrt(p.x * p.x + p.y * p.y)), 1);
-  const targetRadius = Math.max(minSpacing * 1.5, markers.length * minSpacing * 0.4);
+  const targetRadius = Math.max(minSpacing * 1.5, Math.sqrt(markers.length) * minSpacing);
   const scale = targetRadius / maxDist;
 
   const positions = rawOffsets.map((offset) => L.point(offset.x * scale, offset.y * scale));

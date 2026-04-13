@@ -132,7 +132,7 @@ export const useClusterExpansion = ({
       const adjustedPositions = geoPositions.map(pos => L.point(pos.x, pos.y));
 
       // Multiple passes to resolve overlaps (external + siblings)
-      for (let pass = 0; pass < 5; pass++) {
+      for (let pass = 0; pass < 10; pass++) {
         for (let i = 0; i < adjustedPositions.length; i++) {
           const expandedPixel = clusterPixel.add(adjustedPositions[i]);
 
@@ -174,6 +174,17 @@ export const useClusterExpansion = ({
               );
             }
           }
+        }
+      }
+
+      // Offset cap, scales with sqrt(count)
+      const maxOffset = Math.max(minSpacing * 2, Math.sqrt(childMarkers.length) * minSpacing * 1.5);
+      for (let i = 0; i < adjustedPositions.length; i++) {
+        const pos = adjustedPositions[i];
+        const dist = Math.sqrt(pos.x * pos.x + pos.y * pos.y);
+        if (dist > maxOffset) {
+          const clamp = maxOffset / dist;
+          adjustedPositions[i] = L.point(pos.x * clamp, pos.y * clamp);
         }
       }
 
