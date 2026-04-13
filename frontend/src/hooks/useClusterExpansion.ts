@@ -188,6 +188,57 @@ export const useClusterExpansion = ({
         }
       }
 
+      // Snap non-overlapping markers back to their original geographic position.
+      const rawOffsets = childMarkers.map((marker) => {
+        const markerPixel = map.latLngToLayerPoint(marker.getLatLng());
+        return L.point(markerPixel.x - clusterPixel.x, markerPixel.y - clusterPixel.y);
+      });
+
+      for (let i = 0; i < adjustedPositions.length; i++) {
+        const raw = rawOffsets[i];
+        const rawPixel = clusterPixel.add(raw);
+        let hasOverlap = false;
+
+        for (const avoidPixel of avoidPixels) {
+          const dx = rawPixel.x - avoidPixel.x;
+          const dy = rawPixel.y - avoidPixel.y;
+          if (dx * dx + dy * dy < minSpacing * minSpacing) {
+            hasOverlap = true;
+            break;
+          }
+        }
+
+        if (!hasOverlap) {
+          for (let j = 0; j < adjustedPositions.length; j++) {
+            if (i === j) continue;
+            const otherPixel = clusterPixel.add(adjustedPositions[j]);
+            const dx = rawPixel.x - otherPixel.x;
+            const dy = rawPixel.y - otherPixel.y;
+            if (dx * dx + dy * dy < minSpacing * minSpacing) {
+              hasOverlap = true;
+              break;
+            }
+          }
+        }
+
+        if (!hasOverlap) {
+          for (let j = 0; j < adjustedPositions.length; j++) {
+            if (i === j) continue;
+            const otherRaw = clusterPixel.add(rawOffsets[j]);
+            const dx = rawPixel.x - otherRaw.x;
+            const dy = rawPixel.y - otherRaw.y;
+            if (dx * dx + dy * dy < minSpacing * minSpacing) {
+              hasOverlap = true;
+              break;
+            }
+          }
+        }
+
+        if (!hasOverlap) {
+          adjustedPositions[i] = raw;
+        }
+      }
+
       const expandedMarkers: L.Marker[] = [];
       const connectionLines: L.Polyline[] = [];
 
