@@ -992,10 +992,12 @@ export const CityService = {
         // Deep-merge into existing localized_names, preserving all
         // keys not present in the patch.
         const existing = await pool.query(
-            `SELECT localized_names FROM locations WHERE id = $1`,
+            `SELECT localized_names, province, country FROM locations WHERE id = $1`,
             [id]
         );
-        const current: LocalizedChain = existing.rows[0]?.localized_names ?? {};
+        const row = existing.rows[0];
+        if (!row) return;
+        const current: LocalizedChain = row.localized_names ?? {};
         const merged: LocalizedChain = {
             city: { ...current.city, ...patch.city },
         };
@@ -1013,6 +1015,37 @@ export const CityService = {
              WHERE id = $1`,
             [id, merged]
         );
+
+        // Propagate province/country translations to all locations
+        // sharing the same province or country name.
+        if (patch.province && row.province) {
+            const provinceJson = JSON.stringify(merged.province);
+            await pool.query(
+                `UPDATE locations
+                 SET localized_names = jsonb_set(
+                     COALESCE(localized_names, '{}'::jsonb),
+                     '{province}',
+                     $2::jsonb
+                 ),
+                 localized_at = NOW()
+                 WHERE province = $1 AND id != $3 AND localized_names IS NOT NULL`,
+                [row.province, provinceJson, id]
+            );
+        }
+        if (patch.country && row.country) {
+            const countryJson = JSON.stringify(merged.country);
+            await pool.query(
+                `UPDATE locations
+                 SET localized_names = jsonb_set(
+                     COALESCE(localized_names, '{}'::jsonb),
+                     '{country}',
+                     $2::jsonb
+                 ),
+                 localized_at = NOW()
+                 WHERE country = $1 AND id != $3 AND localized_names IS NOT NULL`,
+                [row.country, countryJson, id]
+            );
+        }
     },
 
     resetLocalizedNames: async (id: string): Promise<void> => {

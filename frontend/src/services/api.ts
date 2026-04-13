@@ -215,4 +215,29 @@ export const mainSearch = async (
     }
 };
 
+// Get localized names for a location (admin only)
+export const getLocalizedNames = async (
+    locationId: string
+): Promise<{ id: string; chain: LocalizedChain }> => {
+    const response = await api.get(`/cities/${locationId}/localized-names`);
+    return response.data;
+};
+
+// Update localized names for a location (admin only, deep-merges)
+export const updateLocalizedNames = async (
+    locationId: string,
+    localizedNames: Partial<LocalizedChain>
+): Promise<{ message: string; id: string; localizedNames: LocalizedChain }> => {
+    const response = await api.patch(`/cities/${locationId}/localized-names`, { localizedNames });
+    return response.data;
+};
+
+// Reset localized names to auto-fetch (admin only)
+export const resetLocalizedNames = async (
+    locationId: string
+): Promise<{ message: string; id: string }> => {
+    const response = await api.patch(`/cities/${locationId}/localized-names`, { reset: true });
+    return response.data;
+};
+
 export default api;

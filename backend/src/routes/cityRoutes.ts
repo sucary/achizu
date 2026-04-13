@@ -98,6 +98,15 @@ router.get('/:id', asyncHandler(async (req, res) => {
     res.json(city);
 }));
 
+// GET /api/cities/:id/localized-names - Get localized names for a location (admin only)
+router.get('/:id/localized-names', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+    const localized = await CityService.getLocalizedById(req.params.id);
+    if (!localized) {
+        throw new AppError('Location not found or not yet localized', 404);
+    }
+    res.json(localized);
+}));
+
 const VALID_CHAIN_KEYS = new Set(['city', 'province', 'country']);
 const VALID_NAME_KEYS = new Set(['en', 'zhHans', 'zhHant', 'ja', 'native']);
 

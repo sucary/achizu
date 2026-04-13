@@ -112,7 +112,7 @@ export const LocationLocalizationService = {
     ensureLocalized: async (locationId: string): Promise<LocalizedLocation | null> => {
         try {
             const existing = await pool.query(
-                `SELECT localized_at, localized_manual, osm_id, osm_type, name
+                `SELECT localized_at, localized_manual, osm_id, osm_type, name, province, country
                  FROM locations WHERE id = $1`,
                 [locationId]
             );
@@ -158,6 +158,10 @@ export const LocationLocalizationService = {
                 console.warn(`[localize] ${locationId} all providers failed`);
                 return null;
             }
+
+            // Override province/country with manual translations from
+            // sibling locations (same province/country name) if available.
+            await applyManualOverrides(chain, row.province, row.country);
 
             await persistChain(locationId, chain);
             return { id: locationId, chain };
@@ -434,6 +438,41 @@ async function fetchChainFromWikidata(rootQid: string, nativeName: string | null
     }
 
     return chain;
+}
+
+// ─── Manual overrides ──────────────────────────────────────────────────
+
+/**
+ * Look for a sibling location (same province or country) that has
+ * localized_manual = true, and merge its province/country translations
+ * into the chain so manual edits propagate to new locations automatically.
+ */
+async function applyManualOverrides(
+    chain: LocalizedChain,
+    province: string | null,
+    country: string | null
+): Promise<void> {
+    if (!province && !country) return;
+
+    // Find one manual sibling that shares province or country.
+    const sibling = await pool.query(
+        `SELECT localized_names FROM locations
+         WHERE localized_manual = TRUE
+           AND localized_names IS NOT NULL
+           AND (province = $1 OR country = $2)
+         LIMIT 1`,
+        [province, country]
+    );
+    if (sibling.rows.length === 0) return;
+
+    const siblingChain = sibling.rows[0].localized_names as LocalizedChain;
+
+    if (province && siblingChain.province) {
+        chain.province = { ...chain.province, ...siblingChain.province };
+    }
+    if (country && siblingChain.country) {
+        chain.country = { ...chain.country, ...siblingChain.country };
+    }
 }
 
 // ─── Persist ────────────────────────────────────────────────────────────

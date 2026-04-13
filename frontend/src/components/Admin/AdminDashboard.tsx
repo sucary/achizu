@@ -5,6 +5,7 @@ import { CheckCircleIcon } from '../icons/GeneralIcons';
 import { API_URL } from '../../services/api';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
 import type { PendingUser } from '../../types/profile';
+import { LocalizationEditor } from './LocalizationEditor';
 
 interface AdminDashboardProps {
     onClose: () => void;
@@ -15,6 +16,8 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
     const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [approvalsOpen, setApprovalsOpen] = useState(true);
+    const [translationsOpen, setTranslationsOpen] = useState(false);
 
     const dialogRef = useDialogAccessibility(onClose);
 
@@ -149,56 +152,84 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-6">
 
-                    <div className="mb-6">
-                        <h2 className="text-lg text-text mb-3">
-                            Pending User Approvals ({pendingUsers.length})
-                        </h2>
+                    {/* Pending User Approvals */}
+                    <div className="mb-4">
+                        <button
+                            onClick={() => setApprovalsOpen(!approvalsOpen)}
+                            className="w-full flex items-center justify-between py-2 text-left"
+                        >
+                            <h2 className="text-lg text-text">
+                                Pending User Approvals ({pendingUsers.length})
+                            </h2>
+                            <span className="text-text-muted text-sm">{approvalsOpen ? '▲' : '▼'}</span>
+                        </button>
 
-                        {loading && (
-                            <div className="text-center py-8">
-                                <Spinner size="lg" className="mx-auto text-primary" />
-                                <p className="text-text-secondary mt-2">Loading...</p>
-                            </div>
-                        )}
-
-                        {error && (
-                            <Alert variant="error" className="mb-4">{error}</Alert>
-                        )}
-
-                        {!loading && !error && pendingUsers.length === 0 && (
-                            <div className="text-center py-8 text-text-secondary">
-                                <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-text-muted" />
-                                <p>No pending approvals</p>
-                            </div>
-                        )}
-
-                        {!loading && !error && pendingUsers.length > 0 && (
-                            <div className="space-y-3">
-                                {pendingUsers.map(user => (
-                                    <div key={user.id} className="border border-border rounded-lg p-4 flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-medium text-text">{user.username || 'No username'}</p>
-                                            <p className="text-sm text-text-secondary">{user.email}</p>
-                                            <p className="text-xs text-text-muted mt-1">
-                                                Registered: {new Date(user.createdAt).toLocaleDateString('fi-FI')} {new Date(user.createdAt).toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':')}
-                                            </p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                onClick={() => handleApprove(user.id)}
-                                                className="bg-green-600 hover:bg-green-700"
-                                            >
-                                                Approve
-                                            </Button>
-                                            <Button
-                                                onClick={() => handleReject(user.id)}
-                                                className="bg-red-600 hover:bg-red-700"
-                                            >
-                                                Reject
-                                            </Button>
-                                        </div>
+                        {approvalsOpen && (
+                            <div className="mt-2">
+                                {loading && (
+                                    <div className="text-center py-8">
+                                        <Spinner size="lg" className="mx-auto text-primary" />
+                                        <p className="text-text-secondary mt-2">Loading...</p>
                                     </div>
-                                ))}
+                                )}
+
+                                {error && (
+                                    <Alert variant="error" className="mb-4">{error}</Alert>
+                                )}
+
+                                {!loading && !error && pendingUsers.length === 0 && (
+                                    <div className="text-center py-8 text-text-secondary">
+                                        <CheckCircleIcon className="w-12 h-12 mx-auto mb-2 text-text-muted" />
+                                        <p>No pending approvals</p>
+                                    </div>
+                                )}
+
+                                {!loading && !error && pendingUsers.length > 0 && (
+                                    <div className="space-y-3">
+                                        {pendingUsers.map(user => (
+                                            <div key={user.id} className="border border-border rounded-lg p-4 flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-sm font-medium text-text">{user.username || 'No username'}</p>
+                                                    <p className="text-sm text-text-secondary">{user.email}</p>
+                                                    <p className="text-xs text-text-muted mt-1">
+                                                        Registered: {new Date(user.createdAt).toLocaleDateString('fi-FI')} {new Date(user.createdAt).toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':')}
+                                                    </p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        onClick={() => handleApprove(user.id)}
+                                                        className="bg-green-600 hover:bg-green-700"
+                                                    >
+                                                        Approve
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => handleReject(user.id)}
+                                                        className="bg-red-600 hover:bg-red-700"
+                                                    >
+                                                        Reject
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Location Translations */}
+                    <div className="border-t border-border pt-4">
+                        <button
+                            onClick={() => setTranslationsOpen(!translationsOpen)}
+                            className="w-full flex items-center justify-between py-2 text-left"
+                        >
+                            <h2 className="text-lg text-text">Location Translations</h2>
+                            <span className="text-text-muted text-sm">{translationsOpen ? '▲' : '▼'}</span>
+                        </button>
+
+                        {translationsOpen && (
+                            <div className="mt-2">
+                                <LocalizationEditor />
                             </div>
                         )}
                     </div>
