@@ -408,7 +408,21 @@ async function fetchChainFromWikidata(rootQid: string, nativeName: string | null
         }
     }
 
-    const provinceNames = provinceQid ? extractLabels(parents[provinceQid]) : null;
+    // Walk one more P131 hop if the first hop landed on a sub-prefecture
+    // entity (ward/district). Use the grandparent as province instead.
+    let resolvedProvinceQid = provinceQid;
+    if (provinceQid && countryQid && parents[provinceQid]) {
+        const grandparentQid = firstActiveP131(parents[provinceQid]);
+        if (grandparentQid && grandparentQid !== countryQid && grandparentQid !== rootQid) {
+            if (!parents[grandparentQid]) {
+                const more = await fetchWikidataEntities([grandparentQid]);
+                parents = { ...parents, ...more };
+            }
+            resolvedProvinceQid = grandparentQid;
+        }
+    }
+
+    const provinceNames = resolvedProvinceQid ? extractLabels(parents[resolvedProvinceQid]) : null;
     const countryNames  = countryQid  ? extractLabels(parents[countryQid])  : null;
 
     const chain: LocalizedChain = { city: cityNames };
