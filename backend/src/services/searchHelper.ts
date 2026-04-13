@@ -84,8 +84,13 @@ export const TextSearch = {
             console.log(`[SEARCH] Cache hit for: "${query}"${acceptLang ? ` (lang: ${acceptLang})` : ''} (${results.length} results)`);
         }
 
-        // Filter out uninformative "yes" types (from OSM boolean tags like bridge=yes)
-        const filtered = results.filter(r => (r.type as string)?.toLowerCase() !== 'yes');
+        // Filter to only place/boundary results — exclude nodes (no polygon) and infrastructure (railway, building, etc.)
+        const nonPlaceClasses = new Set(['railway', 'building', 'aeroway', 'highway']);
+        const filtered = results.filter(r =>
+            (r.type as string)?.toLowerCase() !== 'yes'
+            && r.osmType !== 'node'
+            && !nonPlaceClasses.has(r.class as string)
+        );
 
         // Cross-reference with local DB to set isLocal flag
         const osmPairs = filtered.map(r => ({ osmId: r.osmId, osmType: r.osmType }));

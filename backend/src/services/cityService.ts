@@ -222,6 +222,9 @@ export const CityService = {
             // ON CONFLICT (osm_id, osm_type) prevents overwriting existing native entries.
             (async () => {
                 for (const item of data) {
+                    // Skip non-place results (nodes, railway, building, etc.)
+                    const nonPlaceClasses = new Set(['railway', 'building', 'aeroway', 'highway']);
+                    if (item.osm_type === 'node' || nonPlaceClasses.has(item.class)) continue;
                     try {
                         if (item.geojson) {
                             console.log(`[GEOCODING] Saving ${item.name} (${item.osm_type}/${item.osm_id}) - has geojson`);
