@@ -82,7 +82,7 @@ export const CityService = {
                 CASE WHEN LOWER(name) LIKE LOWER($2) || '%' THEN 0 ELSE 1 END,
                 -- Then prioritize city/town/administrative types over small POIs
                 CASE
-                    WHEN type IN ('city', 'town', 'administrative', 'village', 'municipality', 'county', 'state', 'region') THEN 0
+                    WHEN type IN ('city', 'town', 'administrative', 'village', 'municipality', 'county', 'state', 'province', 'region') THEN 0
                     WHEN type IN ('suburb', 'neighbourhood', 'district') THEN 1
                     ELSE 2
                 END,
