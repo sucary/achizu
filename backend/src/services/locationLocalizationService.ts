@@ -443,35 +443,53 @@ async function fetchChainFromWikidata(rootQid: string, nativeName: string | null
 // ─── Manual overrides ──────────────────────────────────────────────────
 
 /**
- * Look for a sibling location (same province or country) that has
- * localized_manual = true, and merge its province/country translations
+ * Look for sibling locations (same province or country) that have
+ * localized_manual = true, and merge their province/country translations
  * into the chain so manual edits propagate to new locations automatically.
+ *
+ * Province and country overrides are matched independently to avoid
+ * leaking a sibling's province into a location that doesn't share it
+ * (e.g., a country-level entry matched only by country name).
  */
 async function applyManualOverrides(
     chain: LocalizedChain,
     province: string | null,
     country: string | null
 ): Promise<void> {
-    if (!province && !country) return;
-
-    // Find one manual sibling that shares province or country.
-    const sibling = await pool.query(
-        `SELECT localized_names FROM locations
-         WHERE localized_manual = TRUE
-           AND localized_names IS NOT NULL
-           AND (province = $1 OR country = $2)
-         LIMIT 1`,
-        [province, country]
-    );
-    if (sibling.rows.length === 0) return;
-
-    const siblingChain = sibling.rows[0].localized_names as LocalizedChain;
-
-    if (province && siblingChain.province) {
-        chain.province = { ...chain.province, ...siblingChain.province };
+    // Copy province translations from a sibling that shares the same province.
+    if (province && province !== 'Unknown') {
+        const sibProv = await pool.query(
+            `SELECT localized_names FROM locations
+             WHERE localized_manual = TRUE
+               AND localized_names IS NOT NULL
+               AND province = $1
+             LIMIT 1`,
+            [province]
+        );
+        if (sibProv.rows.length > 0) {
+            const sibChain = sibProv.rows[0].localized_names as LocalizedChain;
+            if (sibChain.province) {
+                chain.province = { ...chain.province, ...sibChain.province };
+            }
+        }
     }
-    if (country && siblingChain.country) {
-        chain.country = { ...chain.country, ...siblingChain.country };
+
+    // Copy country translations from a sibling that shares the same country.
+    if (country && country !== 'Unknown') {
+        const sibCountry = await pool.query(
+            `SELECT localized_names FROM locations
+             WHERE localized_manual = TRUE
+               AND localized_names IS NOT NULL
+               AND country = $1
+             LIMIT 1`,
+            [country]
+        );
+        if (sibCountry.rows.length > 0) {
+            const sibChain = sibCountry.rows[0].localized_names as LocalizedChain;
+            if (sibChain.country) {
+                chain.country = { ...chain.country, ...sibChain.country };
+            }
+        }
     }
 }
 

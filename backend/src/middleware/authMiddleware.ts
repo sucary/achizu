@@ -98,7 +98,7 @@ export async function optionalAuth(
             req.profile = await fetchProfile(user.id);
         }
     } catch {
-        // Silently continue without user
+        // continue
     }
 
     next();

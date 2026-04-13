@@ -462,18 +462,38 @@ export const CityService = {
         province = province || 'Unknown';
         const country = data.address?.country || 'Unknown';
 
-        // Check if city already exists by name+province (to avoid unique constraint violation)
-        const existingByName = await pool.query(`
-            SELECT id, name, province, country, osm_id, osm_type,
-                   ST_Y(center::geometry) as lat,
-                   ST_X(center::geometry) as lng
-            FROM locations
-            WHERE name = $1 AND province = $2
-            LIMIT 1
-        `, [city, province]);
+        // Disambiguate name+province when a different osm entity already
+        const locationType = getDisplayType(data.type, data.addresstype, data.address as Record<string, string>, city);
+        const nameCollision = await pool.query(
+            `SELECT osm_id FROM locations WHERE name = $1 AND province = $2 LIMIT 1`,
+            [city, province]
+        );
+        if (nameCollision.rows.length > 0 && String(nameCollision.rows[0].osm_id) !== String(data.osm_id)) {
+            // Another entity owns this name+province — append type to province
+            province = `${province} [${locationType}]`;
+        }
 
-        if (existingByName.rows.length > 0) {
-            const row = existingByName.rows[0];
+        // Check if this exact location already exists
+        const existingCheck = data.osm_id
+            ? await pool.query(`
+                SELECT id, name, province, country, osm_id, osm_type,
+                       ST_Y(center::geometry) as lat,
+                       ST_X(center::geometry) as lng
+                FROM locations
+                WHERE osm_id = $1 AND osm_type = $2
+                LIMIT 1
+            `, [data.osm_id, data.osm_type])
+            : await pool.query(`
+                SELECT id, name, province, country, osm_id, osm_type,
+                       ST_Y(center::geometry) as lat,
+                       ST_X(center::geometry) as lng
+                FROM locations
+                WHERE name = $1 AND province = $2
+                LIMIT 1
+            `, [city, province]);
+
+        if (existingCheck.rows.length > 0) {
+            const row = existingCheck.rows[0];
             return {
                 id: row.id,
                 name: row.name,
