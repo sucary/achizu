@@ -1,6 +1,10 @@
 /**
- * Cloudinary image upload utility
+ * Cloudinary signed image upload utility
  */
+
+import axios from 'axios';
+import { supabase } from '../lib/supabase';
+import { API_URL } from '../services/api';
 
 interface CloudinaryUploadResponse {
   secure_url: string;
@@ -17,11 +21,12 @@ interface CloudinaryError {
   };
 }
 
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-if (!CLOUD_NAME || !UPLOAD_PRESET) {
-  console.warn('Cloudinary environment variables not set. Image upload will not work.');
+interface SignatureResponse {
+  signature: string;
+  timestamp: number;
+  folder: string;
+  apiKey: string;
+  cloudName: string;
 }
 
 /**
@@ -42,7 +47,26 @@ export const validateImageFile = (file: File): string | null => {
 };
 
 /**
- * Uploads image to Cloudinary
+ * Fetches a signed upload signature from the backend
+ */
+async function getUploadSignature(): Promise<SignatureResponse> {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  const response = await axios.post<SignatureResponse>(
+    `${API_URL}/upload/signature`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${session?.access_token}`,
+      },
+    }
+  );
+
+  return response.data;
+}
+
+/**
+ * Uploads image to Cloudinary using a signed request
  * @returns The secure URL of the uploaded image
  */
 export const uploadImageToCloudinary = async (file: File): Promise<string> => {
@@ -51,16 +75,17 @@ export const uploadImageToCloudinary = async (file: File): Promise<string> => {
     throw new Error(validationError);
   }
 
-  if (!CLOUD_NAME || !UPLOAD_PRESET) {
-    throw new Error('Cloudinary not configured. Check environment variables.');
-  }
+  const { signature, timestamp, folder, apiKey, cloudName } = await getUploadSignature();
 
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('upload_preset', UPLOAD_PRESET);
+  formData.append('api_key', apiKey);
+  formData.append('timestamp', String(timestamp));
+  formData.append('signature', signature);
+  formData.append('folder', folder);
 
   const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
     {
       method: 'POST',
       body: formData,
@@ -75,4 +100,3 @@ export const uploadImageToCloudinary = async (file: File): Promise<string> => {
   const data: CloudinaryUploadResponse = await response.json();
   return data.secure_url;
 };
-

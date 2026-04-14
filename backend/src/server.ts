@@ -7,6 +7,7 @@ import artistRoutes from './routes/artistRoutes';
 import cityRoutes from './routes/cityRoutes';
 import authRoutes from './routes/authRoutes';
 import searchRoutes from './routes/searchRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { verifyDatabaseConnection } from './config/database';
 
@@ -39,6 +40,7 @@ app.use('/api/artists', artistRoutes);
 app.use('/api/cities', cityRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
     res.json({
