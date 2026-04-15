@@ -52,6 +52,27 @@ async function getUserByUsername(username: string): Promise<UserByUsername | nul
     return result.rows[0] || null;
 }
 
+/**
+ * Look up a user by username and enforce privacy/access control.
+ * Returns the resolved user or throws a 404.
+ */
+async function resolveUsernameWithAccess(req: AuthenticatedRequest): Promise<UserByUsername> {
+    const username = req.params.username;
+    const targetUser = await getUserByUsername(username);
+    if (!targetUser) {
+        throw new AppError('User not found', 404);
+    }
+
+    const isAdmin = req.profile?.isAdmin ?? false;
+    const isOwnProfile = targetUser.id === req.user?.id;
+
+    if (!isOwnProfile && !isAdmin && targetUser.isPrivate) {
+        throw new AppError('User not found', 404);
+    }
+
+    return targetUser;
+}
+
 async function getTargetUserId(req: AuthenticatedRequest): Promise<string | undefined> {
     const isAdmin = req.profile?.isAdmin ?? false;
     const isAuthenticated = !!req.user;
@@ -93,19 +114,7 @@ export const getAllArtists = asyncHandler(async (req: AuthenticatedRequest, res:
 });
 
 export const getArtistsByUsername = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const username = req.params.username;
-    const targetUser = await getUserByUsername(username);
-    if (!targetUser) {
-        throw new AppError('User not found', 404);
-    }
-
-    const isAdmin = req.profile?.isAdmin ?? false;
-    const isOwnProfile = targetUser.id === req.user?.id;
-
-    // Access level control
-    if (!isOwnProfile && !isAdmin && targetUser.isPrivate) {
-        throw new AppError('User not found', 404);
-    }
+    const targetUser = await resolveUsernameWithAccess(req);
 
     const filters: ArtistQueryParams = {
         name: req.query.name as string,
@@ -210,19 +219,7 @@ export const getArtistCountByCity = asyncHandler(async (req: AuthenticatedReques
 });
 
 export const getArtistCountByUsername = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const username = req.params.username;
-    const targetUser = await getUserByUsername(username);
-    if (!targetUser) {
-        throw new AppError('User not found', 404);
-    }
-
-    const isAdmin = req.profile?.isAdmin ?? false;
-    const isOwnProfile = targetUser.id === req.user?.id;
-
-    // Access control
-    if (!isOwnProfile && !isAdmin && targetUser.isPrivate) {
-        throw new AppError('User not found', 404);
-    }
+    const targetUser = await resolveUsernameWithAccess(req);
 
     const view = (req.query.view as LocationView) || 'active';
     if (view !== 'original' && view !== 'active') {

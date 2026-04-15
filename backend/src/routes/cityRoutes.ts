@@ -1,13 +1,11 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { CityService } from '../services/cityService';
-import { TextSearch, ReverseSearch, type LocationLanguage } from '../services/searchHelper';
+import { TextSearch, ReverseSearch, VALID_LANGS, type LocationLanguage } from '../services/searchHelper';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { CoordinatesSchema } from '../schemas/artistValidation';
 import { requireAuth, requireAdmin } from '../middleware/authMiddleware';
 import { LocalizedChain, LocalizedNames } from '../types/city';
-
-const VALID_LANGS = new Set<LocationLanguage>(['en', 'zhHans', 'zhHant', 'ja', 'native']);
 
 const router = Router();
 

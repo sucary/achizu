@@ -1,5 +1,6 @@
 import { Artist, StoreArtistDTO, UpdateStoreArtistDTO, LocationCount, LocationView, ArtistQueryParams, CropArea } from '../types/artist';
 import type { LocalizedChain } from '../types/city';
+import { parseLocalizedNames } from '../services/cityService';
 import pool from '../config/database';
 
 // Base columns for artist reads (used with table alias 'a')
@@ -48,12 +49,8 @@ const ARTIST_RETURNING_COLUMNS = `
  * Helper function to convert database row to Artist object
  */
 function rowToArtist(row: Record<string, unknown>): Artist {
-    const parseChain = (v: unknown): LocalizedChain | null => {
-        if (!v) return null;
-        return typeof v === 'string' ? JSON.parse(v) : v as LocalizedChain;
-    };
-    const originalChain = parseChain(row.original_localized_names);
-    const activeChain = parseChain(row.active_localized_names);
+    const originalChain = parseLocalizedNames(row.original_localized_names) as LocalizedChain | null;
+    const activeChain = parseLocalizedNames(row.active_localized_names) as LocalizedChain | null;
 
     return {
         id: row.id as string,

@@ -3,6 +3,7 @@ import { SearchCacheService } from './searchCacheService';
 import { LocationLocalizationService } from './locationLocalizationService';
 
 export type LocationLanguage = 'en' | 'zhHans' | 'zhHant' | 'ja' | 'native';
+export const VALID_LANGS = new Set<LocationLanguage>(['en', 'zhHans', 'zhHant', 'ja', 'native']);
 
 export interface SearchResult {
     osmId: number;

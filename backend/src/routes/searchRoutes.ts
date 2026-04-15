@@ -2,9 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { SearchService } from '../services/searchService';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
-import type { LocationLanguage } from '../services/searchHelper';
-
-const VALID_LANGS = new Set<LocationLanguage>(['en', 'zhHans', 'zhHant', 'ja', 'native']);
+import { VALID_LANGS, type LocationLanguage } from '../services/searchHelper';
 
 const router = Router();
 

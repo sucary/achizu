@@ -5,6 +5,7 @@ import { nominatimLimiter } from './nominatimRateLimiter';
 // Geocoding API configuration (LocationIQ - Nominatim-compatible)
 const GEOCODING_API_BASE = 'https://us1.locationiq.com/v1';
 const GEOCODING_API_KEY = process.env.LOCATIONIQ_API_KEY;
+const NOMINATIM_HEADERS = { 'User-Agent': 'ArtistLocationMap/1.0' };
 
 /**
  * Get display type for a location
@@ -55,7 +56,7 @@ function getDisplayType(type: string, addresstype?: string, address?: Record<str
 /**
  * Parse localized_names which may be stored as a JSON string or object
  */
-function parseLocalizedNames(raw: any): any {
+export function parseLocalizedNames(raw: any): any {
     return typeof raw === 'string' ? JSON.parse(raw) : raw;
 }
 
@@ -214,7 +215,7 @@ export const CityService = {
         console.log(`[GEOCODING] Calling API for: "${query}"${acceptLanguage ? ` (lang: ${acceptLanguage})` : ''}`);
 
         try {
-            const headers: Record<string, string> = { 'User-Agent': 'ArtistLocationMap/1.0' };
+            const headers: Record<string, string> = { ...NOMINATIM_HEADERS };
             if (acceptLanguage) {
                 headers['accept-language'] = acceptLanguage;
             }
@@ -341,7 +342,7 @@ export const CityService = {
             // Use global rate limiter to ensure 1 req/sec across all users
             const response = await nominatimLimiter.enqueue(() =>
                 fetch(url, {
-                    headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
+                    headers: NOMINATIM_HEADERS
                 })
             );
 
@@ -377,7 +378,7 @@ export const CityService = {
             // Use global rate limiter to ensure 1 req/sec across all users
             const response = await nominatimLimiter.enqueue(() =>
                 fetch(url, {
-                    headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
+                    headers: NOMINATIM_HEADERS
                 })
             );
 
@@ -698,7 +699,7 @@ export const CityService = {
             // Use global rate limiter to ensure 1 req/sec across all users
             const response = await nominatimLimiter.enqueue(() =>
                 fetch(url, {
-                    headers: { 'User-Agent': 'ArtistLocationMap/1.0' }
+                    headers: NOMINATIM_HEADERS
                 })
             );
 
