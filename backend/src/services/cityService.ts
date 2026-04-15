@@ -52,6 +52,57 @@ function getDisplayType(type: string, addresstype?: string, address?: Record<str
     return type;
 }
 
+/**
+ * Parse localized_names which may be stored as a JSON string or object
+ */
+function parseLocalizedNames(raw: any): any {
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+}
+
+/**
+ * Map a database row to a City object
+ */
+function rowToCity(row: any): City {
+    return {
+        id: row.id,
+        name: row.name,
+        province: row.province,
+        country: row.country,
+        displayName: row.display_name,
+        center: { lat: parseFloat(row.lat), lng: parseFloat(row.lng) },
+        osmId: parseInt(row.osm_id),
+        osmType: row.osm_type,
+        type: row.type,
+        class: row.class,
+        importance: row.importance,
+        ...(row.boundary !== undefined ? { boundary: row.boundary } : {}),
+        ...(row.raw_boundary !== undefined ? { rawBoundary: row.raw_boundary } : {}),
+        ...(row.last_updated !== undefined ? { lastUpdated: row.last_updated } : {}),
+        ...(row.needs_refresh !== undefined ? { needsRefresh: row.needs_refresh } : {}),
+    };
+}
+
+/**
+ * Query a single location with full details
+ */
+async function queryOneLocation(whereClause: string, params: any[]): Promise<City | null> {
+    const result = await pool.query(`
+        SELECT
+            id, name, province, country,
+            display_name, osm_id, osm_type, type, class, importance,
+            ST_AsGeoJSON(boundary)::json as boundary,
+            ST_AsGeoJSON(raw_boundary)::json as raw_boundary,
+            ST_Y(center::geometry) as lat,
+            ST_X(center::geometry) as lng,
+            last_updated, needs_refresh
+        FROM locations
+        WHERE ${whereClause}
+    `, params);
+
+    if (result.rows.length === 0) return null;
+    return rowToCity(result.rows[0]);
+}
+
 export const CityService = {
 
     /**
@@ -94,21 +145,9 @@ export const CityService = {
         `, [`%${query}%`, query, limit]);
 
         return result.rows.map((row: any) => {
-            const ln = typeof row.localized_names === 'string'
-                ? JSON.parse(row.localized_names)
-                : row.localized_names;
+            const ln = parseLocalizedNames(row.localized_names);
             return {
-                id: row.id,
-                name: row.name,
-                province: row.province,
-                country: row.country,
-                displayName: row.display_name,
-                center: { lat: row.lat, lng: row.lng },
-                osmId: parseInt(row.osm_id),
-                osmType: row.osm_type,
-                type: row.type,
-                class: row.class,
-                importance: row.importance,
+                ...rowToCity(row),
                 ...(ln?.city ? { localizedChain: ln } : {}),
             };
         });
@@ -143,24 +182,14 @@ export const CityService = {
         `, [query]);
 
         return result.rows.map((row: any) => {
-            const ln = typeof row.localized_names === 'string'
-                ? JSON.parse(row.localized_names)
-                : row.localized_names;
+            const ln = parseLocalizedNames(row.localized_names);
+            // Use locations center if available, otherwise fall back to priority_locations coords
+            const center = row.cb_lat != null
+                ? { lat: parseFloat(row.cb_lat), lng: parseFloat(row.cb_lng) }
+                : { lat: parseFloat(row.lat), lng: parseFloat(row.lng) };
             return {
-                id: row.id,
-                name: row.name,
-                province: row.province,
-                country: row.country,
-                displayName: row.display_name,
-                // Use locations center if available, otherwise fall back to priority_locations coords
-                center: row.cb_lat != null
-                    ? { lat: parseFloat(row.cb_lat), lng: parseFloat(row.cb_lng) }
-                    : { lat: parseFloat(row.lat), lng: parseFloat(row.lng) },
-                osmId: parseInt(row.osm_id),
-                osmType: row.osm_type,
-                type: row.type,
-                class: row.class,
-                importance: row.importance,
+                ...rowToCity(row),
+                center,
                 isPriority: true,
                 ...(ln?.city ? { localizedChain: ln } : {}),
             };
@@ -268,39 +297,7 @@ export const CityService = {
      * Fetch city by OSM ID from DB
      */
     getByOsmId: async (osmId: number, osmType: string): Promise<City | null> => {
-        const result = await pool.query(`
-            SELECT
-                id, name, province, country,
-                display_name, osm_id, osm_type, type, class, importance,
-                ST_AsGeoJSON(boundary)::json as boundary,
-                ST_AsGeoJSON(raw_boundary)::json as raw_boundary,
-                ST_Y(center::geometry) as lat,
-                ST_X(center::geometry) as lng,
-                last_updated, needs_refresh
-            FROM locations
-            WHERE osm_id = $1 AND osm_type = $2
-        `, [osmId, osmType]);
-
-        if (result.rows.length === 0) return null;
-
-        const row = result.rows[0];
-        return {
-            id: row.id,
-            name: row.name,
-            province: row.province,
-            country: row.country,
-            displayName: row.display_name,
-            boundary: row.boundary,
-            rawBoundary: row.raw_boundary,
-            center: { lat: row.lat, lng: row.lng },
-            osmId: parseInt(row.osm_id),
-            osmType: row.osm_type,
-            type: row.type,
-            class: row.class,
-            importance: row.importance,
-            lastUpdated: row.last_updated,
-            needsRefresh: row.needs_refresh
-        };
+        return queryOneLocation('osm_id = $1 AND osm_type = $2', [osmId, osmType]);
     },
 
     /**
@@ -318,10 +315,7 @@ export const CityService = {
 
         const map = new Map<string, { id: string; localizedNames: any }>();
         for (const row of result.rows) {
-            const ln = typeof row.localized_names === 'string'
-                ? JSON.parse(row.localized_names)
-                : row.localized_names;
-            map.set(`${String(row.osm_id)}:${row.osm_type}`, { id: row.id, localizedNames: ln });
+            map.set(`${String(row.osm_id)}:${row.osm_type}`, { id: row.id, localizedNames: parseLocalizedNames(row.localized_names) });
         }
         return map;
     },
@@ -493,16 +487,7 @@ export const CityService = {
             `, [city, province]);
 
         if (existingCheck.rows.length > 0) {
-            const row = existingCheck.rows[0];
-            return {
-                id: row.id,
-                name: row.name,
-                province: row.province,
-                country: row.country,
-                osmId: row.osm_id,
-                osmType: row.osm_type,
-                center: { lat: row.lat, lng: row.lng }
-            };
+            return rowToCity(existingCheck.rows[0]);
         }
 
         const client = await pool.connect();
@@ -659,16 +644,7 @@ export const CityService = {
                 `, [city, province]);
 
                 if (existing.rows.length > 0) {
-                    const row = existing.rows[0];
-                    return {
-                        id: row.id,
-                        name: row.name,
-                        province: row.province,
-                        country: row.country,
-                        osmId: row.osm_id,
-                        osmType: row.osm_type,
-                        center: { lat: row.lat, lng: row.lng }
-                    };
+                    return rowToCity(existing.rows[0]);
                 }
             }
 
@@ -679,9 +655,6 @@ export const CityService = {
         }
     },
 
-    /**
-     * Find city by coordinates
-     */
     /**
      * Get all local boundaries containing the given coordinates
      * Returns multiple results ordered by area (smallest/most specific first)
@@ -699,54 +672,12 @@ export const CityService = {
             LIMIT $3
         `, [lng, lat, limit]);
 
-        return result.rows.map((row: any) => ({
-            id: row.id,
-            name: row.name,
-            province: row.province,
-            country: row.country,
-            displayName: row.display_name,
-            center: { lat: row.lat, lng: row.lng },
-            osmId: parseInt(row.osm_id),
-            osmType: row.osm_type,
-            type: row.type,
-            class: row.class,
-            importance: row.importance
-        }));
+        return result.rows.map(rowToCity);
     },
 
     reverseGeocode: async (lat: number, lng: number): Promise<City | null> => {
-        // Check local DB first, return smallest boundary
-        const result = await pool.query(`
-            SELECT
-                id, name, province, country, display_name,
-                osm_id, osm_type, type, class, importance,
-                ST_Y(center::geometry) as lat,
-                ST_X(center::geometry) as lng
-            FROM locations
-            WHERE ST_Contains(boundary::geometry, ST_SetSRID(ST_MakePoint($1, $2), 4326))
-            ORDER BY ST_Area(boundary::geometry) ASC
-            LIMIT 1
-        `, [lng, lat]);
-
-        if (result.rows.length > 0) {
-            const row = result.rows[0];
-            return {
-                id: row.id,
-                name: row.name,
-                province: row.province,
-                country: row.country,
-                displayName: row.display_name,
-                center: { lat: row.lat, lng: row.lng },
-                osmId: parseInt(row.osm_id),
-                osmType: row.osm_type,
-                type: row.type,
-                class: row.class,
-                importance: row.importance
-            };
-        }
-
-        // Fall back to Nominatim if not in DB
-        return CityService.reverseGeocodeNominatim(lat, lng);
+        const results = await CityService.reverseGeocodeAll(lat, lng, 1);
+        return results[0] ?? await CityService.reverseGeocodeNominatim(lat, lng);
     },
 
     /**
@@ -973,39 +904,7 @@ export const CityService = {
     },
 
     getById: async (id: string): Promise<City | null> => {
-        const result = await pool.query(`
-            SELECT
-                id, name, province, country,
-                display_name, osm_id, osm_type, type, class, importance,
-                ST_AsGeoJSON(boundary)::json as boundary,
-                ST_AsGeoJSON(raw_boundary)::json as raw_boundary,
-                ST_Y(center::geometry) as lat,
-                ST_X(center::geometry) as lng,
-                last_updated, needs_refresh
-            FROM locations
-            WHERE id = $1
-        `, [id]);
-
-        if (result.rows.length === 0) return null;
-
-        const row = result.rows[0];
-        return {
-            id: row.id,
-            name: row.name,
-            province: row.province,
-            country: row.country,
-            displayName: row.display_name,
-            boundary: row.boundary,
-            rawBoundary: row.raw_boundary,
-            center: { lat: row.lat, lng: row.lng },
-            osmId: parseInt(row.osm_id),
-            osmType: row.osm_type,
-            type: row.type,
-            class: row.class,
-            importance: row.importance,
-            lastUpdated: row.last_updated,
-            needsRefresh: row.needs_refresh
-        };
+        return queryOneLocation('id = $1', [id]);
     },
 
     updateLocalizedNames: async (id: string, patch: LocalizedChain): Promise<void> => {
