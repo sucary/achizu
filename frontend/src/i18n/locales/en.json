@@ -1,0 +1,19 @@
+{
+  "common": {
+    "appName": "Achizu",
+    "search": "Search",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "Something went wrong"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Create Account",
+    "forgotPassword": "Forgot Password"
+  },
+  "location": {
+    "searchPlaceholder": "Search locations..."
+  }
+}

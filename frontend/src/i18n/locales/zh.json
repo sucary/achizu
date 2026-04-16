@@ -1,0 +1,19 @@
+{
+  "common": {
+    "appName": "Achizu - 音乐人地图",
+    "search": "搜索",
+    "cancel": "取消",
+    "save": "保存",
+    "close": "关闭",
+    "loading": "加载中...",
+    "error": "错误"
+  },
+  "auth": {
+    "signIn": "登录",
+    "signUp": "创建账户",
+    "forgotPassword": "忘记密码"
+  },
+  "location": {
+    "searchPlaceholder": "搜索地点..."
+  }
+}
