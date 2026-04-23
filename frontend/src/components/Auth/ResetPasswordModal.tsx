@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { CloseButton } from '../ui';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { useTranslation } from 'react-i18next';
 
 interface ResetPasswordModalProps {
     onClose: () => void;
@@ -15,18 +16,19 @@ export function ResetPasswordModal({ onClose }: ResetPasswordModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const { t } = useTranslation();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
         if (password.length < 6) {
-            setError('Password must be at least 6 characters');
+            setError(t('auth.errors.passwordMin'));
             return;
         }
 
         if (password !== confirmPassword) {
-            setError('Passwords do not match');
+            setError(t('auth.errors.passwordsMatch'));
             return;
         }
 
@@ -36,9 +38,9 @@ export function ResetPasswordModal({ onClose }: ResetPasswordModalProps) {
 
         if (error) {
             if (error.message === 'Auth session missing!') {
-                setError('Session expired. Please request a new reset link.');
+                setError(t('auth.resetPassword.authSessionExpired'));
             } else {
-                setError(error.message);
+                setError(t('auth.errors.unexpectedError'));
             }
         } else {
             setSuccess(true);
@@ -66,16 +68,16 @@ export function ResetPasswordModal({ onClose }: ResetPasswordModalProps) {
                         <svg aria-hidden="true" className="w-12 h-12 text-green-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        <h2 className="text-xl font-bold text-text mb-2">Password Updated</h2>
-                        <p className="text-sm text-text-secondary">Redirecting to the map...</p>
+                        <h2 className="text-xl font-bold text-text mb-2">{t('auth.resetPassword.passwordUpdated')}</h2>
+                        <p className="text-sm text-text-secondary">{t('common.redirectToMap')}</p>
                     </div>
                 ) : (
                     <>
-                        <h2 id="reset-password-title" className="text-xl font-bold text-text mb-6">Set New Password</h2>
+                        <h2 id="reset-password-title" className="text-xl font-bold text-text mb-6">{t('auth.resetPassword.title')}</h2>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label htmlFor="reset-new-password" className="block text-sm font-medium text-text mb-1">New password</label>
+                                <label htmlFor="reset-new-password" className="block text-sm font-medium text-text mb-1">{t('auth.fields.newPassword')}</label>
                                 <div className="relative">
                                     <input
                                         id="reset-new-password"
@@ -88,7 +90,7 @@ export function ResetPasswordModal({ onClose }: ResetPasswordModalProps) {
                                         autoFocus
                                     />
                                     <button
-                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        aria-label={showPassword ? t('auth.buttons.hidePassword') : t('auth.buttons.showPassword')}
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
                                         className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
@@ -108,7 +110,7 @@ export function ResetPasswordModal({ onClose }: ResetPasswordModalProps) {
                             </div>
 
                             <div>
-                                <label htmlFor="reset-confirm-password" className="block text-sm font-medium text-text mb-1">Confirm new password</label>
+                                <label htmlFor="reset-confirm-password" className="block text-sm font-medium text-text mb-1">{t('auth.fields.confirmNewPassword')}</label>
                                 <input
                                     id="reset-confirm-password"
                                     type="password"
@@ -127,7 +129,7 @@ export function ResetPasswordModal({ onClose }: ResetPasswordModalProps) {
                                 disabled={loading || !password || !confirmPassword}
                                 className="w-full py-2.5 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
                             >
-                                {loading ? 'Updating...' : 'Update password'}
+                                {loading ? t('auth.resetPassword.updating') : t('auth.buttons.resetPassword')}
                             </button>
                         </form>
                     </>

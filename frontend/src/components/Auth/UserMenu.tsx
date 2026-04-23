@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface UserMenuProps {
     onOpenAdminDashboard?: () => void;
@@ -11,6 +12,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
     const { user, profile, signOut } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -72,7 +74,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-muted transition-colors"
                     >
-                        Account Settings
+                        {t('userMenu.settings')}
                     </button>
                     {profile.isAdmin && onOpenAdminDashboard && (
                         <button
@@ -83,7 +85,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
                             }}
                             className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-muted transition-colors"
                         >
-                            Admin Dashboard
+                            {t('userMenu.adminDashboard.title')}
                         </button>
                     )}
                     <button
@@ -91,7 +93,7 @@ export function UserMenu({ onOpenAdminDashboard }: UserMenuProps) {
                         onClick={handleSignOut}
                         className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface-muted transition-colors rounded-b-lg"
                     >
-                        Sign Out
+                        {t('userMenu.signOut')}
                     </button>
                 </div>
             )}

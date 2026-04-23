@@ -1,6 +1,7 @@
 import { useAuth } from '../../context/AuthContext';
 import { AuthModal } from './AuthModal';
 import { UserMenu } from './UserMenu';
+import { useTranslation } from 'react-i18next';
 
 interface AccountButtonProps {
     showAuthModal: boolean;
@@ -11,6 +12,7 @@ interface AccountButtonProps {
 
 export function AccountButton({ showAuthModal, onOpenAuthModal, onCloseAuthModal, onOpenAdminDashboard }: AccountButtonProps) {
     const { user, loading } = useAuth();
+    const { t } = useTranslation();
 
     if (loading) {
         return null;
@@ -25,7 +27,7 @@ export function AccountButton({ showAuthModal, onOpenAuthModal, onCloseAuthModal
                     onClick={onOpenAuthModal}
                     className="bg-surface px-4 py-2 rounded-md shadow-md hover:bg-surface-muted transition-colors text-text text-sm font-medium"
                 >
-                    Sign In
+                    {t('auth.buttons.signIn')}
                 </button>
             )}
             <AuthModal isOpen={showAuthModal} onClose={onCloseAuthModal} />

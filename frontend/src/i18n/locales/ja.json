@@ -1,0 +1,102 @@
+{
+  "common": {
+    "appName": "アチズ",
+    "search": "検索",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "close": "閉じる",
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "redirectToMap": "地図に移動しています..."
+  },
+  "auth": {
+    "fields": {
+      "email": "メールアドレス",
+      "password": "パスワード",
+      "confirmPassword": "パスワードを確認",
+      "currentPassword": "現在のパスワード",
+      "newPassword": "新しいパスワード",
+      "confirmNewPassword": "新しいパスワードを確認"
+    },
+    "buttons": {
+      "signIn": "ログイン",
+      "signUp": "アカウントを作成",
+      "sendResetLink": "リセットリンクを送信",
+      "backToSignIn": "ログインに戻る",
+      "showPassword": "パスワードを表示",
+      "hidePassword": "パスワードを非表示",
+      "rememberMe": "ログイン状態を保持する",
+      "done": "完了",
+      "resend": "再送信",
+      "resetPassword": "パスワードをリセット"
+    },
+    "signIn": {
+      "title": "ログイン",
+      "forgotPassword": "パスワードをお忘れですか？",
+      "dontHaveAccount": "アカウントをお持ちでないですか？",
+      "or": "または"
+    },
+    "signUp": {
+      "title": "アカウントを作成",
+      "haveAccount": "すでにアカウントをお持ちですか？"
+    },
+    "resetPassword": {
+      "title": "パスワードをリセット",
+      "description": "メールアドレスを入力してください。パスワードリセットリンクをお送りします。",
+      "authSessionExpired": "セッションが期限切れです。新しいリセットリンクをリクエストしてください。",
+      "updating": "パスワードを更新しています...",
+      "passwordUpdated": "パスワードを更新しました。"
+    },
+    "emailCheck": {
+      "title": "メールを確認してください",
+      "message": "{{email}}に確認リンクを送信しました。受信トレイを確認し、リンクをクリックして続行してください。"
+    },
+    "messages": {
+      "checkEmailConfirmation": "確認のためにメールを確認してください。",
+      "resetLinkSent": "パスワード再設定用のリンクを送信しました。"
+    },
+    "userNamePrompt": {
+      "title": "ユーザー名を作成",
+      "description": "他のユーザーはあなたのユーザー名であなたを見つけられます。",
+      "subdescription": "ユーザー名と公開設定は後で設定から変更できます。",
+      "usernameLabel": "ユーザー名",
+      "usernamePlaceholder": "ユーザー名を入力してください",
+      "usernameAvailable":"このユーザー名は使用できます",
+      "submit": "続行"
+    },
+    "errors": {
+      "emailRequired": "メールアドレスを入力してください。",
+      "validEmail": "有効なメールアドレスを入力してください。",
+      "emailExists": "このメールアドレスはすでに登録されています。ログインするか、別のメールアドレスを使用してください。",
+      "passwordRequired": "パスワードを入力してください。",
+      "passwordMin": "パスワードは6文字以上である必要があります。",
+      "confirmPasswordRequired": "パスワードを確認してください。",
+      "passwordsMatch": "パスワードが一致しません。",
+      "incorrectCredentials": "メールアドレスまたはパスワードが間違っています。",
+      "unexpectedError": "予期しないエラーが発生しました。もう一度お試しください。",
+      "unableToSignIn": "{{provider}}でサインインできません。別の方法を試すか、サポートにお問い合わせください。",
+      "userNameMin":"ユーザー名は3文字以上で入力してください。",
+      "userNameMax":"ユーザー名は16文字以内で入力してください。",
+      "userNamePattern":"ユーザー名には英字、数字、アンダースコアのみ使用できます。",
+      "userNameTaken":"そのユーザー名は既に登録されています。新しいユーザー名を入力してください。",
+      "unableToSaveUsername":"ユーザー名を保存できませんでした。もう一度お試しください。"
+    }
+  },
+  "approval": {
+    "title": "アカウント承認待ち",
+    "description": "あなたのアカウントは管理者の承認を待っています。",
+    "pending": "あなたのアカウントは承認待ちです。",
+    "approved": "あなたのアカウントは承認されました。今すぐログインできます。",
+    "rejected": "アカウント申請は承認されませんでした。"
+  },
+    "userMenu": {
+    "settings": "設定",
+    "adminDashboard":{
+      "title": "管理ダッシュボード"
+    },
+    "signOut": "ログアウト"
+  },
+  "location": {
+    "searchPlaceholder": "場所を検索..."
+  }
+}

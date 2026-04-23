@@ -6,6 +6,7 @@ import { EyeIcon, EyeOffIcon, GoogleIcon, GitHubIcon } from '../icons/FormIcons'
 import { CheckIcon } from '../icons/GeneralIcons';
 import { API_URL } from '../../services/api';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { useTranslation } from 'react-i18next';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -33,6 +34,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     const { signIn, signUp, signInWithOAuth } = useAuth();
 
+    const { t } = useTranslation();
+
     const clearMessages = () => {
         setError(null);
         setMessage(null);
@@ -52,11 +55,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     const validateEmail = (value: string): boolean => {
         if (!value) {
-            setEmailError('Email is required');
+            setEmailError(t('auth.errors.emailRequired'));
             return false;
         }
         if (!value.includes('@') || !value.includes('.')) {
-            setEmailError('Please enter a valid email');
+            setEmailError(t('auth.errors.validEmail'));
             return false;
         }
         return true;
@@ -64,11 +67,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     const validatePassword = (value: string): boolean => {
         if (!value) {
-            setPasswordError('Password is required');
+            setPasswordError(t('auth.errors.passwordRequired'));
             return false;
         }
         if (value.length < 6) {
-            setPasswordError('Password must be at least 6 characters');
+            setPasswordError(t('auth.errors.passwordMin'));
             return false;
         }
         return true;
@@ -76,11 +79,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     const validateConfirmPassword = (value: string): boolean => {
         if (!value) {
-            setConfirmPasswordError('Please confirm your password');
+            setConfirmPasswordError(t('auth.errors.confirmPasswordRequired'));
             return false;
         }
         if (value !== password) {
-            setConfirmPasswordError('Passwords do not match');
+            setConfirmPasswordError(t('auth.errors.passwordsMatch'));
             return false;
         }
         return true;
@@ -113,7 +116,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     );
                     const emailCheckData = await emailCheckRes.json();
                     if (!emailCheckData.available) {
-                        setEmailError('Email already registered');
+                        setEmailError(t('auth.errors.emailExists'));
                         setLoading(false);
                         return;
                     }
@@ -131,20 +134,20 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         setError(error.message);
                     }
                 } else {
-                    setMessage('Check your email for confirmation.');
+                    setMessage(t('auth.messages.checkEmailConfirmation'));
                 }
             } else {
                 const { error } = await signIn(email, password, rememberMe);
                 if (error) {
                     setError(error.message === 'Invalid login credentials'
-                        ? 'Incorrect email or password'
+                        ? t('auth.errors.incorrectCredentials')
                         : error.message);
                 } else {
                     handleClose();
                 }
             }
         } catch {
-            setError('An unexpected error happened. Please try again.');
+            setError(t('auth.errors.unexpectedError'));
         } finally {
             setLoading(false);
         }
@@ -156,7 +159,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         try {
             await signInWithOAuth(provider);
         } catch {
-            setError('Unable to sign in with ' + provider + '. Please try again.');
+            setError(t('auth.errors.unableToSignIn', {provider}));
         } finally {
             setOauthLoading(null);
         }
@@ -164,11 +167,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     const handleForgotPassword = async () => {
         if (!forgotPasswordEmail) {
-            setForgotPasswordEmailError('Please enter your email');
+            setForgotPasswordEmailError(t('auth.errors.emailRequired')); 
             return;
         }
         if (!forgotPasswordEmail.includes('@')) {
-            setForgotPasswordEmailError('Please enter a valid email');
+            setForgotPasswordEmailError(t('auth.errors.validEmail'));
             return;
         }
         setLoading(true);
@@ -180,7 +183,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         if (error) {
             setForgotPasswordEmailError(error.message);
         } else {
-            setMessage('Check your email for the password reset link');
+            setMessage(t('auth.messages.resetLinkSent'));
         }
     };
 
@@ -209,42 +212,43 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                 <div className="w-2 h-2 rounded-full bg-text-muted" />
                             </div>
                         </div>
-                        <h2 id="auth-title" className="text-xl font-bold text-text mb-2">Check your email</h2>
-                        <p className="text-sm text-text-secondary mb-6">We've sent a confirmation link to <span className="font-medium text-text">{email || forgotPasswordEmail}</span></p>
+                        <h2 id="auth-title" className="text-xl font-bold text-text mb-2">{t('auth.emailCheck.title')}</h2>
+                        <p className="text-sm text-text-secondary mb-6">{t('auth.emailCheck.message', { email: email || forgotPasswordEmail })}</p>
                         <div className="flex gap-3">
-                            <Button onClick={handleClose} variant="secondary" className="flex-1">Resend</Button>
-                            <Button onClick={handleClose} className="flex-1">Done</Button>
+                            <Button onClick={handleClose} variant="secondary" className="flex-1">{t('auth.buttons.resend')}</Button>
+                            <Button onClick={handleClose} className="flex-1">{t('auth.buttons.done')}</Button>
                         </div>
                     </div>
                 ) : (
                 <>
                 <h2 id="auth-title" className="text-2xl font-bold text-text mb-6">
-                    {isForgotPassword ? 'Reset Password' : isSignUp ? 'Create Account' : 'Sign In'}
+                    {isForgotPassword ? t('auth.resetPassword.title') : isSignUp ? t('auth.signUp.title') : t('auth.signIn.title')}
                 </h2>
 
                 {isForgotPassword ? (
                     <>
                         <p className="text-sm text-text-secondary mb-6">
-                            Enter your email and we'll send you a link to reset your password.
+                            {t('auth.resetPassword.description')}
                         </p>
                         <form onSubmit={(e) => { e.preventDefault(); handleForgotPassword(); }} className="space-y-4">
                             <Input
                                 type="email"
-                                label="Email"
+                                label={t('auth.fields.email')}
+
                                 value={forgotPasswordEmail}
                                 onChange={(e) => { setForgotPasswordEmail(e.target.value); setForgotPasswordEmailError(null); }}
                                 error={forgotPasswordEmailError || undefined}
                                 required
                                 autoFocus
                             />
-                            <Button type="submit" isLoading={loading} className="w-full">Send reset link</Button>
+                            <Button type="submit" isLoading={loading} className="w-full">{t('auth.buttons.resetPassword')}</Button>
                             <p className="text-center text-sm text-text-secondary">
                                 <button
                                     type="button"
                                     onClick={() => { setIsForgotPassword(false); clearMessages(); }}
                                     className="text-primary hover:underline font-medium"
                                 >
-                                    Back to Sign In
+                                    {t('auth.buttons.backToSignIn')}
                                 </button>
                             </p>
                         </form>
@@ -270,14 +274,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     <div 
                     aria-hidden="true" className="flex items-center gap-3 mb-6 text-sm text-text-secondary">
                         <div className="flex-1 border-t border-border-strong" />
-                        <span>or</span>
+                        <span>{t('auth.signIn.or')}</span>
                         <div className="flex-1 border-t border-border-strong" />
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                         <Input
                             type="email"
-                            label="Email"
+                            label={t('auth.fields.email')}
                             value={email}
                             onChange={(e) => {
                                 setEmail(e.target.value);
@@ -289,7 +293,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
                         <Input
                             type={showPassword ? 'text' : 'password'}
-                            label="Password"
+                            label={t('auth.fields.password')}
                             value={password}
                             onChange={(e) => {
                                 setPassword(e.target.value);
@@ -303,7 +307,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             minLength={6}
                             rightIcon={
                                 <IconButton 
-                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                aria-label={t(showPassword ? 'auth.buttons.hidePassword' : 'auth.buttons.showPassword')}
                                 type="button" size="sm" onClick={() => setShowPassword(!showPassword)}>
                                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                                 </IconButton>
@@ -313,7 +317,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         {isSignUp && (
                             <Input
                                 type={showConfirmPassword ? 'text' : 'password'}
-                                label="Confirm Password"
+                                label={t('auth.fields.confirmPassword')}
                                 value={confirmPassword}
                                 onChange={(e) => {
                                     setConfirmPassword(e.target.value);
@@ -324,7 +328,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                 minLength={6}
                                 rightIcon={
                                     <IconButton
-                                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                        aria-label={t(showConfirmPassword ? 'auth.buttons.hidePassword' : 'auth.buttons.showPassword')}
                                         type="button" size="sm" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                                         {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
                                     </IconButton>
@@ -344,14 +348,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                     <div aria-hidden="true" className="w-4 h-4 border border-border-strong rounded peer-checked:bg-primary peer-checked:border-primary group-hover:border-primary flex items-center justify-center">
                                         {rememberMe && <CheckIcon className="w-3 h-3 text-white" />}
                                     </div>
-                                    <span className="ml-2 text-sm text-text-secondary">Remember me</span>
+                                    <span className="ml-2 text-sm text-text-secondary">{t('auth.buttons.rememberMe')}</span>
                                 </label>
                                 <button
                                     type="button"
                                     onClick={() => { setIsForgotPassword(true); setForgotPasswordEmail(email); clearMessages(); }}
                                     className="text-sm text-text-secondary hover:underline"
                                 >
-                                    Forgot password?
+                                    {t('auth.signIn.forgotPassword')}
                                 </button>
                             </div>
                         )}
@@ -359,17 +363,17 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         {error && <Alert variant="error" onClose={() => setError(null)}>{error}</Alert>}
 
                         <Button type="submit" isLoading={loading} className="w-full">
-                            {isSignUp ? 'Sign Up' : 'Sign In'}
+                            {isSignUp ? t('auth.buttons.signUp') : t('auth.buttons.signIn')}
                         </Button>
                     </form>
 
                     <p className="mt-4 text-center text-sm text-text-secondary">
-                        {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+                        {isSignUp ? t('auth.signUp.haveAccount') : t('auth.signIn.dontHaveAccount')}{' '}
                         <button
                             onClick={() => { setIsSignUp(!isSignUp); clearMessages(); }}
                             className="text-primary hover:underline font-medium"
                         >
-                            {isSignUp ? 'Sign In' : 'Sign Up'}
+                            {isSignUp ? t('auth.buttons.signIn') : t('auth.buttons.signUp')}
                         </button>
                     </p>
                 </>

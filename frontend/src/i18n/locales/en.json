@@ -6,12 +6,95 @@
     "save": "Save",
     "close": "Close",
     "loading": "Loading...",
-    "error": "Something went wrong"
+    "error": "Something went wrong",
+    "redirectToMap": "Redirecting to the map..."
   },
   "auth": {
-    "signIn": "Sign In",
-    "signUp": "Create Account",
-    "forgotPassword": "Forgot Password"
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password"
+    },
+    "buttons": {
+      "signIn": "Sign In",
+      "signUp": "Sign Up",
+      "sendResetLink": "Send reset link",
+      "backToSignIn": "Back to Sign In",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "rememberMe": "Remember me",
+      "done": "Done",
+      "resend": "Resend",
+      "resetPassword": "Reset Password"
+    },
+    "signIn": {
+      "title": "Sign In",
+      "forgotPassword": "Forgot Password?",
+      "dontHaveAccount": "Don't have an account?",
+      "or": "Or"
+    },
+    "signUp": {
+      "title": "Create Account",
+      "haveAccount": "Already have an account?"
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "description": "Enter your email and we'll send you a link to reset your password.",
+      "authSessionExpired": "Session expired. Please request a new reset link.",
+      "passwordUpdated": "Password updated",
+      "updating": "Updating password..."
+    },
+    "emailCheck": {
+      "title": "Check your email",
+      "message": "We've sent a confirmation link to {{email}}. Please check your inbox and click the link to continue."
+    },
+    "userNamePrompt": {
+      "title": "Create your username",
+      "description": "Others can find you by your username.",
+      "subdescription": "Username and visibility can be modified in settings later.",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Enter a username",
+      "usernameAvailable":"Username available",
+      "submit": "Continue"
+    },
+    "messages": {
+      "checkEmailConfirmation": "Check your email for confirmation.",
+      "resetLinkSent": "Check your email for the password reset link"
+    },
+    "errors": {
+      "emailRequired": "Please enter your email",
+      "validEmail": "Please enter a valid email",
+      "emailExists": "This email is already registered, please sign in or use another email",
+      "passwordRequired": "Please enter a password",
+      "passwordMin": "Password must be at least 6 characters",
+      "confirmPasswordRequired": "Please confirm your password",
+      "passwordsMatch": "Passwords do not match",
+      "incorrectCredentials": "Incorrect email or password",
+      "unexpectedError": "An unexpected error occurred, please try again",
+      "unableToSignIn": "Unable to sign in with {{provider}}. Please try another method or contact support.",
+      "userNameMin":"Username must be at least 3 characters",
+      "userNameMax":"Username must not exceed 16 characters",
+      "userNamePattern":"Username can only contain letters, numbers, and underscores",
+      "userNameTaken":"This username is already registered, please enter a new username",
+      "unableToSaveUsername":"Unable to save username. Please try again."
+    }
+  },
+  "approval": {
+    "title": "Account Pending Approval",
+    "description": "Your account is awaiting admin approval.",
+    "pending": "Your account is pending approval.",
+    "approved": "Your account has been approved! You can now sign in.",
+    "rejected": "Your account application was rejected."
+  },
+  "userMenu": {
+    "settings": "Settings",
+    "adminDashboard":{
+      "title": "Admin Dashboard"
+    },
+    "signOut": "Sign Out"
   },
   "location": {
     "searchPlaceholder": "Search locations..."

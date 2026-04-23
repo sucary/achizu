@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next';
 
 import en from './locales/en.json';
 import zh from './locales/zh.json';
-import jp from './locales/jp.json';
+import ja from './locales/ja.json';
 
 void i18n
     .use(LanguageDetector)
@@ -13,9 +13,9 @@ void i18n
         resources: {
             en: { translation: en },
             zh: { translation: zh },
-            jp: { translation: jp },
+            ja: { translation: ja },
         },
-        supportedLngs: ['en', 'zh', 'jp'],
+        supportedLngs: ['en', 'zh', 'ja'],
         fallbackLng: 'en',
         interpolation: {
             escapeValue: false,

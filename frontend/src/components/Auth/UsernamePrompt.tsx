@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Input, Button } from '../ui';
 import { API_URL } from '../../services/api';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { useTranslation } from 'react-i18next';
 
 interface UsernamePromptProps {
     onComplete: () => void;
@@ -15,18 +16,20 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [checking, setChecking] = useState(false);
+    const { t } = useTranslation();
+    const availabilityTimeoutRef = useRef<number | null>(null);
 
     const validateUsername = (value: string): boolean => {
         if (value.length < 3) {
-            setError('Username must be at least 3 characters');
+            setError(t('auth.errors.userNameMin'));
             return false;
         }
         if (value.length > 16) {
-            setError('Username must be 16 characters or less');
+            setError(t('auth.errors.userNameMax'));
             return false;
         }
         if (!/^[a-zA-Z0-9_]+$/.test(value)) {
-            setError('Use only letters, numbers, and underscores');
+            setError(t('auth.errors.userNamePattern'));
             return false;
         }
         setError(null);
@@ -41,7 +44,7 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
             const res = await fetch(`${API_URL}/auth/check-username?username=${value}`);
             const data = await res.json();
             if (!data.available) {
-                setError('Username already taken');
+                setError(t('auth.errors.userNameTaken'));
             }
         } finally {
             setChecking(false);
@@ -65,7 +68,8 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
 
             if (!res.ok) {
                 const data = await res.json();
-                setError(data.error || 'Unable to save username. Please try again.');
+                console.error('Failed to save username:', data.error);
+                setError(t('auth.errors.unableToSaveUsername'));
                 return;
             }
 
@@ -74,6 +78,14 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+    return () => {
+        if (availabilityTimeoutRef.current !== null) {
+            window.clearTimeout(availabilityTimeoutRef.current);
+        }
+    };
+}, []);
 
     const isAvailable = !error && username.length >= 3 && !checking;
 
@@ -88,30 +100,36 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
                 tabIndex={-1}
                 className="relative bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 p-6 focus:outline-none"
             >
-                <h2 id="username-prompt-title" className="text-xl font-bold text-text mb-2">Create your username</h2>
+                <h2 id="username-prompt-title" className="text-xl font-bold text-text mb-2">{t('auth.userNamePrompt.title')}</h2>
                 <p className="text-sm text-text-secondary mb-4">
-                    Others can find you by your username.<br />
-                    Username and visibility can be modified in settings later.
+                    {t('auth.userNamePrompt.description')}
+                    <br />
+                    {t('auth.userNamePrompt.subdescription')}
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <Input
-                            label="Username"
+                            label={t('auth.userNamePrompt.usernameLabel')}
                             type="text"
                             value={username}
                             onChange={(e) => {
                                 const value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
                                 setUsername(value);
                                 setError(null);
+                                if (availabilityTimeoutRef.current !== null) {
+                                    window.clearTimeout(availabilityTimeoutRef.current);
+                                }
                                 if (value.length >= 3) {
-                                    setTimeout(() => checkAvailability(value), 800);
+                                    availabilityTimeoutRef.current = window.setTimeout(() => {
+                                        checkAvailability(value);
+                                    }, 800);
                                 }
                             }}
-                            placeholder="your_username"
+                            placeholder={t('auth.userNamePrompt.usernamePlaceholder')}
                             maxLength={16}
                             error={error || undefined}
-                            helperText={isAvailable ? 'Username available' : undefined}
+                            helperText={isAvailable ? t('auth.userNamePrompt.usernameAvailable') : undefined}
                             autoFocus
                         />
                     </div>
@@ -122,7 +140,7 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
                         disabled={!!error || username.length < 3 || checking}
                         className="w-full"
                     >
-                        Continue
+                        {t('auth.userNamePrompt.submit')}
                     </Button>
                 </form>
             </div>
