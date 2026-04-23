@@ -68,8 +68,7 @@ export function UsernamePrompt({ onComplete }: UsernamePromptProps) {
 
             if (!res.ok) {
                 const data = await res.json();
-                console.error('Failed to save username:', data.error);
-                setError(t('auth.errors.unableToSaveUsername'));
+                setError(data.error || t('auth.errors.unableToSaveUsername'));
                 return;
             }
 
