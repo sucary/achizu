@@ -17,11 +17,23 @@ interface SearchCallbacks {
     onRateLimited?: (retryFn: () => void) => void;
 }
 
+interface SearchMessages {
+    searchTimedOut: string;
+    failedSearch: string;
+    failedMore: string;
+}
+
 type PendingSearch =
     | { type: 'text'; query: string; source: SearchSource }
     | { type: 'reverse'; lat: number; lng: number; source: SearchSource };
 
 const SEARCH_TIMEOUT_MS = 10000;
+
+const DEFAULT_MESSAGES: SearchMessages = {
+    searchTimedOut: 'Search timed out. Please try again.',
+    failedSearch: 'Failed to search locations. Please try again.',
+    failedMore: 'Failed to search for more results.',
+};
 
 export class LocationSearchService {
     private abortController: AbortController | null = null;
@@ -29,6 +41,7 @@ export class LocationSearchService {
     private isSearching = false;
     private pendingSearch: PendingSearch | null = null;
     private callbacks: SearchCallbacks;
+    private messages: SearchMessages = DEFAULT_MESSAGES;
     private lastSearchStartTime = 0;
     private readonly RATE_LIMIT_MS = 1000; // 1 second between searches
     private lang?: string;
@@ -39,6 +52,10 @@ export class LocationSearchService {
 
     setLang(lang: string | undefined) {
         this.lang = lang;
+    }
+
+    setMessages(messages: SearchMessages) {
+        this.messages = messages;
     }
 
     private clearTimeout() {
@@ -55,7 +72,7 @@ export class LocationSearchService {
             this.abortController?.abort();
             this.abortController = null;
             this.isSearching = false;
-            this.callbacks.onError('Search timed out. Please try again.');
+            this.callbacks.onError(this.messages.searchTimedOut);
         }, SEARCH_TIMEOUT_MS);
     }
 
@@ -112,7 +129,7 @@ export class LocationSearchService {
             }
 
             // Extract error message from API response
-            let errorMessage = 'Failed to search locations. Please try again.';
+            let errorMessage = this.messages.failedSearch;
             if (axios.isAxiosError(err) && err.response?.data?.error) {
                 errorMessage = err.response.data.error;
             }
@@ -149,7 +166,7 @@ export class LocationSearchService {
             }
 
             // Extract error message from API response
-            let errorMessage = 'Failed to search for more results.';
+            let errorMessage = this.messages.failedMore;
             if (axios.isAxiosError(err) && err.response?.data?.error) {
                 errorMessage = err.response.data.error;
             }

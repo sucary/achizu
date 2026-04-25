@@ -11,6 +11,7 @@ import { useArtistForm } from '../../hooks/useArtistForm';
 import { getAvatarUrl, getProfileUrl } from '../../utils/cloudinaryUrl';
 import { Alert, IconButton, Button } from '../ui';
 import type { Artist } from '../../types/artist';
+import { useTranslation } from 'react-i18next';
 
 
 interface ArtistFormProps {
@@ -22,12 +23,12 @@ interface ArtistFormProps {
     onConsumePendingCoordinates?: () => void;
 }
 
-const SOCIAL_FIELDS: SocialLinkField[] = [
-    { key: 'website', icon: HomeIcon, placeholder: 'Website URL' },
-    { key: 'instagram', icon: InstagramIcon, placeholder: 'Instagram URL' },
-    { key: 'twitter', icon: XIcon, placeholder: 'Twitter/X URL' },
-    { key: 'appleMusic', icon: MusicIcon, placeholder: 'Music URL' },
-    { key: 'youtube', icon: YoutubeIcon, placeholder: 'YouTube URL' },
+const SOCIAL_FIELD_CONFIG: Omit<SocialLinkField, 'placeholder'>[] = [
+    { key: 'website', icon: HomeIcon },
+    { key: 'instagram', icon: InstagramIcon },
+    { key: 'twitter', icon: XIcon },
+    { key: 'appleMusic', icon: MusicIcon },
+    { key: 'youtube', icon: YoutubeIcon },
 ];
 
 const ArtistForm = ({
@@ -46,6 +47,11 @@ const ArtistForm = ({
     // Cropper state - simplified: just need to know if it's open and have the image
     const [isCropperOpen, setIsCropperOpen] = useState(false);
     const [cropperImageSrc, setCropperImageSrc] = useState<string | null>(null);
+    const { t } = useTranslation();
+    const socialFields: SocialLinkField[] = SOCIAL_FIELD_CONFIG.map((field) => ({
+        ...field,
+        placeholder: t(`artistForm.socialMedia.${field.key}`),
+    }));
 
     const {
         formData,
@@ -144,7 +150,7 @@ const ArtistForm = ({
         <>
         {/* Hidden file input */}
         <input
-            aria-label="upload image"
+            aria-label={t('artistForm.buttons.uploadAvatar')}
             ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -190,19 +196,19 @@ const ArtistForm = ({
                             displayValue={getLocationDisplayValue(formData.originalLocation)}
                             onChange={(result) => handleLocationSelect(result, 'originalLocation')}
                             onManualPin={() => handleManualPin('originalLocation')}
-                            placeholder="Search original location"
-                            label="Original Location"
+                            placeholder={t('artistForm.fields.searchOriginalLocation')}
+                            label={t('artistForm.fields.originalLocation')}
                             pendingCoordinates={getPendingCoordinatesFor('originalLocation')}
                             onCoordinatesConsumed={handleCoordinatesConsumed}
                         />
 
                         <div className="flex justify-center -my-2 relative z-10">
                             <IconButton
-                                aria-label="Copy original location to active location"
+                                aria-label={t('artistForm.buttons.copyOriginalToActive')}
                                 onClick={copyOriginalToActive}
                                 size="sm"
                                 className="bg-surface-muted border border-border text-text-secondary rounded-full hover:bg-primary hover:text-white hover:border-primary"
-                                title="Copy Original to Active"
+                                title={t('artistForm.buttons.copyOriginalToActive')}
                                 type="button"
                             >
                                 <ArrowDownIcon className="w-4 h-4" />
@@ -213,32 +219,32 @@ const ArtistForm = ({
                             displayValue={getLocationDisplayValue(formData.activeLocation)}
                             onChange={(result) => handleLocationSelect(result, 'activeLocation')}
                             onManualPin={() => handleManualPin('activeLocation')}
-                            placeholder="Search active location"
-                            label="Active Location"
+                            placeholder={t('artistForm.fields.searchActiveLocation')}
+                            label={t('artistForm.fields.activeLocation')}
                             pendingCoordinates={getPendingCoordinatesFor('activeLocation')}
                             onCoordinatesConsumed={handleCoordinatesConsumed}
                         />
                     </div>
 
                     <div>
-                        <span className="block text-sm font-bold text-text mb-1">Career Years</span>
+                        <span className="block text-sm font-bold text-text mb-1">{t('artistForm.fields.careerYears')}</span>
                         <div className="flex items-center gap-2">
                             <div className="flex-1">
-                                <YearSelect value={formData.debutYear} onChange={updateDebutYear} placeholder="Debut" />
+                                <YearSelect value={formData.debutYear} onChange={updateDebutYear} placeholder={t('artistForm.fields.debut')} />
                             </div>
                             <div className="flex-1">
                                 {showInactive ? (
-                                    <YearSelect value={formData.inactiveYear} onChange={updateInactiveYear} placeholder="Inactive" />
+                                    <YearSelect value={formData.inactiveYear} onChange={updateInactiveYear} placeholder={t('artistForm.fields.inactive')} />
                                 ) : (
                                     <div className="h-full flex items-center justify-center">
-                                        <span className="px-3 py-1 text-sm font-medium text-text-secondary bg-surface-muted rounded-full">Present</span>
+                                        <span className="px-3 py-1 text-sm font-medium text-text-secondary bg-surface-muted rounded-full">{t('artistForm.fields.present')}</span>
                                     </div>
                                 )}
                             </div>
                             <IconButton
-                                aria-label={showInactive ? 'Artist is inactive' : 'Mark as inactive'}
+                                aria-label={showInactive ? t('artistForm.buttons.setActive') : t('artistForm.buttons.setInactive')}
                                 onClick={() => { setShowInactive(!showInactive); if (showInactive) updateInactiveYear(undefined); }}
-                                title={showInactive ? 'Artist is inactive' : 'Mark as inactive'}
+                                title={showInactive ? t('artistForm.buttons.setActive') : t('artistForm.buttons.setInactive')}
                             >
                                 {showInactive ? <MusicNoteIcon /> : <SleepIcon />}
                             </IconButton>
@@ -254,13 +260,13 @@ const ArtistForm = ({
                             type="button"
 
                         >
-                            <span>Social Media</span>
+                            <span>{t('artistForm.socialMedia.title')}</span>
                             <ChevronDownIcon aria-hidden="true" className={`w-4 h-4 text-text-muted transition-transform duration-200 ${isSocialExpanded ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isSocialExpanded && (
                             <div className="px-3 py-3 flex flex-col gap-3 bg-surface-secondary rounded-b-md">
-                                {SOCIAL_FIELDS.map((field) => (
+                                {socialFields.map((field) => (
                                     <SocialLinkInput
                                         key={field.key}
                                         field={field}
@@ -287,7 +293,7 @@ const ArtistForm = ({
                         className="flex-1"
                         type="button"
                     >
-                        Cancel
+                        {t('artistForm.buttons.cancel')}
                     </Button>
                     <Button
                         onClick={handleSave}
@@ -295,7 +301,7 @@ const ArtistForm = ({
                         className="flex-1"
                         type="button"
                     >
-                        Save
+                        {t('artistForm.buttons.save')}
                     </Button>
                 </div>
             </div>

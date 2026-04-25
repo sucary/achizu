@@ -7,6 +7,7 @@ import type { SocialLinkKey } from '../constants/artist';
 import { extractLocationData, createEmptyLocation, hasValidCoordinates } from '../utils/locationUtils';
 import { uploadImageToCloudinary } from '../utils/cloudinary';
 import { validateAllSocialLinks } from '../utils/urlValidation';
+import { useTranslation } from 'react-i18next';
 
 export interface UseArtistFormOptions {
     initialData?: Artist;
@@ -43,11 +44,11 @@ export interface UseArtistFormReturn {
     isEditing: boolean;
 }
 
-const createInitialFormData = (initialData?: Artist): Partial<Artist> => {
+const createInitialFormData = (initialData: Artist | undefined, defaultName: string): Partial<Artist> => {
     if (initialData) return initialData;
 
     return {
-        name: 'New Artist',
+        name: defaultName,
         sourceImage: '',
         avatarCrop: undefined,
         profileCrop: undefined,
@@ -63,8 +64,9 @@ export const useArtistForm = ({
     onCancel
 }: UseArtistFormOptions): UseArtistFormReturn => {
     const queryClient = useQueryClient();
+    const { t } = useTranslation();
 
-    const [formData, setFormData] = useState<Partial<Artist>>(() => createInitialFormData(initialData));
+    const [formData, setFormData] = useState<Partial<Artist>>(() => createInitialFormData(initialData, t('artistForm.defaults.newArtist')));
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pendingField, setPendingField] = useState<'originalLocation' | 'activeLocation' | null>(null);
@@ -132,14 +134,14 @@ export const useArtistForm = ({
             }));
             return imageUrl;
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to upload image';
+            const errorMessage = err instanceof Error ? err.message : t('artistForm.errors.failedUploadImage');
             setUploadError(errorMessage);
             console.error('Image upload error:', err);
             return null;
         } finally {
             setIsUploadingImage(false);
         }
-    }, []);
+    }, [t]);
 
     // Update crop coordinates
     const updateCrops = useCallback((avatarCrop: CropArea, profileCrop: CropArea) => {
@@ -151,26 +153,29 @@ export const useArtistForm = ({
     }, []);
 
     const validateForm = useCallback((): string | null => {
-        if (!formData.name || formData.name.trim() === '' || formData.name === 'New Artist') {
-            return 'Artist name is required';
+        if (!formData.name || formData.name.trim() === '' || formData.name === t('artistForm.defaults.newArtist')) {
+            return t('artistForm.errors.nameRequired');
         }
 
         if (!hasValidCoordinates(formData.originalLocation)) {
-            return 'Original location is required';
+            return t('artistForm.errors.originalLocationRequired');
         }
 
         if (!hasValidCoordinates(formData.activeLocation)) {
-            return 'Active location is required';
+            return t('artistForm.errors.activeLocationRequired');
         }
 
-        const socialValidation = validateAllSocialLinks(formData.socialLinks);
+        const socialValidation = validateAllSocialLinks(formData.socialLinks, {
+            invalidWebsite: t('artistForm.errors.invalidWebsiteUrl'),
+            invalidProfile: (platform) => t('artistForm.errors.invalidSocialProfileUrl', { platform }),
+        });
         if (!socialValidation.isValid) {
             const firstError = Object.values(socialValidation.errors)[0];
-            return firstError || 'Invalid social link URL';
+            return firstError || t('artistForm.errors.invalidSocialLinkUrl');
         }
 
         return null;
-    }, [formData.name, formData.originalLocation, formData.activeLocation, formData.socialLinks]);
+    }, [formData.name, formData.originalLocation, formData.activeLocation, formData.socialLinks, t]);
 
     const handleSave = useCallback(async () => {
         setError(null);
@@ -198,7 +203,7 @@ export const useArtistForm = ({
             onCancel?.();
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string; error?: string } }; message?: string };
-            let errorMessage = 'Failed to save artist. Please try again.';
+            let errorMessage = t('artistForm.errors.failedSaveArtist');
 
             if (error.response?.data?.message) {
                 errorMessage = error.response.data.message;
@@ -212,7 +217,7 @@ export const useArtistForm = ({
         } finally {
             setIsSaving(false);
         }
-    }, [formData, initialData?.id, validateForm, queryClient, onSuccess, onCancel]);
+    }, [formData, initialData?.id, validateForm, queryClient, onSuccess, onCancel, t]);
 
     return {
         formData,

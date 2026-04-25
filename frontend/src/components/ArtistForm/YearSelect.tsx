@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDownIcon } from '../icons/GeneralIcons';
+import { useTranslation } from 'react-i18next';
 
 interface YearSelectProps {
     value?: number;
@@ -14,7 +15,7 @@ interface YearSelectProps {
 const YearSelect = ({
     value,
     onChange,
-    placeholder = 'Year',
+    placeholder,
     label,
     minYear = 1900,
     maxYear = new Date().getFullYear()
@@ -26,6 +27,8 @@ const YearSelect = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { t } = useTranslation();
+
 
     // Sync input value with prop value
     useEffect(() => {
@@ -158,11 +161,11 @@ const YearSelect = ({
                         e.target.select();
                     }}
                     onBlur={handleBlur}
-                    placeholder={placeholder}
+                    placeholder={placeholder || t('artistForm.yearSelect.placeholder')}
                     className="w-full px-3 py-2 pr-8 text-sm border border-border-strong rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary"
                 />
                 <button
-                    aria-label="Toggle year dropdown"
+                    aria-label={t('artistForm.yearSelect.label')}
                     type="button"
                     onMouseDown={(e) => {
                         e.preventDefault();

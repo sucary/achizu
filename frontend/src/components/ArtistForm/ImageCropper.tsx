@@ -4,6 +4,7 @@ import type { Area, Point } from 'react-easy-crop';
 import type { CropArea } from '../../types/artist';
 import { ASPECT_RATIOS } from '../../constants/artist';
 import { useDialogAccessibility } from '../../hooks/useDialogAccessibility';
+import { useTranslation } from 'react-i18next';
 
 export interface CropResult {
     avatarCrop: CropArea;
@@ -53,6 +54,7 @@ const ImageCropper = ({
 }: ImageCropperProps) => {
     const dialogRef = useDialogAccessibility(onCancel);
     const [mode, setMode] = useState<CropMode>(initialMode);
+    const { t } = useTranslation();
 
     // Single crop state - resets when switching tabs
     const [cropState, setCropState] = useState<CropState>({ ...INITIAL_CROP_STATE });
@@ -131,7 +133,7 @@ const ImageCropper = ({
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Image Cropper"
+            aria-label={t('artistForm.cropper.title')}
             tabIndex={-1}
             className="fixed inset-0 z-cropper flex items-center justify-center bg-black/70 focus:outline-none">
             <div className="bg-surface rounded-lg shadow-xl w-[90vw] max-w-md overflow-hidden">
@@ -147,7 +149,7 @@ const ImageCropper = ({
                                 : 'text-text-secondary hover:text-text'
                         }`}
                     >
-                        Avatar
+                        {t('artistForm.cropper.avatar')}
                     </button>
                     <button
                         aria-selected={mode === 'profile'}
@@ -159,7 +161,7 @@ const ImageCropper = ({
                                 : 'text-text-secondary hover:text-text'
                         }`}
                     >
-                        Profile
+                        {t('artistForm.cropper.banner')}
                     </button>
                 </div>
 
@@ -168,17 +170,17 @@ const ImageCropper = ({
                     {/* Re-upload button */}
                     {onReupload && (
                         <button
-                            aria-label="Re-upload image"
+                            aria-label={t('artistForm.cropper.reUpload')}
                             onClick={onReupload}
                             className="absolute left-3 top-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-white/80 bg-black/40 hover:bg-black/60 hover:text-white transition-colors"
                             type="button"
-                            title="Upload a different image"
+                            title={t('artistForm.cropper.reUpload')}
                         >
                             <svg 
                             aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                             </svg>
-                            Re-upload
+                            {t('artistForm.cropper.reUpload')}
                         </button>
                     )}
 
@@ -206,7 +208,7 @@ const ImageCropper = ({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
                         <input
-                            aria-label="Zoom"
+                            aria-label={t('artistForm.cropper.zoom')}
                             type="range"
                             min={1}
                             max={3}
@@ -228,10 +230,10 @@ const ImageCropper = ({
                             onClick={handleReset}
                             className="mt-1 px-2 py-0.5 rounded text-[10px] font-medium text-white/60 hover:text-white/90 hover:bg-surface/10 transition-colors"
                             type="button"
-                            title="Reset to default"
-                            aria-label="Reset to default"
+                            title={t('artistForm.cropper.resetToDefault')}
+                            aria-label={t('artistForm.cropper.resetToDefault')}
                         >
-                            Reset
+                            {t('artistForm.cropper.reset')}
                         </button>
                     </div>
                 </div>
@@ -243,7 +245,7 @@ const ImageCropper = ({
                         className="flex-1 px-4 py-2 text-sm font-medium text-text bg-surface border border-border-strong rounded-md hover:bg-surface-secondary transition-colors"
                         type="button"
                     >
-                        Cancel
+                        {t('artistForm.buttons.cancel')}
                     </button>
                     <button
                         onClick={handleSave}
@@ -251,7 +253,7 @@ const ImageCropper = ({
                         className="flex-1 px-4 py-2 text-sm font-medium text-white bg-primary border border-transparent rounded-md hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         type="button"
                     >
-                        Save
+                        {t('artistForm.buttons.save')}
                     </button>
                 </div>
             </div>

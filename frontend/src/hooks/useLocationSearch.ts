@@ -3,6 +3,7 @@ import { reverseSearchCities, type SearchResult } from '../services/api';
 import { LocationSearchService } from '../services/LocationSearchService';
 import { locationSearchReducer, initialState } from './locationSearchReducer';
 import { useLocationLanguage } from '../context/LocationLanguageContext';
+import { useTranslation } from 'react-i18next';
 
 interface UseLocationSearchProps {
     displayValue?: string;
@@ -19,6 +20,8 @@ export function useLocationSearch({
 }: UseLocationSearchProps) {
     const [state, dispatch] = useReducer(locationSearchReducer, initialState);
     const { locationLanguage } = useLocationLanguage();
+    const { t } = useTranslation();
+    const { clickedCoords, query, retryFn } = state;
 
     // Create service with callbacks that dispatch to reducer
     const service = useMemo(() => new LocationSearchService({
@@ -39,6 +42,14 @@ export function useLocationSearch({
         service.setLang(locationLanguage);
     }, [service, locationLanguage]);
 
+    useEffect(() => {
+        service.setMessages({
+            searchTimedOut: t('artistForm.locationSearch.errors.searchTimedOut'),
+            failedSearch: t('artistForm.locationSearch.errors.failedSearch'),
+            failedMore: t('artistForm.locationSearch.errors.failedMore'),
+        });
+    }, [service, t]);
+
     // Cleanup service on unmount
     useEffect(() => {
         return () => service.destroy();
@@ -51,36 +62,36 @@ export function useLocationSearch({
     }, [service]);
 
     const handleSelect = useCallback((result: SearchResult) => {
-        const finalResult = state.clickedCoords
-            ? { ...result, center: state.clickedCoords }
+        const finalResult = clickedCoords
+            ? { ...result, center: clickedCoords }
             : result;
         onChange(finalResult);
         dispatch({ type: 'RESET_QUERY' });
-    }, [state.clickedCoords, onChange]);
+    }, [clickedCoords, onChange]);
 
     const handleSearch = useCallback(() => {
-        const searchQuery = state.query ?? '';
+        const searchQuery = query ?? '';
         if (searchQuery.trim().length >= 2) {
             service.search(searchQuery.trim());
         }
-    }, [service, state.query]);
+    }, [service, query]);
 
     const handleSearchMore = useCallback(() => {
-        if (state.clickedCoords) {
-            service.reverseSearch(state.clickedCoords.lat, state.clickedCoords.lng, 'nominatim');
+        if (clickedCoords) {
+            service.reverseSearch(clickedCoords.lat, clickedCoords.lng, 'nominatim');
         } else {
-            const searchQuery = state.query ?? '';
+            const searchQuery = query ?? '';
             if (searchQuery.trim().length >= 2) {
                 service.search(searchQuery.trim(), 'nominatim');
             }
         }
-    }, [service, state.clickedCoords, state.query]);
+    }, [service, clickedCoords, query]);
 
     const handleRetry = useCallback(() => {
-        if (state.retryFn) {
-            state.retryFn();
+        if (retryFn) {
+            retryFn();
         }
-    }, [state.retryFn]);
+    }, [retryFn]);
 
     const setQuery = useCallback((query: string | null) => {
         dispatch({ type: 'SET_QUERY', query });
@@ -129,7 +140,7 @@ export function useLocationSearch({
                     dispatch({ type: 'SET_QUERY', query: null });
                 }
             } catch (err) {
-                dispatch({ type: 'SEARCH_ERROR', error: 'No locations found at this point. Try another spot.' });
+                dispatch({ type: 'SEARCH_ERROR', error: t('artistForm.locationSearch.errors.noLocationsAtPoint') });
                 console.error('Reverse search failed:', err);
             } finally {
                 onCoordinatesConsumed?.();
@@ -137,7 +148,7 @@ export function useLocationSearch({
         };
 
         handleReverseSearch();
-    }, [pendingCoordinates, onCoordinatesConsumed, onChange, service]);
+    }, [pendingCoordinates, onCoordinatesConsumed, onChange, service, t]);
 
     // Effect: reset query when displayValue changes externally
     const prevDisplayValue = useRef(displayValue);

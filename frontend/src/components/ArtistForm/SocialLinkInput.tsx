@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import type { ComponentType, SVGProps } from 'react';
 import type { SocialLinkKey } from '../../constants/artist';
 import { validateSocialUrl } from '../../utils/urlValidation';
+import { useTranslation } from 'react-i18next';
 
 export interface SocialLinkField {
     key: SocialLinkKey;
@@ -19,15 +20,21 @@ const SocialLinkInput = ({ field, value, onChange }: SocialLinkInputProps) => {
     const { key, icon: Icon, placeholder } = field;
     const [error, setError] = useState<string | null>(null);
     const [touched, setTouched] = useState(false);
+    const { t } = useTranslation();
+
+    const validationMessages = useMemo(() => ({
+        invalidWebsite: t('artistForm.errors.invalidWebsiteUrl'),
+        invalidProfile: (platform: string) => t('artistForm.errors.invalidSocialProfileUrl', { platform }),
+    }), [t]);
 
     const isValid = useMemo(() => {
         if (!value) return false;
-        return validateSocialUrl(key, value).isValid;
-    }, [key, value]);
+        return validateSocialUrl(key, value, validationMessages).isValid;
+    }, [key, value, validationMessages]);
 
     const handleBlur = () => {
         setTouched(true);
-        const result = validateSocialUrl(key, value);
+        const result = validateSocialUrl(key, value, validationMessages);
         setError(result.error || null);
     };
 

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { EditIcon } from '../icons/GeneralIcons';
 import { MAX_NAME_LENGTH } from '../../constants/artist';
+import { useTranslation } from 'react-i18next';
 
 type HoverTarget = 'name' | 'avatar' | null;
 
@@ -26,18 +27,20 @@ const ArtistFormHeader = ({
     const [isEditingName, setIsEditingName] = useState(false);
     const [hoverTarget, setHoverTarget] = useState<HoverTarget>(null);
     const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
+    const { t } = useTranslation();
 
     const displayName = name.length > MAX_NAME_LENGTH
         ? `${name.substring(0, MAX_NAME_LENGTH)}...`
         : name;
 
-    const placeholderUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'New Artist')}&size=150&background=e5e7eb&color=9ca3af`;
+    const placeholderUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || t('artistForm.defaults.newArtist'))}&size=150&background=e5e7eb&color=9ca3af`;
 
     const handleProfileClick = (e: React.MouseEvent) => {
         if (mouseDownPos.current) {
             const dx = e.clientX - mouseDownPos.current.x;
             const dy = e.clientY - mouseDownPos.current.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
+            
 
             // If mouse moved more than 5 pixels, it's a drag, not a click
             // Prevents accidental clicks when trying to drag the name
@@ -56,6 +59,7 @@ const ArtistFormHeader = ({
             const dx = e.clientX - mouseDownPos.current.x;
             const dy = e.clientY - mouseDownPos.current.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
+            
 
             if (distance > 5) {
                 mouseDownPos.current = null;
@@ -70,8 +74,13 @@ const ArtistFormHeader = ({
         <div
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleProfileClick(e as any); }}
-            aria-label="Edit artist profile"
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onProfileClick();
+                }
+            }}
+            aria-label={t('artistForm.buttons.editBanner')}
             className="relative w-full h-32 bg-surface-muted bg-cover bg-center group/profile cursor-pointer"
             style={{ backgroundImage: profileUrl ? `url(${profileUrl})` : undefined }}
             onMouseDown={(e) => mouseDownPos.current = { x: e.clientX, y: e.clientY }}
@@ -84,6 +93,8 @@ const ArtistFormHeader = ({
 
             {/* Avatar */}
             <button
+                type="button"
+                aria-label={t('artistForm.buttons.uploadAvatar')}
                 className="absolute -bottom-8 left-4 w-20 h-20 rounded-full border-4 border-surface bg-border overflow-hidden z-10 shadow-md group/avatar cursor-pointer"
                 onMouseDown={(e) => mouseDownPos.current = { x: e.clientX, y: e.clientY }}
                 onClick={handleAvatarClick}
@@ -98,7 +109,7 @@ const ArtistFormHeader = ({
                     <>
                         <img
                             src={avatarUrl || placeholderUrl}
-                            alt="Avatar"
+                            alt={t('artistForm.alts.avatar')}
                             className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
@@ -117,7 +128,7 @@ const ArtistFormHeader = ({
             >
                 {isEditingName ? (
                     <input
-                        aria-label="artist name"
+                        aria-label={t('artistForm.fields.name')}
                         type="text"
                         value={name}
                         onChange={(e) => onNameChange(e.target.value)}
@@ -132,7 +143,7 @@ const ArtistFormHeader = ({
                         onClick={() => setIsEditingName(true)}
                         className="text-lg font-bold text-white text-shadow-overlay hover:text-gray-100 whitespace-nowrap overflow-hidden p-0 m-0 leading-tight border-b-2 border-transparent cursor-pointer min-h-[1.75rem]"
                         title={name}
-                        aria-label="Edit artist name"
+                        aria-label={t('artistForm.buttons.editName')}
                     >
                         {displayName}
                     </button>

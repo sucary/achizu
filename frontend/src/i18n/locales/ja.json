@@ -61,7 +61,7 @@
       "subdescription": "ユーザー名と公開設定は後で設定から変更できます。",
       "usernameLabel": "ユーザー名",
       "usernamePlaceholder": "ユーザー名を入力してください",
-      "usernameAvailable":"このユーザー名は使用できます",
+      "usernameAvailable": "このユーザー名は使用できます",
       "submit": "続行"
     },
     "errors": {
@@ -75,11 +75,11 @@
       "incorrectCredentials": "メールアドレスまたはパスワードが間違っています。",
       "unexpectedError": "予期しないエラーが発生しました。もう一度お試しください。",
       "unableToSignIn": "{{provider}}でサインインできません。別の方法を試すか、サポートにお問い合わせください。",
-      "userNameMin":"ユーザー名は3文字以上で入力してください。",
-      "userNameMax":"ユーザー名は16文字以内で入力してください。",
-      "userNamePattern":"ユーザー名には英字、数字、アンダースコアのみ使用できます。",
-      "userNameTaken":"そのユーザー名は既に登録されています。新しいユーザー名を入力してください。",
-      "unableToSaveUsername":"ユーザー名を保存できませんでした。もう一度お試しください。"
+      "userNameMin": "ユーザー名は3文字以上で入力してください。",
+      "userNameMax": "ユーザー名は16文字以内で入力してください。",
+      "userNamePattern": "ユーザー名には英字、数字、アンダースコアのみ使用できます。",
+      "userNameTaken": "そのユーザー名は既に登録されています。新しいユーザー名を入力してください。",
+      "unableToSaveUsername": "ユーザー名を保存できませんでした。もう一度お試しください。"
     }
   },
   "approval": {
@@ -89,14 +89,90 @@
     "approved": "あなたのアカウントは承認されました。今すぐログインできます。",
     "rejected": "アカウント申請は承認されませんでした。"
   },
-    "userMenu": {
+  "userMenu": {
     "settings": "設定",
-    "adminDashboard":{
+    "adminDashboard": {
       "title": "管理ダッシュボード"
     },
     "signOut": "ログアウト"
   },
   "location": {
     "searchPlaceholder": "場所を検索..."
+  },
+  "artistForm": {
+    "fields": {
+      "name": "名前",
+      "originalLocation": "出身地",
+      "searchOriginalLocation": "出身地を検索",
+      "activeLocation": "活動拠点",
+      "searchActiveLocation": "活動拠点を検索",
+      "careerYears": "活動期間",
+      "debut": "デビュー",
+      "present": "現在",
+      "inactive": "活動休止"
+    },
+    "alts": {
+      "avatar": "アーティストのアバター"
+    },
+    "defaults": {
+      "newArtist": "新しいアーティスト"
+    },
+    "buttons": {
+      "editBanner": "アーティストのバナーを編集",
+      "editName": "アーティスト名を編集",
+      "uploadAvatar": "画像をアップロード",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "copyOriginalToActive": "出身地を活動拠点にコピー",
+      "setInactive": "活動休止として設定",
+      "setActive": "現在も活動中として設定"
+    },
+    "socialMedia": {
+      "title": "ソーシャルメディア",
+      "website": "公式サイトURL",
+      "instagram": "Instagram URL",
+      "twitter": "Twitter/X URL",
+      "appleMusic": "音楽配信URL",
+      "youtube": "YouTube URL"
+    },
+    "cropper": {
+      "title": "画像をトリミング",
+      "avatar": "アバター",
+      "banner": "バナー",
+      "reUpload": "再アップロード",
+      "reset": "リセット",
+      "resetToDefault": "デフォルトに戻す",
+      "zoom": "ズーム"
+    },
+    "locationSearch": {
+      "placeholder": "場所を検索",
+      "cancelSearch": "場所の検索をキャンセル",
+      "searchLocation": "場所を検索",
+      "manualSelect": "地図上で場所を選択",
+      "retry": "再試行",
+      "searching": "場所を検索しています...",
+      "searchMore": "さらに検索...",
+      "noResults": "結果が見つかりません",
+      "errors": {
+        "searchTimedOut": "検索がタイムアウトしました。もう一度お試しください。",
+        "failedSearch": "場所を検索できませんでした。もう一度お試しください。",
+        "failedMore": "追加の検索結果を取得できませんでした。",
+        "noLocationsAtPoint": "この地点では場所が見つかりませんでした。別の地点を試してください。"
+      }
+    },
+    "yearSelect": {
+      "placeholder": "年",
+      "label": "年を選択"
+    },
+    "errors": {
+      "nameRequired": "アーティスト名を入力してください。",
+      "originalLocationRequired": "出身地を入力してください。",
+      "activeLocationRequired": "活動拠点を入力してください。",
+      "invalidWebsiteUrl": "有効なURLを入力してください（https://...）",
+      "invalidSocialProfileUrl": "有効な{{platform}}プロフィールURLを入力してください。",
+      "invalidSocialLinkUrl": "ソーシャルリンクのURLが無効です。",
+      "failedUploadImage": "画像をアップロードできませんでした。",
+      "failedSaveArtist": "アーティストを保存できませんでした。もう一度お試しください。"
+    }
   }
 }

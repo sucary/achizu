@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLocationLanguage } from '../../context/LocationLanguageContext';
 import { formatLocationLocalized } from '../../utils/locationUtils';
 import type { SearchResult } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 
 interface LocationSearchProps {
     displayValue?: string;
@@ -59,6 +60,7 @@ export const LocationSearch = ({
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, maxHeight: 320 });
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLDivElement>(null);
+    const { t } = useTranslation();
 
     // Update dropdown position when opening
     useEffect(() => {
@@ -135,7 +137,7 @@ export const LocationSearch = ({
                         <input
                             id={inputId}
                             type="text"
-                            placeholder={placeholder || "Search location..."}
+                            placeholder={placeholder || t('artistForm.locationSearch.placeholder')}
                             className={`w-full pl-3 py-2 border border-border-strong rounded-md text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-inset focus:ring-primary ${isLoading ? 'pr-14' : 'pr-9'}`}
                             value={query !== null ? query : displayValue}
                             onChange={handleInputChange}
@@ -154,23 +156,23 @@ export const LocationSearch = ({
                                 </div>
                             )}
                             <button
-                                aria-label="Search location"
+                                aria-label={(isLoading || queueSize > 0) ? t('artistForm.locationSearch.cancelSearch') : t('artistForm.locationSearch.searchLocation')}
                                 onClick={(isLoading || queueSize > 0) ? handleCancel : handleSearch}
                                 type="button"
                                 disabled={!isLoading && queueSize === 0 && !canSearch}
                                 className={`p-1 rounded transition-colors ${(isLoading || queueSize > 0) ? 'text-text-secondary hover:bg-error hover:text-white' : 'text-text-secondary hover:bg-primary hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-secondary'}`}
-                                title={(isLoading || queueSize > 0) ? "Cancel search" : "Search"}
+                                title={(isLoading || queueSize > 0) ? t('artistForm.locationSearch.cancelSearch') : t('artistForm.locationSearch.searchLocation')}
                             >
                                 {(isLoading || queueSize > 0) ? <CloseIcon className="w-4 h-4" /> : <SearchIcon className="w-4 h-4" />}
                             </button>
                         </div>
                     </div>
                     <button
-                        aria-label="Manually select on map"
+                        aria-label={t('artistForm.locationSearch.manualSelect')}
                         onClick={onManualPin}
                         type="button"
                         className="p-2 rounded text-text-secondary hover:bg-primary hover:text-white transition-colors"
-                        title="Manually select on map"
+                        title={t('artistForm.locationSearch.manualSelect')}
                     >
                         <MapPinIcon className="w-5 h-5" />
                     </button>
@@ -184,7 +186,7 @@ export const LocationSearch = ({
                                 onClick={handleRetry}
                                 className="ml-2 text-primary hover:underline"
                             >
-                                Retry
+                                {t('artistForm.locationSearch.retry')}
                             </button>
                         )}
                     </div>
@@ -247,7 +249,7 @@ export const LocationSearch = ({
                                         )}
                                     </div>
                                 )}
-                                <span>{isLoadingMore ? 'Searching...' : 'Search for more results'}</span>
+                                <span>{isLoadingMore ? t('artistForm.locationSearch.searching') : t('artistForm.locationSearch.searchMore')}</span>
                             </Button>
                         )}
                     </div>
@@ -265,7 +267,7 @@ export const LocationSearch = ({
                         width: `${dropdownPosition.width}px`
                     }}
                 >
-                    No results found
+                    {t('artistForm.locationSearch.noResults')}
                 </div>,
                 document.body
             )}

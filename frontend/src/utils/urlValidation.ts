@@ -16,12 +16,26 @@ const PLATFORM_NAMES: Record<SocialLinkKey, string> = {
     youtube: 'YouTube',
 };
 
+export type SocialValidationMessages = {
+    invalidWebsite: string;
+    invalidProfile: (platform: string) => string;
+};
+
 export interface ValidationResult {
     isValid: boolean;
     error?: string;
 }
 
-export const validateSocialUrl = (key: SocialLinkKey, value: string): ValidationResult => {
+const DEFAULT_MESSAGES: SocialValidationMessages = {
+    invalidWebsite: 'Enter a valid URL (https://...)',
+    invalidProfile: (platform) => `Enter a valid ${platform} profile URL`,
+};
+
+export const validateSocialUrl = (
+    key: SocialLinkKey,
+    value: string,
+    messages: SocialValidationMessages = DEFAULT_MESSAGES
+): ValidationResult => {
     // Empty is valid (optional field)
     if (!value || value.trim() === '') {
         return { isValid: true };
@@ -32,16 +46,17 @@ export const validateSocialUrl = (key: SocialLinkKey, value: string): Validation
 
     if (!pattern.test(trimmed)) {
         if (key === 'website') {
-            return { isValid: false, error: 'Enter a valid URL (https://...)' };
+            return { isValid: false, error: messages.invalidWebsite };
         }
-        return { isValid: false, error: `Enter a valid ${PLATFORM_NAMES[key]} profile URL` };
+        return { isValid: false, error: messages.invalidProfile(PLATFORM_NAMES[key]) };
     }
 
     return { isValid: true };
 };
 
 export const validateAllSocialLinks = (
-    socialLinks: Partial<Record<SocialLinkKey, string>> | undefined
+    socialLinks: Partial<Record<SocialLinkKey, string>> | undefined,
+    messages?: SocialValidationMessages
 ): { isValid: boolean; errors: Partial<Record<SocialLinkKey, string>> } => {
     const errors: Partial<Record<SocialLinkKey, string>> = {};
 
@@ -50,7 +65,7 @@ export const validateAllSocialLinks = (
     }
 
     for (const [key, value] of Object.entries(socialLinks)) {
-        const result = validateSocialUrl(key as SocialLinkKey, value || '');
+        const result = validateSocialUrl(key as SocialLinkKey, value || '', messages);
         if (!result.isValid && result.error) {
             errors[key as SocialLinkKey] = result.error;
         }
