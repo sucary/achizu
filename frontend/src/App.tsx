@@ -1105,7 +1105,7 @@ function App() {
                         {user && <NotificationButton onOpenChange={setNotificationMenuOpen} />}
                     </div>
                     {!user && (
-                        <div className="z-[1100] hidden sm:block">
+                        <div className="z-[1100]">
                             <LanguageDropdown />
                         </div>
                     )}
