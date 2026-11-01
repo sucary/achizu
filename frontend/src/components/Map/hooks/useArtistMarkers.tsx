@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useTranslation } from 'react-i18next';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
+import type * as GeoJSON from 'geojson';
 import ArtistCard from '../../ArtistCard';
 import { CLUSTER_CONFIG } from '../../../constants/mapCluster';
 import { InlineActionMenu } from '../../ui';

@@ -1,4 +1,5 @@
-import type maplibregl from 'maplibre-gl';
+import type * as maplibregl from 'maplibre-gl';
+import type * as GeoJSON from 'geojson';
 import type { ReactNode } from 'react';
 import type { Root } from 'react-dom/client';
 import type { Artist, SelectionMode } from '../../types/artist';

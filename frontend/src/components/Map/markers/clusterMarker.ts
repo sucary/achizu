@@ -1,4 +1,4 @@
-import type maplibregl from 'maplibre-gl';
+import type * as maplibregl from 'maplibre-gl';
 import { CLUSTER_CONFIG } from '../../../constants/mapCluster';
 import i18n from '../../../i18n';
 import { getGeneratedClusterColor, getStableColorHash } from '../../../utils/generatedClusterPalette';

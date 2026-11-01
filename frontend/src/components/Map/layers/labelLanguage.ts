@@ -1,10 +1,11 @@
-import type maplibregl from 'maplibre-gl';
+import type * as maplibregl from 'maplibre-gl';
+import type { ExpressionSpecification } from '@maplibre/maplibre-gl-style-spec';
 import type { LocationLanguage } from '../../../types/artist';
 
 // Map label localization and CJK font routing
 
 type MapStyleLayer = NonNullable<ReturnType<maplibregl.Map['getStyle']>['layers']>[number];
-type MapExpression = unknown[];
+type MapExpression = ExpressionSpecification;
 
 const LOCAL_IDEOGRAPH_TEXT_FONT = ['Open Sans Regular', 'Arial Unicode MS Regular'];
 const isChineseLanguage = (language: LocationLanguage) => language === 'zhHans' || language === 'zhHant';
@@ -93,7 +94,7 @@ export const patchMapLabelLanguage = (
     if (!style?.layers) return;
 
     const layers = style.layers;
-    const textField = [
+    const textField: MapExpression = [
         'coalesce',
         ...getNameExpressions(language),
     ];

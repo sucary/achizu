@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { useQuery } from '@tanstack/react-query';
 import { MapControls } from './MapControls';
 import type { GigMapFilterState } from './MapControls';
@@ -44,6 +45,8 @@ import { GigCard } from '../Tour/GigCard';
 import ArtistCard from '../ArtistCard';
 
 // Interactive artist map shell and control wiring
+
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
 const ALL_GIG_DATES = { from: '0001-01-01', to: '9999-12-31' };
 const focusedMapZoom = 11;
@@ -502,12 +505,6 @@ export default function MapView({
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
-
-        const supported = (maplibregl as unknown as { supported?: () => boolean }).supported;
-        if (supported && !supported()) {
-            setMapError(t('map.error.renderMapError'));
-            return;
-        }
 
         const map = new maplibregl.Map({
             container,
