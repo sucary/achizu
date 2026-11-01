@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { useTranslation } from 'react-i18next';
 import * as maplibregl from 'maplibre-gl';
 import type * as GeoJSON from 'geojson';
@@ -53,6 +53,14 @@ const maxRandomMarkerZIndex = selectedMarkerZIndex - 1;
 const markerPopupOffset = 32;
 
 const markerAnimations = new WeakMap<maplibregl.Marker, number>();
+const pendingRootUnmounts = new WeakSet<Root>();
+
+const deferRootUnmount = (root: Root | undefined) => {
+    if (!root || pendingRootUnmounts.has(root)) return;
+    pendingRootUnmounts.add(root);
+    queueMicrotask(() => root.unmount());
+};
+
 const displayCoordinateDragHandlers = new WeakMap<maplibregl.Marker, {
     dragStart: () => void;
     dragEnd: () => Promise<void>;
@@ -1575,7 +1583,7 @@ export const useArtistMarkers = ({
             if (options?.removeMarkerOnClose) {
                 marker.remove();
             }
-            root.unmount();
+            deferRootUnmount(root);
             markersRef.current.forEach((entry) => {
                 if (entry.popup === popup) {
                     entry.popup = undefined;
@@ -1597,7 +1605,7 @@ export const useArtistMarkers = ({
         if (entry) {
             // Replace the previous popup handle for this marker
             entry.popup?.remove();
-            entry.root?.unmount();
+            deferRootUnmount(entry.root);
             entry.popup = popup;
             entry.root = root;
         }
@@ -1675,7 +1683,7 @@ export const useArtistMarkers = ({
         popup.on('close', () => {
             // Venue cluster popup has no marker entry to own React cleanup
             sourceElement.classList.remove('marker-focused');
-            root.unmount();
+            deferRootUnmount(root);
             if (activePopupRef.current === popup) {
                 activePopupRef.current = null;
             }
