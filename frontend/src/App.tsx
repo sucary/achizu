@@ -273,7 +273,7 @@ function App() {
     const { data: allTourGigs = [] } = useQuery({
         queryKey: ['gigs', ALL_GIG_DATES],
         queryFn: () => getGigs(ALL_GIG_DATES),
-        enabled: tourMode.active && showGigPanel,
+        enabled: tourMode.active && (showGigPanel || showGigCalendar),
     });
     const highlightedGigCount = tourMode.selectedDay
         ? tourGigs.filter((gig) => gig.date === tourMode.selectedDay).length
@@ -1237,7 +1237,7 @@ function App() {
             )}
             {showGigCalendar && (
                 <GigCalendar
-                    gigs={tourGigs}
+                    gigs={allTourGigs}
                     selectedDay={tourMode.selectedDay}
                     onSelectDay={handleSelectCalendarDay}
                     onClose={handleCloseGigCalendar}
