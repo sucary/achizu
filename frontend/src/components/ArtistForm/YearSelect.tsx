@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useId } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDownIcon } from '../icons/GeneralIcons';
 import { useTranslation } from 'react-i18next';
@@ -57,16 +57,30 @@ const YearSelect = ({
     const activeYear = getFocusYear();
     const activeOptionId = isOpen && activeYear ? `${listboxId}-${activeYear}` : undefined;
 
-    // Update dropdown position
-    useEffect(() => {
-        if (isOpen && containerRef.current) {
+    useLayoutEffect(() => {
+        if (!isOpen) return;
+
+        const updatePosition = () => {
+            if (!containerRef.current) return;
             const rect = containerRef.current.getBoundingClientRect();
+            // Fixed positioning uses viewport coordinates without page scroll offsets.
             setDropdownPosition({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
+                top: rect.bottom,
+                left: rect.left,
                 width: rect.width
             });
-        }
+        };
+
+        updatePosition();
+        const viewport = window.visualViewport;
+        window.addEventListener('resize', updatePosition);
+        viewport?.addEventListener('resize', updatePosition);
+        viewport?.addEventListener('scroll', updatePosition);
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            viewport?.removeEventListener('resize', updatePosition);
+            viewport?.removeEventListener('scroll', updatePosition);
+        };
     }, [isOpen]);
 
     // Scrolling the form dismisses the open dropdown.
