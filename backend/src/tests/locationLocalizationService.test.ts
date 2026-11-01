@@ -49,7 +49,7 @@ function locationIQOsakaLookup() {
     return [
         {
             name: '大阪市',
-            address: { state: 'Osaka Prefecture', country: 'Japan' },
+            address: { state: 'Osaka Prefecture', country: 'Japan', country_code: 'jp' },
             extratags: {
                 wikidata: 'Q35765',
                 wikipedia: 'ja:大阪市',
@@ -202,7 +202,9 @@ afterAll(async () => {
 describe('LocationLocalizationService — Wikidata-first via LocationIQ', () => {
     describe('happy path (Wikidata branch)', () => {
         it('reads wikidata tag from LocationIQ extratags, walks Wikidata chain, persists localized_names', async () => {
-            const cityId = await insertCityRow('大阪市', 358674, TOKYO_LAT, TOKYO_LNG);
+            // The stored base name can be English even though OSM's
+            // unqualified name is Japanese.
+            const cityId = await insertCityRow('Osaka', 358674, TOKYO_LAT, TOKYO_LNG);
 
             const fetchSpy = vi.spyOn(global, 'fetch');
             // Call 1: LocationIQ lookup → returns extratags.wikidata + namedetails + address
@@ -224,9 +226,11 @@ describe('LocationLocalizationService — Wikidata-first via LocationIQ', () => 
             expect(result!.chain.province?.en).toBe('Osaka Prefecture');
             expect(result!.chain.province?.ja).toBe('大阪府');
             expect(result!.chain.province?.zhHant).toBe('大阪府');
+            expect(result!.chain.province?.native).toBe('大阪府');
 
             expect(result!.chain.country?.en).toBe('Japan');
             expect(result!.chain.country?.ja).toBe('日本');
+            expect(result!.chain.country?.native).toBe('日本');
 
             // Exactly 3 calls — 1 LocationIQ + 2 Wikidata.
             expect(fetchSpy.mock.calls.length).toBe(3);
@@ -278,7 +282,7 @@ describe('LocationLocalizationService — Wikidata-first via LocationIQ', () => 
     });
 
     describe('LocationIQ-only fallback (no wikidata tag)', () => {
-        it('uses initial namedetails for city + 3 more lookups for parents', async () => {
+        it('uses initial namedetails plus localized and native lookups for parents', async () => {
             const cityId = await insertCityRow('Helsinki', 34914, 60.1699, 24.9384);
 
             const fetchSpy = vi.spyOn(global, 'fetch');
@@ -294,6 +298,8 @@ describe('LocationLocalizationService — Wikidata-first via LocationIQ', () => 
             fetchSpy.mockResolvedValueOnce(makeFetchResponse(locationIQAddressLookup('烏西馬省', '芬蘭')));
             // Call 4: ja address lookup
             fetchSpy.mockResolvedValueOnce(makeFetchResponse(locationIQAddressLookup('ウーシマー県', 'フィンランド')));
+            // Call 5: native address lookup
+            fetchSpy.mockResolvedValueOnce(makeFetchResponse(locationIQAddressLookup('Uusimaa', 'Suomi')));
 
             const result = await LocationLocalizationService.ensureLocalized(cityId);
 
@@ -313,15 +319,18 @@ describe('LocationLocalizationService — Wikidata-first via LocationIQ', () => 
             expect(result!.chain.province?.zhHans).toBe('乌西马省');
             expect(result!.chain.province?.zhHant).toBe('烏西馬省');
             expect(result!.chain.province?.ja).toBe('ウーシマー県');
+            expect(result!.chain.province?.native).toBe('Uusimaa');
 
             // Country in 4 languages.
             expect(result!.chain.country?.en).toBe('Finland');
             expect(result!.chain.country?.zhHans).toBe('芬兰');
             expect(result!.chain.country?.zhHant).toBe('芬蘭');
             expect(result!.chain.country?.ja).toBe('フィンランド');
+            expect(result!.chain.country?.native).toBe('Suomi');
 
-            // Exactly 4 LocationIQ calls — initial + 3 per-language follow-ups.
-            expect(fetchSpy.mock.calls.length).toBe(4);
+            // Initial + 3 per-language follow-ups + native.
+            expect(fetchSpy.mock.calls.length).toBe(5);
+            expect(fetchSpy.mock.calls[4]?.[0]).toContain('accept-language=native');
         });
     });
 
@@ -369,6 +378,7 @@ describe('LocationLocalizationService — Wikidata-first via LocationIQ', () => 
             fetchSpy.mockResolvedValueOnce(makeFetchResponse(wikidataEmpty()));
             // Branch B kicks in. Reuses the namedetails+address from call 1
             // for city/en slot, then 3 more LocationIQ calls for the other langs.
+            fetchSpy.mockResolvedValueOnce(makeFetchResponse(locationIQAddressLookup('Phantasia', 'Phantomland')));
             fetchSpy.mockResolvedValueOnce(makeFetchResponse(locationIQAddressLookup('Phantasia', 'Phantomland')));
             fetchSpy.mockResolvedValueOnce(makeFetchResponse(locationIQAddressLookup('Phantasia', 'Phantomland')));
             fetchSpy.mockResolvedValueOnce(makeFetchResponse(locationIQAddressLookup('Phantasia', 'Phantomland')));

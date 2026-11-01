@@ -181,8 +181,11 @@ export const formatLocationLocalized = (
 
     const city = getLocalizedName(chain.city, preference) || location.city;
 
-    // Missing localized province is omitted to avoid mixed-language address chains
-    const province = getLocalizedName(chain.province, preference) || (chain.province ? location.province : '');
+    // Provinces require a matching requested/English translation. A native-only
+    // backend fallback is omitted in other modes to avoid mixed-language chains.
+    const province = preference === 'native'
+        ? chain.province?.native || ''
+        : chain.province?.[preference] || chain.province?.en || '';
     const country = getLocalizedName(chain.country, preference) || location.country;
 
     const parts = [

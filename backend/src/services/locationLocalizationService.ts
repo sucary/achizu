@@ -107,6 +107,23 @@ interface LocationIQLookupResult {
     extratags?: LocationIQExtratags;
 }
 
+type SupportedNativeLanguage = 'ja' | 'zhHans' | 'zhHant';
+
+function nativeLanguageFromCountryCode(countryCode?: string): SupportedNativeLanguage | null {
+    switch (countryCode?.toLowerCase()) {
+    case 'jp':
+        return 'ja';
+    case 'cn':
+        return 'zhHans';
+    case 'tw':
+    case 'hk':
+    case 'mo':
+        return 'zhHant';
+    default:
+        return null;
+    }
+}
+
 export const LocationLocalizationService = {
     /**
      * Idempotent multilingual localization. Short-circuits if already localized.
@@ -130,7 +147,7 @@ export const LocationLocalizationService = {
 
             const osmId = Number(row.osm_id);
             const osmType: string = row.osm_type;
-            const nativeName: string | null = row.name ?? null;
+            const storedName: string | null = row.name ?? null;
 
             // 1. Initial LocationIQ lookup to get Wikidata ID (if any) and namedetails for fallback.
             const initial = await fetchLocationIQLookup(osmId, osmType, 'en');
@@ -139,12 +156,18 @@ export const LocationLocalizationService = {
                 return null;
             }
 
+            // `locations.name` is often stored in the language used during
+            // search (commonly English), while OSM's unqualified `name` is
+            // the actual local/native name.
+            const nativeName = initial.namedetails?.name ?? initial.name ?? storedName;
+            const nativeLanguage = nativeLanguageFromCountryCode(initial.address?.country_code);
+
             const wikidataId = extractWikidataId(initial);
 
             // 2. Branch A: Wikidata path if we have a Wikidata ID. More efficient and richer data if it works, but more points of failure.
             let chain: LocalizedChain | null = null;
             if (wikidataId) {
-                chain = await fetchChainFromWikidata(wikidataId, nativeName);
+                chain = await fetchChainFromWikidata(wikidataId, nativeName, nativeLanguage);
             }
 
             // 3. Branch B: LocationIQ-only fallback path. Uses the namedetails
@@ -153,10 +176,10 @@ export const LocationLocalizationService = {
                 if (wikidataId) {
                     console.warn(`[localize] ${locationId} Wikidata returned nothing for ${wikidataId}, falling back to LocationIQ-only`);
                 }
-                chain = await fetchChainFromLocationIQ(osmId, osmType, initial, nativeName);
+                chain = await fetchChainFromLocationIQ(osmId, osmType, initial, nativeName, nativeLanguage);
             } else if (shouldReplaceCountryFromFallback(chain, row.country ?? initial.address?.country)) {
                 console.warn(`[localize] ${locationId} Wikidata country mismatched base country, replacing country from LocationIQ`);
-                const fallbackChain = await fetchChainFromLocationIQ(osmId, osmType, initial, nativeName);
+                const fallbackChain = await fetchChainFromLocationIQ(osmId, osmType, initial, nativeName, nativeLanguage);
                 if (fallbackChain?.country) {
                     chain.country = fallbackChain.country;
                 }
@@ -170,9 +193,26 @@ export const LocationLocalizationService = {
                 return null;
             }
 
-            // Override province/country with manual translations from
-            // sibling locations (same province/country name) if available.
+            // Fill missing levels from matching localized rows, then let
+            // manually curated translations take precedence.
+            await applySiblingTranslations(chain, locationId, row.province, row.country);
             await applyManualOverrides(chain, row.province, row.country);
+
+            // LocationIQ explicitly supports `accept-language=native`.
+            // Use it to fill any native values that Wikidata or the
+            // per-language lookups did not provide.
+            if (hasMissingNativeNames(chain)) {
+                const nativeLookup = await fetchLocationIQLookup(osmId, osmType, 'native');
+                applyNativeLookup(chain, nativeLookup);
+            }
+            applyStoredNativeFallback(chain, {
+                name: row.name,
+                province: row.province,
+                country: row.country,
+                countryCode: initial.address?.country_code ?? row.address_components?.country_code,
+                overwriteKnownLanguage: true,
+            });
+
             chain = applyChinaRegionCountryPolicy(chain, {
                 country: row.country ?? initial.address?.country,
                 countryCode: initial.address?.country_code ?? row.address_components?.country_code,
@@ -185,6 +225,7 @@ export const LocationLocalizationService = {
             return null;
         }
     },
+
 };
 
 // ─── LocationIQ ─────────────────────────────────────────────────────────
@@ -254,8 +295,8 @@ function namesFromNamedetails(nd: LocationIQNamedetails | undefined, nativeName:
         if (!names.zhHans) names.zhHans = nd['name:zh'];
         if (!names.zhHant) names.zhHant = nd['name:zh'];
     }
-    if (nativeName) names.native = nativeName;
-    else if (nd.name) names.native = nd.name;
+    if (nd.name) names.native = nd.name;
+    else if (nativeName) names.native = nativeName;
     return Object.keys(names).length > 0 ? names : null;
 }
 
@@ -266,7 +307,8 @@ async function fetchChainFromLocationIQ(
     osmId: number,
     osmType: string,
     initial: LocationIQLookupResult,
-    nativeName: string | null
+    nativeName: string | null,
+    nativeLanguage: SupportedNativeLanguage | null
 ): Promise<LocalizedChain | null> {
     const cityNames = namesFromNamedetails(initial.namedetails, nativeName);
     if (!cityNames) return null;
@@ -287,6 +329,10 @@ async function fetchChainFromLocationIQ(
         const result = await fetchLocationIQLookup(osmId, osmType, accept);
         foldAddressInto(result?.address, key, provinceNames, countryNames);
     }
+    if (nativeLanguage) {
+        if (provinceNames[nativeLanguage]) provinceNames.native = provinceNames[nativeLanguage];
+        if (countryNames[nativeLanguage]) countryNames.native = countryNames[nativeLanguage];
+    }
 
     const chain: LocalizedChain = { city: cityNames };
     if (Object.keys(provinceNames).length > 0) chain.province = provinceNames;
@@ -305,6 +351,71 @@ function foldAddressInto(
     const country  = address.country;
     if (province) provinceNames[key] = province;
     if (country)  countryNames[key]  = country;
+}
+
+function hasMissingNativeNames(chain: LocalizedChain): boolean {
+    return !chain.city.native
+        || !!chain.province && !chain.province.native
+        || !!chain.country && !chain.country.native;
+}
+
+function applyNativeLookup(
+    chain: LocalizedChain,
+    lookup: LocationIQLookupResult | null,
+    overwrite = false
+): void {
+    if (!lookup) return;
+
+    if (overwrite || !chain.city.native) {
+        const city = lookup.namedetails?.name
+            ?? lookup.name
+            ?? lookup.address?.city
+            ?? lookup.address?.town
+            ?? lookup.address?.village;
+        if (city) chain.city.native = city;
+    }
+
+    const province = lookup.address?.state ?? lookup.address?.province;
+    if (province) {
+        chain.province ??= {};
+        if (overwrite || !chain.province.native) chain.province.native = province;
+    }
+
+    if (lookup.address?.country) {
+        chain.country ??= {};
+        if (overwrite || !chain.country.native) chain.country.native = lookup.address.country;
+    }
+}
+
+function applyStoredNativeFallback(
+    chain: LocalizedChain,
+    source: {
+        name?: string;
+        province?: string;
+        country?: string;
+        countryCode?: string;
+        overwriteKnownLanguage: boolean;
+    }
+): void {
+    const nativeLanguage = nativeLanguageFromCountryCode(source.countryCode);
+    const fill = (names: LocalizedNames, fallback?: string) => {
+        const localizedNative = nativeLanguage ? names[nativeLanguage] : undefined;
+        if (localizedNative && (source.overwriteKnownLanguage || !names.native)) {
+            names.native = localizedNative;
+        } else if (!names.native && fallback) {
+            names.native = fallback;
+        }
+    };
+
+    fill(chain.city, source.name);
+    if (source.province && source.province !== 'Unknown') {
+        chain.province ??= {};
+        fill(chain.province, source.province);
+    }
+    if (source.country && source.country !== 'Unknown') {
+        chain.country ??= {};
+        fill(chain.country, source.country);
+    }
 }
 
 // ─── Wikidata ───────────────────────────────────────────────────────────
@@ -363,7 +474,11 @@ async function fetchEntityDataPerId(qids: string[]): Promise<Record<string, Wiki
     return out;
 }
 
-function extractLabels(entity: WikidataEntity | undefined, native?: string | null): LocalizedNames | null {
+function extractLabels(
+    entity: WikidataEntity | undefined,
+    native?: string | null,
+    nativeLanguage?: SupportedNativeLanguage | null
+): LocalizedNames | null {
     if (!entity?.labels) return null;
     const labels = entity.labels;
     const names: LocalizedNames = {};
@@ -376,6 +491,7 @@ function extractLabels(entity: WikidataEntity | undefined, native?: string | nul
         if (!names.zhHant) names.zhHant = labels.zh.value;
     }
     if (native) names.native = native;
+    else if (nativeLanguage && names[nativeLanguage]) names.native = names[nativeLanguage];
     return Object.keys(names).length > 0 ? names : null;
 }
 
@@ -400,12 +516,16 @@ function firstActiveClaimId(claims: WikidataClaim[]): string | null {
     return null;
 }
 
-async function fetchChainFromWikidata(rootQid: string, nativeName: string | null): Promise<LocalizedChain | null> {
+async function fetchChainFromWikidata(
+    rootQid: string,
+    nativeName: string | null,
+    nativeLanguage: SupportedNativeLanguage | null
+): Promise<LocalizedChain | null> {
     const initial = await fetchWikidataEntities([rootQid]);
     const city = initial[rootQid];
     if (!city) return null;
 
-    const cityNames = extractLabels(city, nativeName);
+    const cityNames = extractLabels(city, nativeName, nativeLanguage);
     if (!cityNames) return null;
 
     const provinceQid = firstActiveP131(city);
@@ -440,8 +560,12 @@ async function fetchChainFromWikidata(rootQid: string, nativeName: string | null
         }
     }
 
-    const provinceNames = resolvedProvinceQid ? extractLabels(parents[resolvedProvinceQid]) : null;
-    const countryNames  = countryQid  ? extractLabels(parents[countryQid])  : null;
+    const provinceNames = resolvedProvinceQid
+        ? extractLabels(parents[resolvedProvinceQid], null, nativeLanguage)
+        : null;
+    const countryNames = countryQid
+        ? extractLabels(parents[countryQid], null, nativeLanguage)
+        : null;
 
     const chain: LocalizedChain = { city: cityNames };
     if (provinceNames) chain.province = provinceNames;
@@ -472,7 +596,44 @@ function shouldReplaceCountryFromFallback(chain: LocalizedChain, expectedCountry
     return !hasMatchingLocalizedName(chain.country, expectedCountry);
 }
 
-// ─── Manual overrides ──────────────────────────────────────────────────
+// ─── Sibling translations and manual overrides ────────────────────────
+
+async function applySiblingTranslations(
+    chain: LocalizedChain,
+    locationId: string,
+    province: string | null,
+    country: string | null
+): Promise<void> {
+    if (province && province !== 'Unknown') {
+        const sibling = await pool.query(
+            `SELECT localized_names
+             FROM locations
+             WHERE id != $1
+               AND province = $2
+               AND localized_names->'province' IS NOT NULL
+             ORDER BY localized_manual DESC, localized_at DESC
+             LIMIT 1`,
+            [locationId, province]
+        );
+        const names = sibling.rows[0]?.localized_names?.province as LocalizedNames | undefined;
+        if (names) chain.province = { ...names, ...chain.province };
+    }
+
+    if (country && country !== 'Unknown') {
+        const sibling = await pool.query(
+            `SELECT localized_names
+             FROM locations
+             WHERE id != $1
+               AND country = $2
+               AND localized_names->'country' IS NOT NULL
+             ORDER BY localized_manual DESC, localized_at DESC
+             LIMIT 1`,
+            [locationId, country]
+        );
+        const names = sibling.rows[0]?.localized_names?.country as LocalizedNames | undefined;
+        if (names) chain.country = { ...names, ...chain.country };
+    }
+}
 
 /**
  * Look for sibling locations (same province or country) that have

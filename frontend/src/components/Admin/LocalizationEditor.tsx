@@ -9,6 +9,7 @@ const LANGS: { key: keyof LocalizedNames; label: string }[] = [
     { key: 'zhHans', label: '简' },
     { key: 'zhHant', label: '繁' },
     { key: 'ja', label: 'JA' },
+    { key: 'native', label: 'Native' },
 ];
 
 type ChainLevel = 'city' | 'province' | 'country';
@@ -196,7 +197,7 @@ export function LocalizationEditor() {
                     </div>
 
                     {/* Column headers */}
-                    <div className="grid items-center gap-2 mb-1" style={{ gridTemplateColumns: '6rem repeat(4, 1fr)' }}>
+                    <div className="grid items-center gap-2 mb-1" style={{ gridTemplateColumns: `6rem repeat(${LANGS.length}, minmax(0, 1fr))` }}>
                         <span />
                         {LANGS.map(({ label }) => (
                             <span key={label} className="text-xs text-text-muted text-center">{label}</span>
@@ -209,7 +210,7 @@ export function LocalizationEditor() {
                             const names = chain[level];
                             const hasMissing = LANGS.some(({ key }) => !names?.[key]);
                             return (
-                                <div key={level} className="grid items-center gap-2" style={{ gridTemplateColumns: '6rem repeat(4, 1fr)' }}>
+                                <div key={level} className="grid items-center gap-2" style={{ gridTemplateColumns: `6rem repeat(${LANGS.length}, minmax(0, 1fr))` }}>
                                     <span className="text-sm text-text-secondary capitalize truncate" title={dbValue}>
                                         {hasMissing && <span className="text-warning mr-1">*</span>}
                                         {label}
