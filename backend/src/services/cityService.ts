@@ -3,6 +3,7 @@ import { City, LocalizedChain, LocalizedLocation, NominatimResponse, NominatimSe
 import { normalizeChinaRegionCountry } from './chinaRegionCountryPolicy';
 import { applyLocationDisplayOverride, getLocationDisplayOverride } from './locationDisplayOverrides';
 import { nominatimLimiter } from './nominatimRateLimiter';
+import { applyJapanesePrefecturePolicy } from './japanesePrefecturePolicy';
 
 // City lookup and geometry persistence services
 
@@ -98,7 +99,12 @@ function normalizeAdministrativeProvince(
  * Parse localized_names which may be stored as a JSON string or object
  */
 export function parseLocalizedNames<T = unknown>(raw: string | T | null | undefined): T | null {
-    return typeof raw === 'string' ? JSON.parse(raw) as T : raw ?? null;
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) as T : raw ?? null;
+    if (parsed && typeof parsed === 'object' && 'city' in parsed
+        && parsed.city && typeof parsed.city === 'object') {
+        return applyJapanesePrefecturePolicy(parsed as unknown as LocalizedChain) as T;
+    }
+    return parsed;
 }
 
 /**
@@ -241,7 +247,7 @@ export const CityService = {
     /**
      * Search cities via Nominatim API
      */
-    searchNominatim: async (query: string, limit: number = 20, acceptLanguage?: string): Promise<NominatimSearchResult[]> => {
+    searchNominatim: async (query: string, limit: number = 20, acceptLanguage: string = 'native'): Promise<NominatimSearchResult[]> => {
         const params = new URLSearchParams({
             q: query,
             format: 'json',
@@ -250,6 +256,7 @@ export const CityService = {
             polygon_geojson: '1',
             dedupe: '0'
         });
+        params.set('accept-language', acceptLanguage);
 
         const url = `${GEOCODING_API_BASE}/search?${params.toString()}&key=${GEOCODING_API_KEY}`;
 
@@ -995,7 +1002,7 @@ export const CityService = {
         if (result.rows.length === 0) return null;
 
         const row = result.rows[0];
-        const chain = row.localized_names as LocalizedChain | null;
+        const chain = parseLocalizedNames<LocalizedChain>(row.localized_names);
         if (!chain || !chain.city) return null;
 
         return { id: row.id, chain };

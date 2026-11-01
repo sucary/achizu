@@ -1,0 +1,61 @@
+import type { LocalizedChain, LocalizedNames } from '../types/city';
+
+// Official names: https://nlftp.mlit.go.jp/ksj/gmlold/codelist/PrefCode.html
+export const JAPANESE_PREFECTURES = [
+    ['Hokkaido', '北海道'], ['Aomori', '青森県'], ['Iwate', '岩手県'],
+    ['Miyagi', '宮城県'], ['Akita', '秋田県'], ['Yamagata', '山形県'],
+    ['Fukushima', '福島県'], ['Ibaraki', '茨城県'], ['Tochigi', '栃木県'],
+    ['Gunma', '群馬県'], ['Saitama', '埼玉県'], ['Chiba', '千葉県'],
+    ['Tokyo', '東京都'], ['Kanagawa', '神奈川県'], ['Niigata', '新潟県'],
+    ['Toyama', '富山県'], ['Ishikawa', '石川県'], ['Fukui', '福井県'],
+    ['Yamanashi', '山梨県'], ['Nagano', '長野県'], ['Gifu', '岐阜県'],
+    ['Shizuoka', '静岡県'], ['Aichi', '愛知県'], ['Mie', '三重県'],
+    ['Shiga', '滋賀県'], ['Kyoto', '京都府'], ['Osaka', '大阪府'],
+    ['Hyogo', '兵庫県'], ['Nara', '奈良県'], ['Wakayama', '和歌山県'],
+    ['Tottori', '鳥取県'], ['Shimane', '島根県'], ['Okayama', '岡山県'],
+    ['Hiroshima', '広島県'], ['Yamaguchi', '山口県'], ['Tokushima', '徳島県'],
+    ['Kagawa', '香川県'], ['Ehime', '愛媛県'], ['Kochi', '高知県'],
+    ['Fukuoka', '福岡県'], ['Saga', '佐賀県'], ['Nagasaki', '長崎県'],
+    ['Kumamoto', '熊本県'], ['Oita', '大分県'], ['Miyazaki', '宮崎県'],
+    ['Kagoshima', '鹿児島県'], ['Okinawa', '沖縄県'],
+] as const;
+
+const normalizeAlias = (value: string): string => value.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+
+const aliases = new Map<string, string>();
+for (const [english, japanese] of JAPANESE_PREFECTURES) {
+    for (const alias of [english, `${english} Prefecture`, japanese, japanese.replace(/県$/, '縣'), japanese.replace(/県$/, '县')]) {
+        aliases.set(normalizeAlias(alias), japanese);
+    }
+}
+aliases.set('tokyo metropolis', '東京都');
+
+function canonicalPrefecture(names?: LocalizedNames): string | undefined {
+    if (!names) return undefined;
+    for (const value of [names.ja, names.native, names.en, names.zhHant, names.zhHans]) {
+        const canonical = value ? aliases.get(normalizeAlias(value)) : undefined;
+        if (canonical) return canonical;
+    }
+    return undefined;
+}
+
+export function applyJapanesePrefecturePolicy(chain: LocalizedChain, countryCode?: string): LocalizedChain {
+    const isJapan = countryCode?.toLowerCase() === 'jp'
+        || Object.values(chain.country ?? {}).some(value => value === '日本' || value?.toLowerCase() === 'japan');
+    if (!isJapan) return chain;
+
+    const result: LocalizedChain = { ...chain };
+    // Only exact Japanese prefecture labels identify the root. Bare English
+    // names such as Osaka and Kyoto also identify cities.
+    const rootName = chain.city.ja || chain.city.native;
+    const rootPrefecture = JAPANESE_PREFECTURES.find(([, japanese]) => japanese === rootName)?.[1];
+    if (rootPrefecture) {
+        result.city = { ...chain.city, native: rootPrefecture };
+        delete result.province;
+    } else {
+        const province = canonicalPrefecture(chain.province);
+        if (province) result.province = { ...chain.province, native: province };
+    }
+    return result;
+}

@@ -7,6 +7,7 @@ import {
 import { applyChinaRegionCountryPolicy } from './chinaRegionCountryPolicy';
 import { CityService } from './cityService';
 import { nominatimLimiter } from './nominatimRateLimiter';
+import { applyJapanesePrefecturePolicy, JAPANESE_PREFECTURES } from './japanesePrefecturePolicy';
 
 /**
  * LocationLocalizationService — Wikidata-first multilingual lookup.
@@ -147,7 +148,6 @@ export const LocationLocalizationService = {
 
             const osmId = Number(row.osm_id);
             const osmType: string = row.osm_type;
-            const storedName: string | null = row.name ?? null;
 
             // 1. Initial LocationIQ lookup to get Wikidata ID (if any) and namedetails for fallback.
             const initial = await fetchLocationIQLookup(osmId, osmType, 'en');
@@ -159,7 +159,7 @@ export const LocationLocalizationService = {
             // `locations.name` is often stored in the language used during
             // search (commonly English), while OSM's unqualified `name` is
             // the actual local/native name.
-            const nativeName = initial.namedetails?.name ?? initial.name ?? storedName;
+            const nativeName = initial.namedetails?.name ?? null;
             const nativeLanguage = nativeLanguageFromCountryCode(initial.address?.country_code);
 
             const wikidataId = extractWikidataId(initial);
@@ -193,30 +193,24 @@ export const LocationLocalizationService = {
                 return null;
             }
 
-            // Fill missing levels from matching localized rows, then let
-            // manually curated translations take precedence.
+            // Fill missing levels from matching localized rows.
             await applySiblingTranslations(chain, locationId, row.province, row.country);
-            await applyManualOverrides(chain, row.province, row.country);
 
             // LocationIQ explicitly supports `accept-language=native`.
-            // Use it to fill any native values that Wikidata or the
-            // per-language lookups did not provide.
-            if (hasMissingNativeNames(chain)) {
+            // Refresh native values outside our translated languages, where
+            // sibling records may contain names from an earlier search language.
+            if (!nativeLanguage || hasMissingNativeNames(chain)) {
                 const nativeLookup = await fetchLocationIQLookup(osmId, osmType, 'native');
-                applyNativeLookup(chain, nativeLookup);
+                applyNativeLookup(chain, nativeLookup, !nativeLanguage);
             }
-            applyStoredNativeFallback(chain, {
-                name: row.name,
-                province: row.province,
-                country: row.country,
-                countryCode: initial.address?.country_code ?? row.address_components?.country_code,
-                overwriteKnownLanguage: true,
-            });
+            applyKnownNativeLanguage(chain, initial.address?.country_code ?? row.address_components?.country_code);
+            await applyManualOverrides(chain, row.province, row.country);
 
             chain = applyChinaRegionCountryPolicy(chain, {
                 country: row.country ?? initial.address?.country,
                 countryCode: initial.address?.country_code ?? row.address_components?.country_code,
             });
+            chain = applyJapanesePrefecturePolicy(chain, initial.address?.country_code ?? row.address_components?.country_code);
 
             await persistChain(locationId, chain);
             return { id: locationId, chain };
@@ -387,34 +381,15 @@ function applyNativeLookup(
     }
 }
 
-function applyStoredNativeFallback(
+function applyKnownNativeLanguage(
     chain: LocalizedChain,
-    source: {
-        name?: string;
-        province?: string;
-        country?: string;
-        countryCode?: string;
-        overwriteKnownLanguage: boolean;
-    }
+    countryCode?: string
 ): void {
-    const nativeLanguage = nativeLanguageFromCountryCode(source.countryCode);
-    const fill = (names: LocalizedNames, fallback?: string) => {
-        const localizedNative = nativeLanguage ? names[nativeLanguage] : undefined;
-        if (localizedNative && (source.overwriteKnownLanguage || !names.native)) {
-            names.native = localizedNative;
-        } else if (!names.native && fallback) {
-            names.native = fallback;
-        }
-    };
+    const nativeLanguage = nativeLanguageFromCountryCode(countryCode);
+    if (!nativeLanguage) return;
 
-    fill(chain.city, source.name);
-    if (source.province && source.province !== 'Unknown') {
-        chain.province ??= {};
-        fill(chain.province, source.province);
-    }
-    if (source.country && source.country !== 'Unknown') {
-        chain.country ??= {};
-        fill(chain.country, source.country);
+    for (const names of [chain.city, chain.province, chain.country]) {
+        if (names?.[nativeLanguage]) names.native = names[nativeLanguage];
     }
 }
 
@@ -550,8 +525,11 @@ async function fetchChainFromWikidata(
     // entity (ward/district). Use the grandparent as province instead.
     let resolvedProvinceQid = provinceQid;
     if (provinceQid && countryQid && parents[provinceQid]) {
+        const parentIsJapanesePrefecture = nativeLanguage === 'ja' && JAPANESE_PREFECTURES.some(
+            ([, japanese]) => parents[provinceQid].labels?.ja?.value === japanese
+        );
         const grandparentQid = firstActiveP131(parents[provinceQid]);
-        if (grandparentQid && grandparentQid !== countryQid && grandparentQid !== rootQid) {
+        if (!parentIsJapanesePrefecture && grandparentQid && grandparentQid !== countryQid && grandparentQid !== rootQid) {
             if (!parents[grandparentQid]) {
                 const more = await fetchWikidataEntities([grandparentQid]);
                 parents = { ...parents, ...more };

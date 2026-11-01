@@ -16,12 +16,12 @@ export interface SearchResult {
 }
 
 /** Map LocationLanguage to accept-language header value */
-const LANG_TO_ACCEPT_LANGUAGE: Record<LocationLanguage, string | null> = {
+const LANG_TO_ACCEPT_LANGUAGE: Record<LocationLanguage, string> = {
     en: 'en',
     ja: 'ja',
     zhHans: 'zh-CN',
     zhHant: 'zh-TW',
-    native: null,
+    native: 'native',
 };
 
 export interface SearchResponse {
@@ -123,7 +123,7 @@ export const TextSearch = {
     },
 
     async getNominatimResults(query: string, limit: number, lang?: LocationLanguage): Promise<{ results: SearchResult[]; fromCache: boolean }> {
-        const acceptLang = lang ? LANG_TO_ACCEPT_LANGUAGE[lang] : null;
+        const acceptLang = LANG_TO_ACCEPT_LANGUAGE[lang ?? 'native'];
 
         let results = await SearchCacheService.get(query, acceptLang ?? undefined);
         const fromCache = results !== null;
